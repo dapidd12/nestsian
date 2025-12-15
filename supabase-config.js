@@ -1,7 +1,8 @@
 // Supabase Configuration for NestSian
 const SUPABASE_CONFIG = {
-    URL: 'https://lnqyomaylfxpignwgssr.supabase.co',
-    KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxucXlvbWF5bGZ4cGlnbndnc3NyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3OTUxMzgsImV4cCI6MjA4MTM3MTEzOH0.SNkjGvBIaPUqwyocgxMHnCgIBr-0ri0qay_hUrBkCpk'
+    URL: 'https://fumkbpwwyolzthowbkus.supabase.co',
+    KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1bWticHd3eW9senRob3dia3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MDM0ODIsImV4cCI6MjA4MTM3OTQ4Mn0.Lc-Jw_zDBbkXAgIw5NTOfX_dBPQpD42IpVxQ-2EvZ2I
+'
 };
 
 class SupabaseService {
