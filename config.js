@@ -5,6 +5,123 @@ const CONFIG = {
     SYSTEM_VERSION: '1.0.0',
     SYSTEM_DESCRIPTION: 'Keamanan dan Teknologi Modern',
     
+    // Database Schema
+    DATABASE: {
+        TABLES: {
+            USERS: 'users',
+            PRODUCTS: 'products',
+            CATEGORIES: 'categories',
+            ORDERS: 'orders',
+            ORDER_ITEMS: 'order_items',
+            CUSTOMERS: 'customers',
+            SETTINGS: 'settings',
+            CONTACT_MESSAGES: 'contact_messages',
+            LOGS: 'system_logs'
+        },
+        SCHEMA: `
+            -- Users Table
+            CREATE TABLE IF NOT EXISTS users (
+                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                name TEXT,
+                role TEXT DEFAULT 'staff',
+                is_active BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- Categories Table
+            CREATE TABLE IF NOT EXISTS categories (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                icon TEXT DEFAULT 'fas fa-tag',
+                description TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- Products Table
+            CREATE TABLE IF NOT EXISTS products (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                price INTEGER NOT NULL,
+                stock INTEGER DEFAULT 0,
+                category_id INTEGER REFERENCES categories(id),
+                image_url TEXT,
+                weight INTEGER DEFAULT 0,
+                featured BOOLEAN DEFAULT false,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- Customers Table
+            CREATE TABLE IF NOT EXISTS customers (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                email TEXT,
+                phone TEXT,
+                address TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- Orders Table
+            CREATE TABLE IF NOT EXISTS orders (
+                id TEXT PRIMARY KEY,
+                customer_name TEXT NOT NULL,
+                customer_email TEXT,
+                customer_phone TEXT,
+                total_amount INTEGER NOT NULL,
+                status TEXT DEFAULT 'pending',
+                payment_method TEXT,
+                shipping_address TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- Order Items Table
+            CREATE TABLE IF NOT EXISTS order_items (
+                id SERIAL PRIMARY KEY,
+                order_id TEXT REFERENCES orders(id),
+                product_id INTEGER REFERENCES products(id),
+                quantity INTEGER NOT NULL,
+                price INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- Settings Table
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- Contact Messages Table
+            CREATE TABLE IF NOT EXISTS contact_messages (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                message TEXT NOT NULL,
+                is_read BOOLEAN DEFAULT false,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+
+            -- System Logs Table
+            CREATE TABLE IF NOT EXISTS system_logs (
+                id SERIAL PRIMARY KEY,
+                user_id UUID REFERENCES users(id),
+                action TEXT NOT NULL,
+                details JSONB,
+                ip_address TEXT,
+                user_agent TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            );
+        `
+    },
+    
     // Theme Configuration
     THEME: {
         PRIMARY_COLOR: '#0080ff',
@@ -21,7 +138,7 @@ const CONFIG = {
         RETRY_ATTEMPTS: 3
     },
     
-    // QRIS Configuration (Default)
+    // QRIS Configuration
     QRIS: {
         DEFAULT_MERCHANT_NAME: 'NestSian Store',
         DEFAULT_MERCHANT_ID: 'ID.NESTSIAN.WWW',
@@ -34,11 +151,11 @@ const CONFIG = {
     // Product Configuration
     PRODUCT: {
         DEFAULT_CATEGORIES: [
-            { id: 1, name: 'Security', icon: 'fas fa-shield-alt' },
-            { id: 2, name: 'Networking', icon: 'fas fa-network-wired' },
-            { id: 3, name: 'Software', icon: 'fas fa-code' },
-            { id: 4, name: 'Hardware', icon: 'fas fa-server' },
-            { id: 5, name: 'Service', icon: 'fas fa-concierge-bell' }
+            { name: 'Security', icon: 'fas fa-shield-alt' },
+            { name: 'Networking', icon: 'fas fa-network-wired' },
+            { name: 'Software', icon: 'fas fa-code' },
+            { name: 'Hardware', icon: 'fas fa-server' },
+            { name: 'Service', icon: 'fas fa-concierge-bell' }
         ],
         STOCK_LOW_THRESHOLD: 5,
         STOCK_CRITICAL_THRESHOLD: 2
@@ -63,21 +180,113 @@ const CONFIG = {
         ENABLED: false
     },
     
-    // Maintenance Mode
-    MAINTENANCE: {
-        ENABLED: false,
-        MESSAGE: 'Sistem sedang dalam pemeliharaan. Silakan kembali beberapa saat lagi.',
-        ETA: null
-    },
-    
     // Security Configuration
     SECURITY: {
-        SESSION_TIMEOUT: 3600, // 1 hour in seconds
+        SESSION_TIMEOUT: 3600,
         MAX_LOGIN_ATTEMPTS: 5,
         PASSWORD_MIN_LENGTH: 8,
         ENABLE_2FA: false
     }
 };
+
+// Database Initialization Helper
+class DatabaseHelper {
+    static async initializeDatabase() {
+        try {
+            const supabase = supabaseService.supabase;
+            
+            if (!supabase || !supabaseService.initialized) {
+                console.warn('Supabase not available for database initialization');
+                return;
+            }
+            
+            // Create tables if they don't exist
+            const tables = CONFIG.DATABASE.TABLES;
+            
+            for (const [tableName, sql] of Object.entries(CONFIG.DATABASE.SCHEMA)) {
+                try {
+                    const { error } = await supabase.rpc('exec_sql', { sql });
+                    if (error && !error.message.includes('already exists')) {
+                        console.error(`Error creating table ${tableName}:`, error);
+                    }
+                } catch (error) {
+                    console.error(`Error initializing table ${tableName}:`, error);
+                }
+            }
+            
+            // Insert default categories if empty
+            const { data: existingCategories } = await supabase
+                .from('categories')
+                .select('id')
+                .limit(1);
+            
+            if (!existingCategories || existingCategories.length === 0) {
+                for (const category of CONFIG.PRODUCT.DEFAULT_CATEGORIES) {
+                    await supabase
+                        .from('categories')
+                        .insert([category]);
+                }
+                console.log('Default categories inserted');
+            }
+            
+            // Insert default settings if empty
+            const { data: existingSettings } = await supabase
+                .from('settings')
+                .select('key')
+                .limit(1);
+            
+            if (!existingSettings || existingSettings.length === 0) {
+                const defaultSettings = [
+                    { key: 'website', value: JSON.stringify({
+                        name: 'NestSian',
+                        slogan: 'Secure. Stable. Futuristic.',
+                        description: 'Solusi keamanan dan teknologi modern untuk bisnis Anda.',
+                        contact_email: 'info@nestsian.com',
+                        contact_phone: '+62 21 1234 5678',
+                        contact_address: 'Jl. Teknologi No. 123, Jakarta Selatan, Indonesia'
+                    })},
+                    { key: 'qris', value: JSON.stringify({
+                        merchant_name: 'NestSian Store',
+                        merchant_id: 'ID.NESTSIAN.WWW',
+                        city: 'Jakarta',
+                        postal_code: '12345',
+                        base_string: '00020101021126570011ID.DANA.WWW011893600915376904960002097690496000303UMI51440014ID.CO.QRIS.WWW0215ID10243512603270303UMI5204481453033605802ID5912NESTSIAN STORE6014JAKARTA SELATAN6105123456304'
+                    })},
+                    { key: 'maintenance', value: JSON.stringify({
+                        enabled: false,
+                        message: 'Sistem sedang dalam pemeliharaan. Silakan kembali beberapa saat lagi.',
+                        eta: null
+                    })},
+                    { key: 'system', value: JSON.stringify({
+                        name: 'NestSian',
+                        logo: 'logo.jpg',
+                        timezone: 'Asia/Jakarta',
+                        currency: 'IDR'
+                    })}
+                ];
+                
+                for (const setting of defaultSettings) {
+                    await supabase
+                        .from('settings')
+                        .insert([setting]);
+                }
+                console.log('Default settings inserted');
+            }
+            
+            console.log('Database initialized successfully');
+            
+        } catch (error) {
+            console.error('Error initializing database:', error);
+        }
+    }
+}
+
+// Initialize database when Supabase is ready
+setTimeout(() => {
+    if (window.supabaseService?.initialized) {
+        DatabaseHelper.initializeDatabase();
+    }
+}, 2000);
 
 // Utility Functions
 class ConfigHelper {
@@ -109,54 +318,10 @@ class ConfigHelper {
         }
         
         config[keys[keys.length - 1]] = value;
-        
-        // Save to localStorage for persistence
-        this.saveToStorage();
-    }
-    
-    static saveToStorage() {
-        try {
-            localStorage.setItem('nestsian_config', JSON.stringify(CONFIG));
-        } catch (error) {
-            console.error('Error saving config to storage:', error);
-        }
-    }
-    
-    static loadFromStorage() {
-        try {
-            const saved = localStorage.getItem('nestsian_config');
-            if (saved) {
-                Object.assign(CONFIG, JSON.parse(saved));
-            }
-        } catch (error) {
-            console.error('Error loading config from storage:', error);
-        }
-    }
-    
-    static resetToDefaults() {
-        // Reset specific config sections
-        CONFIG.QRIS = {
-            DEFAULT_MERCHANT_NAME: 'NestSian Store',
-            DEFAULT_MERCHANT_ID: 'ID.NESTSIAN.WWW',
-            DEFAULT_CITY: 'Jakarta',
-            DEFAULT_POSTAL_CODE: '12345',
-            TIMEOUT_MINUTES: 5,
-            DEFAULT_AMOUNTS: [10000, 50000, 100000, 500000]
-        };
-        
-        CONFIG.MAINTENANCE = {
-            ENABLED: false,
-            MESSAGE: 'Sistem sedang dalam pemeliharaan. Silakan kembali beberapa saat lagi.',
-            ETA: null
-        };
-        
-        this.saveToStorage();
     }
 }
-
-// Initialize config from storage
-ConfigHelper.loadFromStorage();
 
 // Export for use in other files
 window.CONFIG = CONFIG;
 window.ConfigHelper = ConfigHelper;
+window.DatabaseHelper = DatabaseHelper;
