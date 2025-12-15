@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NestSian - Keamanan dan Teknologi Modern</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="logo.jpg">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- QRCode Generator -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <script>
+        // Anti Inspect Element
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
+                (e.ctrlKey && e.key === 'u')) {
+                e.preventDefault();
+            }
+        });
+        
+        // Tailwind Configuration
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#e6f7ff',
+                            100: '#b3e0ff',
+                            200: '#80caff',
+                            300: '#4db3ff',
+                            400: '#1a9dff',
+                            500: '#0080ff',
+                            600: '#0066cc',
+                            700: '#004d99',
+                            800: '#003366',
+                            900: '#001a33',
+                        },
+                        secondary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            200: '#f5d0fe',
+                            300: '#f0abfc',
+                            400: '#e879f9',
+                            500: '#d946ef',
+                            600: '#c026d3',
+                            700: '#a21caf',
+                            800: '#86198f',
+                            900: '#701a75',
+                        },
+                        dark: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'gradient': 'gradient 8s linear infinite',
+                        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'slide-up': 'slide-up 0.5s ease-out',
+                    },
+                    keyframes: {
+                        gradient: {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            }
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0.7 }
+                        },
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' }
+                        },
+                        'slide-up': {
+                            '0%': { transform: 'translateY(20px)', opacity: 0 },
+                            '100%': { transform: 'translateY(0)', opacity: 1 }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-dark-950 via-dark-900 to-dark-800 text-gray-100 font-sans min-h-screen">
+    
+    <!-- Loading Overlay -->
+    <div id="loading" class="fixed inset-0 bg-dark-950 z-50 flex flex-col items-center justify-center">
+        <div class="relative">
+            <div class="w-32 h-32 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <img src="logo.jpg" alt="NestSian" class="w-20 h-20 rounded-full object-cover">
+            </div>
+        </div>
+        <p class="mt-6 text-lg font-medium text-primary-300 animate-pulse">Memuat Sistem NestSian...</p>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl shadow-2xl max-w-md w-full p-8 animate-slide-up">
+            <div class="text-center mb-8">
+                <div class="flex justify-center mb-4">
+                    <img src="logo.jpg" alt="NestSian" class="w-20 h-20 rounded-full object-cover border-4 border-primary-500/20">
+                </div>
+                <h2 class="text-2xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                    NestSian
+                </h2>
+                <p class="text-gray-400 mt-2">Sistem Keamanan dan Teknologi Modern</p>
+            </div>
+            
+            <div id="loginForm">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Email/Username</label>
+                        <input type="text" id="loginEmail" 
+                               class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                               placeholder="admin@nestsian.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                        <input type="password" id="loginPassword" 
+                               class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                               placeholder="••••••••">
+                    </div>
+                    <button id="loginSubmit" 
+                            class="w-full py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-semibold rounded-lg hover:opacity-90 transition-all active:scale-95">
+                        Masuk ke Sistem
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Mode -->
+    <div id="maintenanceMode" class="hidden fixed inset-0 bg-dark-950 z-40 flex items-center justify-center p-4">
+        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl shadow-2xl max-w-lg w-full p-8 text-center">
+            <div class="text-primary-400 text-5xl mb-4">
+                <i class="fas fa-tools"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-4">Mode Pemeliharaan</h2>
+            <p class="text-gray-400 mb-6">Sistem sedang dalam pemeliharaan. Silakan kembali beberapa saat lagi.</p>
+            <p class="text-sm text-gray-500">Estimasi selesai: <span id="maintenanceEta">-</span></p>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div id="mainLayout" class="hidden min-h-screen">
+        <!-- Header -->
+        <header class="sticky top-0 z-30 bg-dark-900/90 backdrop-blur-lg border-b border-dark-700">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <button id="sidebarToggle" class="lg:hidden text-gray-400 hover:text-white">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <div class="flex items-center space-x-3">
+                            <img src="logo.jpg" alt="NestSian" class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <h1 class="text-xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                                    NestSian
+                                </h1>
+                                <p class="text-xs text-gray-400">Secure. Stable. Futuristic.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="hidden md:flex items-center space-x-2 text-sm text-gray-400">
+                            <i class="fas fa-shield-alt text-primary-400"></i>
+                            <span id="serverStatus" class="text-green-400">● Online</span>
+                        </div>
+                        <div id="clock" class="hidden md:block px-3 py-1 bg-dark-800 rounded-lg text-sm"></div>
+                        <button id="adminPanelBtn" class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-lg text-sm font-medium hover:opacity-90 transition-all">
+                            <i class="fas fa-cog mr-2"></i>Admin
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex">
+            <!-- Sidebar -->
+            <aside id="sidebar" class="fixed lg:relative left-0 top-0 h-screen w-64 bg-dark-900 border-r border-dark-700 transform -translate-x-full lg:translate-x-0 transition-transform z-20">
+                <div class="p-6">
+                    <div class="text-center mb-8">
+                        <img src="logo.jpg" alt="NestSian" class="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-primary-500/20">
+                        <h3 class="font-bold text-white">NestSian Panel</h3>
+                        <p class="text-xs text-gray-400">Keamanan Digital</p>
+                    </div>
+                    
+                    <nav class="space-y-2">
+                        <a href="#dashboard" class="sidebar-link active">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="#products" class="sidebar-link">
+                            <i class="fas fa-box"></i>
+                            <span>Produk</span>
+                        </a>
+                        <a href="#categories" class="sidebar-link">
+                            <i class="fas fa-tags"></i>
+                            <span>Kategori</span>
+                        </a>
+                        <a href="#orders" class="sidebar-link">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>Pesanan</span>
+                            <span id="orderBadge" class="sidebar-badge">0</span>
+                        </a>
+                        <a href="#qris" class="sidebar-link">
+                            <i class="fas fa-qrcode"></i>
+                            <span>QRIS Dinamis</span>
+                        </a>
+                        <a href="#customers" class="sidebar-link">
+                            <i class="fas fa-users"></i>
+                            <span>Pelanggan</span>
+                        </a>
+                        <a href="#reports" class="sidebar-link">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Laporan</span>
+                        </a>
+                    </nav>
+                    
+                    <div class="mt-8 pt-8 border-t border-dark-700">
+                        <div class="sidebar-link text-red-400" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Keluar</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-4 lg:p-6">
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="content-section active" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Dashboard</h2>
+                        <p class="text-gray-400">Selamat datang di NestSian Panel</p>
+                    </div>
+                    
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Total Produk</p>
+                                    <h3 id="totalProducts" class="text-3xl font-bold text-white mt-2">0</h3>
+                                </div>
+                                <div class="text-primary-400 text-2xl">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Pesanan Hari Ini</p>
+                                    <h3 id="todayOrders" class="text-3xl font-bold text-white mt-2">0</h3>
+                                </div>
+                                <div class="text-green-400 text-2xl">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Pendapatan Bulan Ini</p>
+                                    <h3 id="monthlyRevenue" class="text-3xl font-bold text-white mt-2">Rp 0</h3>
+                                </div>
+                                <div class="text-yellow-400 text-2xl">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Pelanggan Aktif</p>
+                                    <h3 id="activeCustomers" class="text-3xl font-bold text-white mt-2">0</h3>
+                                </div>
+                                <div class="text-accent-400 text-2xl">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Orders -->
+                    <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 mb-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold text-white">Pesanan Terbaru</h3>
+                            <a href="#orders" class="text-primary-400 hover:text-primary-300 text-sm">Lihat Semua</a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-gray-400 border-b border-dark-700">
+                                        <th class="pb-3">ID Pesanan</th>
+                                        <th class="pb-3">Pelanggan</th>
+                                        <th class="pb-3">Produk</th>
+                                        <th class="pb-3">Total</th>
+                                        <th class="pb-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentOrders">
+                                    <!-- Data akan dimuat di sini -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Products Section -->
+                <section id="products" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Manajemen Produk</h2>
+                        <p class="text-gray-400">Kelola produk, stok, dan kategori</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Product Form -->
+                        <div class="lg:col-span-2">
+                            <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 mb-6">
+                                <h3 class="text-lg font-semibold text-white mb-4">Tambah/Edit Produk</h3>
+                                <form id="productForm" class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Nama Produk</label>
+                                            <input type="text" id="productName" 
+                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Kategori</label>
+                                            <select id="productCategory" 
+                                                    class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Harga (Rp)</label>
+                                            <input type="number" id="productPrice" 
+                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Stok</label>
+                                            <input type="number" id="productStock" 
+                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Berat (gram)</label>
+                                            <input type="number" id="productWeight" 
+                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Deskripsi</label>
+                                        <textarea id="productDescription" rows="3" 
+                                                  class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"></textarea>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">URL Gambar</label>
+                                        <input type="text" id="productImage" 
+                                               class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                               placeholder="https://example.com/image.jpg">
+                                    </div>
+                                    
+                                    <div class="flex space-x-3">
+                                        <button type="submit" id="saveProduct" 
+                                                class="px-6 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all">
+                                            Simpan Produk
+                                        </button>
+                                        <button type="button" id="cancelEdit" 
+                                                class="px-6 py-2 bg-dark-700 text-gray-300 font-medium rounded-lg hover:bg-dark-600 transition-all hidden">
+                                            Batal
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <!-- Product List -->
+                            <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                                <h3 class="text-lg font-semibold text-white mb-4">Daftar Produk</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr class="text-left text-gray-400 border-b border-dark-700">
+                                                <th class="pb-3">Produk</th>
+                                                <th class="pb-3">Kategori</th>
+                                                <th class="pb-3">Harga</th>
+                                                <th class="pb-3">Stok</th>
+                                                <th class="pb-3">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="productList">
+                                            <!-- Data akan dimuat di sini -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Categories -->
+                        <div>
+                            <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                                <h3 class="text-lg font-semibold text-white mb-4">Kategori Produk</h3>
+                                <form id="categoryForm" class="mb-6">
+                                    <div class="space-y-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Nama Kategori</label>
+                                            <input type="text" id="categoryName" 
+                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Icon (Font Awesome)</label>
+                                            <input type="text" id="categoryIcon" 
+                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                                   placeholder="fas fa-shield-alt">
+                                        </div>
+                                        <button type="submit" 
+                                                class="w-full px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all">
+                                            Tambah Kategori
+                                        </button>
+                                    </div>
+                                </form>
+                                
+                                <div class="space-y-2" id="categoryList">
+                                    <!-- Kategori akan dimuat di sini -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Categories Section -->
+                <section id="categories" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Kategori Produk</h2>
+                        <p class="text-gray-400">Kelola kategori produk untuk organisasi yang lebih baik</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Categories will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Orders Section -->
+                <section id="orders" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Manajemen Pesanan</h2>
+                        <p class="text-gray-400">Kelola semua pesanan pelanggan</p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 space-y-4 md:space-y-0">
+                            <div class="flex space-x-2">
+                                <button class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">Semua</button>
+                                <button class="px-4 py-2 bg-dark-700 text-gray-300 rounded-lg text-sm font-medium hover:bg-dark-600">Pending</button>
+                                <button class="px-4 py-2 bg-dark-700 text-gray-300 rounded-lg text-sm font-medium hover:bg-dark-600">Diproses</button>
+                                <button class="px-4 py-2 bg-dark-700 text-gray-300 rounded-lg text-sm font-medium hover:bg-dark-600">Selesai</button>
+                            </div>
+                            <div class="flex space-x-2">
+                                <input type="date" class="px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                                <button class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg text-sm font-medium">
+                                    <i class="fas fa-download mr-2"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-gray-400 border-b border-dark-700">
+                                        <th class="pb-3">ID Pesanan</th>
+                                        <th class="pb-3">Tanggal</th>
+                                        <th class="pb-3">Pelanggan</th>
+                                        <th class="pb-3">Produk</th>
+                                        <th class="pb-3">Total</th>
+                                        <th class="pb-3">Status</th>
+                                        <th class="pb-3">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orderList">
+                                    <!-- Data akan dimuat di sini -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- QRIS Section -->
+                <section id="qris" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">QRIS Dinamis</h2>
+                        <p class="text-gray-400">Kelola QRIS untuk pembayaran dinamis</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- QRIS Settings -->
+                        <div class="lg:col-span-2">
+                            <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 mb-6">
+                                <h3 class="text-lg font-semibold text-white mb-4">Pengaturan QRIS</h3>
+                                <form id="qrisSettingsForm" class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Nama Merchant</label>
+                                            <input type="text" id="qrisMerchantName" 
+                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">ID Merchant</label>
+                                            <input type="text" id="qrisMerchantId" 
+                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Kota</label>
+                                            <input type="text" id="qrisCity" 
+                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-300 mb-2">Kode Pos</label>
+                                            <input type="text" id="qrisPostalCode" 
+                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Base QRIS String</label>
+                                        <textarea id="qrisBase" rows="3" 
+                                                  class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm resize-none"></textarea>
+                                    </div>
+                                    
+                                    <button type="submit" 
+                                            class="px-6 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all">
+                                        Simpan Pengaturan QRIS
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- QR Generator -->
+                            <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                                <h3 class="text-lg font-semibold text-white mb-4">Generator QR Dinamis</h3>
+                                <div class="space-y-6">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Jumlah Pembayaran (Rp)</label>
+                                        <input type="number" id="qrisAmount" 
+                                               class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
+                                               placeholder="Masukkan jumlah pembayaran">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-300 mb-2">Keterangan</label>
+                                        <input type="text" id="qrisDescription" 
+                                               class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                               placeholder="Deskripsi pembayaran">
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        <button class="quick-amount px-4 py-3 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600 transition-all" data-amount="10000">Rp 10K</button>
+                                        <button class="quick-amount px-4 py-3 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600 transition-all" data-amount="50000">Rp 50K</button>
+                                        <button class="quick-amount px-4 py-3 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600 transition-all" data-amount="100000">Rp 100K</button>
+                                        <button class="quick-amount px-4 py-3 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600 transition-all" data-amount="500000">Rp 500K</button>
+                                    </div>
+                                    
+                                    <button id="generateQris" 
+                                            class="w-full px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all text-lg">
+                                        Generate QR Code
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- QR Preview -->
+                        <div>
+                            <div class="sticky top-24">
+                                <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 mb-6">
+                                    <h3 class="text-lg font-semibold text-white mb-4">Preview QR</h3>
+                                    <div class="flex justify-center mb-4">
+                                        <div id="qrcodePreview" class="p-4 bg-white rounded-lg">
+                                            <div class="text-center text-gray-500 py-8">
+                                                <i class="fas fa-qrcode text-4xl mb-2"></i>
+                                                <p class="text-sm">QR akan muncul di sini</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-3" id="qrisInfo">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Jumlah:</span>
+                                            <span class="text-white font-medium" id="previewAmount">Rp 0</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Merchant:</span>
+                                            <span class="text-white font-medium" id="previewMerchant">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Status:</span>
+                                            <span class="text-yellow-400 font-medium" id="previewStatus">Belum Digenerate</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6 space-y-3">
+                                        <button id="downloadQr" 
+                                                class="w-full px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                disabled>
+                                            <i class="fas fa-download mr-2"></i>Download QR
+                                        </button>
+                                        <button id="copyQr" 
+                                                class="w-full px-4 py-2 bg-dark-700 text-gray-300 rounded-lg font-medium hover:bg-dark-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                disabled>
+                                            <i class="fas fa-copy mr-2"></i>Copy QR String
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Countdown Timer -->
+                                <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                                    <h3 class="text-lg font-semibold text-white mb-4">Waktu Tersisa</h3>
+                                    <div class="text-center">
+                                        <div class="text-3xl font-bold text-primary-400 mb-2" id="countdownTimer">05:00</div>
+                                        <p class="text-sm text-gray-400">QR akan kedaluwarsa dalam:</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Customers Section -->
+                <section id="customers" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Manajemen Pelanggan</h2>
+                        <p class="text-gray-400">Kelola data pelanggan dan riwayat transaksi</p>
+                    </div>
+                    
+                    <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                            <div class="relative w-full md:w-64 mb-4 md:mb-0">
+                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                                <input type="text" placeholder="Cari pelanggan..." 
+                                       class="w-full pl-10 pr-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-gray-400 border-b border-dark-700">
+                                        <th class="pb-3">Nama</th>
+                                        <th class="pb-3">Email</th>
+                                        <th class="pb-3">Telepon</th>
+                                        <th class="pb-3">Total Transaksi</th>
+                                        <th class="pb-3">Status</th>
+                                        <th class="pb-3">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customerList">
+                                    <!-- Data akan dimuat di sini -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Reports Section -->
+                <section id="reports" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Laporan dan Analisis</h2>
+                        <p class="text-gray-400">Analisis performa bisnis dan transaksi</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- Sales Chart -->
+                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                            <h3 class="text-lg font-semibold text-white mb-4">Penjualan 7 Hari Terakhir</h3>
+                            <div class="h-64 flex items-end space-x-2" id="salesChart">
+                                <!-- Chart bars will be generated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Top Products -->
+                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                            <h3 class="text-lg font-semibold text-white mb-4">Produk Terlaris</h3>
+                            <div class="space-y-4" id="topProducts">
+                                <!-- Top products will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed Report -->
+                    <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-white">Laporan Detail</h3>
+                            <div class="flex space-x-2 mt-4 md:mt-0">
+                                <select class="px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    <option>Hari Ini</option>
+                                    <option>Minggu Ini</option>
+                                    <option>Bulan Ini</option>
+                                    <option>3 Bulan Terakhir</option>
+                                </select>
+                                <button class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg font-medium">
+                                    <i class="fas fa-file-export mr-2"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-gray-400 border-b border-dark-700">
+                                        <th class="pb-3">Tanggal</th>
+                                        <th class="pb-3">Pesanan</th>
+                                        <th class="pb-3">Pelanggan</th>
+                                        <th class="pb-3">Produk</th>
+                                        <th class="pb-3">Jumlah</th>
+                                        <th class="pb-3">Total</th>
+                                        <th class="pb-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportDetails">
+                                    <!-- Report details will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminPanelModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div class="flex justify-between items-center p-6 border-b border-dark-700">
+                <h2 class="text-xl font-bold text-white">Panel Admin NestSian</h2>
+                <button id="closeAdminPanel" class="text-gray-400 hover:text-white text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 120px)">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="showAdminTab('settings')">
+                        <div class="text-primary-400 text-xl mb-2">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Pengaturan Sistem</h3>
+                        <p class="text-sm text-gray-400 mt-1">Konfigurasi website</p>
+                    </div>
+                    
+                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="showAdminTab('users')">
+                        <div class="text-green-400 text-xl mb-2">
+                            <i class="fas fa-users-cog"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Manajemen User</h3>
+                        <p class="text-sm text-gray-400 mt-1">Kelola admin & staff</p>
+                    </div>
+                    
+                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="showAdminTab('security')">
+                        <div class="text-red-400 text-xl mb-2">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Keamanan</h3>
+                        <p class="text-sm text-gray-400 mt-1">Pengaturan keamanan</p>
+                    </div>
+                    
+                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="showAdminTab('maintenance')">
+                        <div class="text-yellow-400 text-xl mb-2">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Maintenance</h3>
+                        <p class="text-sm text-gray-400 mt-1">Mode pemeliharaan</p>
+                    </div>
+                    
+                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="showAdminTab('backup')">
+                        <div class="text-accent-400 text-xl mb-2">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Backup & Restore</h3>
+                        <p class="text-sm text-gray-400 mt-1">Cadangkan data</p>
+                    </div>
+                    
+                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="showAdminTab('logs')">
+                        <div class="text-gray-400 text-xl mb-2">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Log Sistem</h3>
+                        <p class="text-sm text-gray-400 mt-1">Riwayat aktivitas</p>
+                    </div>
+                </div>
+                
+                <!-- Admin Content Sections -->
+                <div id="adminTabContent">
+                    <!-- Settings -->
+                    <div id="adminSettings" class="admin-tab-content hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Pengaturan Sistem</h3>
+                        <form class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Nama Website</label>
+                                    <input type="text" class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Logo URL</label>
+                                    <input type="text" class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                                </div>
+                            </div>
+                            <button type="submit" class="px-6 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg">Simpan Pengaturan</button>
+                        </form>
+                    </div>
+                    
+                    <!-- Maintenance -->
+                    <div id="adminMaintenance" class="admin-tab-content hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Mode Pemeliharaan</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-dark-800 rounded-lg">
+                                <div>
+                                    <h4 class="font-medium text-white">Aktifkan Mode Maintenance</h4>
+                                    <p class="text-sm text-gray-400">Hanya admin yang bisa mengakses website</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="maintenanceToggle" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-dark-600 peer-focus:ring-4 peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                                </label>
+                            </div>
+                            
+                            <div id="maintenanceSettings" class="hidden space-y-4 p-4 bg-dark-800 rounded-lg">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Pesan Maintenance</label>
+                                    <textarea rows="3" class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">Estimasi Selesai</label>
+                                    <input type="datetime-local" class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-10 opacity-0 transition-all duration-300 z-50">
+        <div class="flex items-center space-x-2">
+            <i class="fas fa-check-circle"></i>
+            <span id="toastMessage">Operasi berhasil!</span>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "name": "nestsian",
+  "public": true,
+  "functions": {
+    "api/**/*.js": {
+      "maxDuration": 10
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "SUPABASE_URL": "your-supabase-url",
+    "SUPABASE_KEY": "your-supabase-key",
+    "TELEGRAM_BOT_TOKEN": "your-telegram-bot-token",
+    "TELEGRAM_CHAT_ID": "your-telegram-chat-id"
+  }
+}
