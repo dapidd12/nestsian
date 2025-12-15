@@ -18,9 +18,8 @@ const CONFIG = {
             CONTACT_MESSAGES: 'contact_messages',
             LOGS: 'system_logs'
         },
-        SCHEMA: `
-            -- Users Table
-            CREATE TABLE IF NOT EXISTS users (
+        SCHEMA: {
+            users: `CREATE TABLE IF NOT EXISTS users (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 email TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
@@ -29,20 +28,16 @@ const CONFIG = {
                 is_active BOOLEAN DEFAULT true,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
-            );
-
-            -- Categories Table
-            CREATE TABLE IF NOT EXISTS categories (
+            )`,
+            categories: `CREATE TABLE IF NOT EXISTS categories (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 icon TEXT DEFAULT 'fas fa-tag',
                 description TEXT,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
-            );
-
-            -- Products Table
-            CREATE TABLE IF NOT EXISTS products (
+            )`,
+            products: `CREATE TABLE IF NOT EXISTS products (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 description TEXT,
@@ -54,20 +49,16 @@ const CONFIG = {
                 featured BOOLEAN DEFAULT false,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
-            );
-
-            -- Customers Table
-            CREATE TABLE IF NOT EXISTS customers (
+            )`,
+            customers: `CREATE TABLE IF NOT EXISTS customers (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 email TEXT,
                 phone TEXT,
                 address TEXT,
                 created_at TIMESTAMP DEFAULT NOW()
-            );
-
-            -- Orders Table
-            CREATE TABLE IF NOT EXISTS orders (
+            )`,
+            orders: `CREATE TABLE IF NOT EXISTS orders (
                 id TEXT PRIMARY KEY,
                 customer_name TEXT NOT NULL,
                 customer_email TEXT,
@@ -79,27 +70,21 @@ const CONFIG = {
                 notes TEXT,
                 created_at TIMESTAMP DEFAULT NOW(),
                 updated_at TIMESTAMP DEFAULT NOW()
-            );
-
-            -- Order Items Table
-            CREATE TABLE IF NOT EXISTS order_items (
+            )`,
+            order_items: `CREATE TABLE IF NOT EXISTS order_items (
                 id SERIAL PRIMARY KEY,
                 order_id TEXT REFERENCES orders(id),
                 product_id INTEGER REFERENCES products(id),
                 quantity INTEGER NOT NULL,
                 price INTEGER NOT NULL,
                 created_at TIMESTAMP DEFAULT NOW()
-            );
-
-            -- Settings Table
-            CREATE TABLE IF NOT EXISTS settings (
+            )`,
+            settings: `CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
                 value TEXT,
                 updated_at TIMESTAMP DEFAULT NOW()
-            );
-
-            -- Contact Messages Table
-            CREATE TABLE IF NOT EXISTS contact_messages (
+            )`,
+            contact_messages: `CREATE TABLE IF NOT EXISTS contact_messages (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 email TEXT NOT NULL,
@@ -107,10 +92,8 @@ const CONFIG = {
                 message TEXT NOT NULL,
                 is_read BOOLEAN DEFAULT false,
                 created_at TIMESTAMP DEFAULT NOW()
-            );
-
-            -- System Logs Table
-            CREATE TABLE IF NOT EXISTS system_logs (
+            )`,
+            system_logs: `CREATE TABLE IF NOT EXISTS system_logs (
                 id SERIAL PRIMARY KEY,
                 user_id UUID REFERENCES users(id),
                 action TEXT NOT NULL,
@@ -118,8 +101,8 @@ const CONFIG = {
                 ip_address TEXT,
                 user_agent TEXT,
                 created_at TIMESTAMP DEFAULT NOW()
-            );
-        `
+            )`
+        }
     },
     
     // Theme Configuration
@@ -193,100 +176,81 @@ const CONFIG = {
 class DatabaseHelper {
     static async initializeDatabase() {
         try {
-            const supabase = supabaseService.supabase;
+            console.log('Initializing database...');
             
-            if (!supabase || !supabaseService.initialized) {
-                console.warn('Supabase not available for database initialization');
+            // Cek apakah supabaseService sudah ada
+            if (!window.supabaseService) {
+                console.warn('Supabase service not available');
                 return;
             }
             
-            // Create tables if they don't exist
-            const tables = CONFIG.DATABASE.TABLES;
+            const supabase = window.supabaseService.supabase;
             
-            for (const [tableName, sql] of Object.entries(CONFIG.DATABASE.SCHEMA)) {
-                try {
-                    const { error } = await supabase.rpc('exec_sql', { sql });
-                    if (error && !error.message.includes('already exists')) {
-                        console.error(`Error creating table ${tableName}:`, error);
-                    }
-                } catch (error) {
-                    console.error(`Error initializing table ${tableName}:`, error);
-                }
+            if (!supabase) {
+                console.warn('Supabase client not available');
+                return;
             }
             
-            // Insert default categories if empty
-            const { data: existingCategories } = await supabase
-                .from('categories')
+            // Test connection first
+            const { error: testError } = await supabase
+                .from('products')
                 .select('id')
                 .limit(1);
             
-            if (!existingCategories || existingCategories.length === 0) {
-                for (const category of CONFIG.PRODUCT.DEFAULT_CATEGORIES) {
-                    await supabase
-                        .from('categories')
-                        .insert([category]);
-                }
-                console.log('Default categories inserted');
+            if (testError && testError.code !== 'PGRST116') {
+                console.warn('Database connection test failed:', testError.message);
+                return;
             }
             
-            // Insert default settings if empty
-            const { data: existingSettings } = await supabase
-                .from('settings')
-                .select('key')
-                .limit(1);
+            console.log('Database connection test passed');
             
-            if (!existingSettings || existingSettings.length === 0) {
-                const defaultSettings = [
-                    { key: 'website', value: JSON.stringify({
-                        name: 'NestSian',
-                        slogan: 'Secure. Stable. Futuristic.',
-                        description: 'Solusi keamanan dan teknologi modern untuk bisnis Anda.',
-                        contact_email: 'info@nestsian.com',
-                        contact_phone: '+62 21 1234 5678',
-                        contact_address: 'Jl. Teknologi No. 123, Jakarta Selatan, Indonesia'
-                    })},
-                    { key: 'qris', value: JSON.stringify({
-                        merchant_name: 'NestSian Store',
-                        merchant_id: 'ID.NESTSIAN.WWW',
-                        city: 'Jakarta',
-                        postal_code: '12345',
-                        base_string: '00020101021126570011ID.DANA.WWW011893600915376904960002097690496000303UMI51440014ID.CO.QRIS.WWW0215ID10243512603270303UMI5204481453033605802ID5912NESTSIAN STORE6014JAKARTA SELATAN6105123456304'
-                    })},
-                    { key: 'maintenance', value: JSON.stringify({
-                        enabled: false,
-                        message: 'Sistem sedang dalam pemeliharaan. Silakan kembali beberapa saat lagi.',
-                        eta: null
-                    })},
-                    { key: 'system', value: JSON.stringify({
-                        name: 'NestSian',
-                        logo: 'logo.jpg',
-                        timezone: 'Asia/Jakarta',
-                        currency: 'IDR'
-                    })}
-                ];
+            // Insert default categories if table exists and is empty
+            try {
+                const { data: categories, error: categoriesError } = await supabase
+                    .from('categories')
+                    .select('*')
+                    .limit(1);
                 
-                for (const setting of defaultSettings) {
-                    await supabase
-                        .from('settings')
-                        .insert([setting]);
+                if (categoriesError) {
+                    console.warn('Categories table might not exist:', categoriesError.message);
+                } else if (!categories || categories.length === 0) {
+                    console.log('Inserting default categories...');
+                    
+                    for (const category of CONFIG.PRODUCT.DEFAULT_CATEGORIES) {
+                        const { error: insertError } = await supabase
+                            .from('categories')
+                            .insert([category]);
+                        
+                        if (insertError) {
+                            console.error('Error inserting category:', insertError);
+                        }
+                    }
+                    console.log('Default categories inserted');
                 }
-                console.log('Default settings inserted');
+            } catch (categoryError) {
+                console.warn('Error checking/inserting categories:', categoryError);
             }
             
-            console.log('Database initialized successfully');
+            console.log('Database initialization completed');
             
         } catch (error) {
-            console.error('Error initializing database:', error);
+            console.error('Error in database initialization:', error);
         }
     }
 }
 
-// Initialize database when Supabase is ready
-setTimeout(() => {
-    if (window.supabaseService?.initialized) {
-        DatabaseHelper.initializeDatabase();
-    }
-}, 2000);
+// Initialize database when ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Tunggu supabaseService siap
+    const checkService = setInterval(function() {
+        if (window.supabaseService) {
+            clearInterval(checkService);
+            setTimeout(() => {
+                DatabaseHelper.initializeDatabase();
+            }, 1000);
+        }
+    }, 100);
+});
 
 // Utility Functions
 class ConfigHelper {

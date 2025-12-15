@@ -104,6 +104,14 @@
                         'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
                         'float': 'float 6s ease-in-out infinite',
                         'slide-up': 'slide-up 0.5s ease-out',
+                        'shimmer': 'shimmer 2s infinite linear',
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-in': 'slideIn 0.3s ease-out',
+                        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin': 'spin 1s linear infinite',
+                        'loading': 'loading 1.5s infinite',
+                        'checkmark': 'checkmark 0.5s ease-out',
+                        'important-pulse': 'important-pulse 2s infinite',
                     },
                     keyframes: {
                         gradient: {
@@ -127,6 +135,39 @@
                         'slide-up': {
                             '0%': { transform: 'translateY(20px)', opacity: 0 },
                             '100%': { transform: 'translateY(0)', opacity: 1 }
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% center' },
+                            '100%': { backgroundPosition: '200% center' }
+                        },
+                        fadeIn: {
+                            'from': { opacity: 0, transform: 'translateY(20px)' },
+                            'to': { opacity: 1, transform: 'translateY(0)' }
+                        },
+                        slideIn: {
+                            'from': { transform: 'translateX(-20px)', opacity: 0 },
+                            'to': { transform: 'translateX(0)', opacity: 1 }
+                        },
+                        pulse: {
+                            '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                            '50%': { opacity: 0.8, transform: 'scale(1.05)' }
+                        },
+                        spin: {
+                            'from': { transform: 'rotate(0deg)' },
+                            'to': { transform: 'rotate(360deg)' }
+                        },
+                        loading: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' }
+                        },
+                        checkmark: {
+                            '0%': { transform: 'scale(0)', opacity: 0 },
+                            '50%': { transform: 'scale(1.2)' },
+                            '100%': { transform: 'scale(1)', opacity: 1 }
+                        },
+                        'important-pulse': {
+                            '0%, 100%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
+                            '70%': { boxShadow: '0 0 0 10px rgba(239, 68, 68, 0)' }
                         }
                     }
                 }
@@ -145,10 +186,11 @@
             </div>
         </div>
         <p class="mt-6 text-lg font-medium text-primary-300 animate-pulse">Memuat Sistem NestSian...</p>
+        <p class="text-sm text-gray-500 mt-2">Initializing services...</p>
     </div>
 
     <!-- Website Frontend -->
-    <div id="frontend" class="min-h-screen">
+    <div id="frontend" class="min-h-screen hidden">
         <!-- Navigation -->
         <nav class="sticky top-0 z-40 bg-dark-900/90 backdrop-blur-lg border-b border-dark-700">
             <div class="container mx-auto px-4 py-4">
@@ -171,7 +213,7 @@
                     </div>
                     
                     <div class="flex items-center space-x-4">
-                        <button id="loginBtn" class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-lg text-sm font-medium hover:opacity-90 transition-all">
+                        <button id="loginBtn" class="btn btn-primary">
                             <i class="fas fa-sign-in-alt mr-2"></i>Login Admin
                         </button>
                     </div>
@@ -196,10 +238,10 @@
                             Dengan sistem canggih dan tim ahli, kami hadir untuk kebutuhan digital Anda.
                         </p>
                         <div class="flex flex-wrap gap-4">
-                            <a href="#products" class="px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-lg font-medium hover:opacity-90 transition-all">
+                            <a href="#products" class="btn btn-primary">
                                 <i class="fas fa-shopping-cart mr-2"></i>Lihat Produk
                             </a>
-                            <a href="#contact" class="px-6 py-3 bg-dark-700 border border-dark-600 rounded-lg font-medium hover:bg-dark-600 transition-all">
+                            <a href="#contact" class="btn btn-secondary">
                                 <i class="fas fa-phone-alt mr-2"></i>Hubungi Kami
                             </a>
                         </div>
@@ -207,31 +249,31 @@
                     <div data-aos="fade-left">
                         <div class="relative">
                             <div class="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-accent-500/20 rounded-3xl blur-3xl"></div>
-                            <div class="relative bg-gradient-to-br from-dark-800 to-dark-900 rounded-3xl p-8 border border-dark-700 shadow-2xl">
+                            <div class="relative card">
                                 <div class="grid grid-cols-2 gap-6">
-                                    <div class="bg-dark-800/50 rounded-xl p-6 border border-dark-700">
-                                        <div class="text-primary-400 text-3xl mb-4">
+                                    <div class="stats-card">
+                                        <div class="stats-icon">
                                             <i class="fas fa-shield-alt"></i>
                                         </div>
                                         <h3 class="text-lg font-semibold text-white mb-2">Keamanan Tingkat Tinggi</h3>
                                         <p class="text-gray-400 text-sm">Proteksi maksimal untuk data Anda</p>
                                     </div>
-                                    <div class="bg-dark-800/50 rounded-xl p-6 border border-dark-700">
-                                        <div class="text-green-400 text-3xl mb-4">
+                                    <div class="stats-card">
+                                        <div class="stats-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
                                             <i class="fas fa-bolt"></i>
                                         </div>
                                         <h3 class="text-lg font-semibold text-white mb-2">Perform Optimal</h3>
                                         <p class="text-gray-400 text-sm">Server cepat dan stabil</p>
                                     </div>
-                                    <div class="bg-dark-800/50 rounded-xl p-6 border border-dark-700">
-                                        <div class="text-accent-400 text-3xl mb-4">
+                                    <div class="stats-card">
+                                        <div class="stats-icon" style="background: rgba(217, 70, 239, 0.1); color: #d946ef;">
                                             <i class="fas fa-headset"></i>
                                         </div>
                                         <h3 class="text-lg font-semibold text-white mb-2">Support 24/7</h3>
                                         <p class="text-gray-400 text-sm">Tim support siap membantu</p>
                                     </div>
-                                    <div class="bg-dark-800/50 rounded-xl p-6 border border-dark-700">
-                                        <div class="text-yellow-400 text-3xl mb-4">
+                                    <div class="stats-card">
+                                        <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
                                             <i class="fas fa-chart-line"></i>
                                         </div>
                                         <h3 class="text-lg font-semibold text-white mb-2">Monitoring Real-time</h3>
@@ -253,9 +295,15 @@
                     <p class="text-gray-400 max-w-2xl mx-auto">Temukan solusi keamanan terbaik untuk kebutuhan bisnis Anda</p>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="products-grid">
                     <!-- Products will be loaded from database -->
                     <div id="frontendProducts"></div>
+                </div>
+                
+                <div class="text-center mt-8">
+                    <a href="#contact" class="btn btn-primary btn-lg">
+                        <i class="fas fa-envelope mr-2"></i>Konsultasi Gratis
+                    </a>
                 </div>
             </div>
         </section>
@@ -375,29 +423,28 @@
                     </div>
                     
                     <div data-aos="fade-left">
-                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-8 border border-dark-700">
+                        <div class="card">
                             <h3 class="text-xl font-bold text-white mb-6">Kirim Pesan</h3>
                             <form id="contactForm" class="space-y-4">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <input type="text" placeholder="Nama Lengkap" 
-                                               class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    <div class="form-group">
+                                        <input type="text" name="name" placeholder="Nama Lengkap" 
+                                               class="form-control" required>
                                     </div>
-                                    <div>
-                                        <input type="email" placeholder="Email" 
-                                               class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                    <div class="form-group">
+                                        <input type="email" name="email" placeholder="Email" 
+                                               class="form-control" required>
                                     </div>
                                 </div>
-                                <div>
-                                    <input type="text" placeholder="Subjek" 
-                                           class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                <div class="form-group">
+                                    <input type="text" name="subject" placeholder="Subjek" 
+                                           class="form-control" required>
                                 </div>
-                                <div>
-                                    <textarea rows="4" placeholder="Pesan Anda" 
-                                              class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"></textarea>
+                                <div class="form-group">
+                                    <textarea name="message" rows="4" placeholder="Pesan Anda" 
+                                              class="form-control resize-none" required></textarea>
                                 </div>
-                                <button type="submit" 
-                                        class="w-full px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all">
+                                <button type="submit" class="btn btn-primary w-full">
                                     <i class="fas fa-paper-plane mr-2"></i>Kirim Pesan
                                 </button>
                             </form>
@@ -460,51 +507,56 @@
     </div>
 
     <!-- Login Modal -->
-    <div id="loginModal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
-        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl shadow-2xl max-w-md w-full p-8 animate-slide-up">
-            <div class="text-center mb-8">
-                <div class="flex justify-center mb-4">
-                    <img src="logo.jpg" alt="NestSian" class="w-20 h-20 rounded-full object-cover border-4 border-primary-500/20">
+    <div id="loginModal" class="modal hidden">
+        <div class="modal-content max-w-md">
+            <div class="modal-header">
+                <div class="text-center w-full">
+                    <div class="flex justify-center mb-4">
+                        <img src="logo.jpg" alt="NestSian" class="w-20 h-20 rounded-full object-cover border-4 border-primary-500/20">
+                    </div>
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                        NestSian Admin
+                    </h2>
+                    <p class="text-gray-400 mt-2">Sistem Manajemen Keamanan</p>
                 </div>
-                <h2 class="text-2xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
-                    NestSian Admin
-                </h2>
-                <p class="text-gray-400 mt-2">Sistem Manajemen Keamanan</p>
             </div>
             
-            <div id="loginForm">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Email/Username</label>
-                        <input type="text" id="loginEmail" 
-                               class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                               placeholder="Masukkan email atau username">
+            <div class="modal-body">
+                <div id="loginForm">
+                    <div class="space-y-4">
+                        <div class="form-group">
+                            <label class="form-label">Email/Username</label>
+                            <input type="text" id="loginEmail" 
+                                   class="form-control"
+                                   placeholder="Masukkan email atau username" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="loginPassword" 
+                                   class="form-control"
+                                   placeholder="••••••••" required>
+                            <p class="text-xs text-gray-500 mt-1">Demo: admin@nestsian.com / admin123</p>
+                        </div>
+                        <button id="loginSubmit" class="btn btn-primary w-full">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Masuk ke Dashboard
+                        </button>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                        <input type="password" id="loginPassword" 
-                               class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                               placeholder="••••••••">
-                        <p class="text-xs text-gray-500 mt-1">Demo: admin@nestsian.com / admin123</p>
-                    </div>
-                    <button id="loginSubmit" 
-                            class="w-full py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-semibold rounded-lg hover:opacity-90 transition-all active:scale-95">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Masuk ke Dashboard
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Maintenance Mode -->
-    <div id="maintenanceMode" class="hidden fixed inset-0 bg-dark-950 z-40 flex items-center justify-center p-4">
-        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl shadow-2xl max-w-lg w-full p-8 text-center">
-            <div class="text-primary-400 text-5xl mb-4">
-                <i class="fas fa-tools"></i>
+    <div id="maintenanceMode" class="modal hidden">
+        <div class="modal-content max-w-lg">
+            <div class="text-center">
+                <div class="text-primary-400 text-5xl mb-4">
+                    <i class="fas fa-tools"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-4">Mode Pemeliharaan</h2>
+                <p class="text-gray-400 mb-6">Sistem sedang dalam pemeliharaan. Silakan kembali beberapa saat lagi.</p>
+                <p class="text-sm text-gray-500">Estimasi selesai: <span id="maintenanceEta">-</span></p>
             </div>
-            <h2 class="text-2xl font-bold text-white mb-4">Mode Pemeliharaan</h2>
-            <p class="text-gray-400 mb-6">Sistem sedang dalam pemeliharaan. Silakan kembali beberapa saat lagi.</p>
-            <p class="text-sm text-gray-500">Estimasi selesai: <span id="maintenanceEta">-</span></p>
         </div>
     </div>
 
@@ -530,7 +582,7 @@
                     </div>
                     
                     <div class="flex items-center space-x-4">
-                        <a href="index.html#home" target="_blank" class="px-3 py-2 bg-dark-800 text-gray-300 rounded-lg text-sm font-medium hover:bg-dark-700 transition-all">
+                        <a href="#home" target="_blank" class="btn btn-secondary btn-sm">
                             <i class="fas fa-external-link-alt mr-2"></i>Lihat Website
                         </a>
                         <div class="hidden md:flex items-center space-x-2 text-sm text-gray-400">
@@ -538,7 +590,7 @@
                             <span id="serverStatus" class="text-green-400">● Online</span>
                         </div>
                         <div id="clock" class="hidden md:block px-3 py-1 bg-dark-800 rounded-lg text-sm"></div>
-                        <button id="adminPanelBtn" class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-lg text-sm font-medium hover:opacity-90 transition-all">
+                        <button id="adminPanelBtn" class="btn btn-primary">
                             <i class="fas fa-cog mr-2"></i>Admin Panel
                         </button>
                     </div>
@@ -548,7 +600,7 @@
 
         <div class="flex">
             <!-- Sidebar -->
-            <aside id="sidebar" class="fixed lg:relative left-0 top-0 h-screen w-64 bg-dark-900 border-r border-dark-700 transform -translate-x-full lg:translate-x-0 transition-transform z-20">
+            <aside id="sidebar" class="fixed lg:relative left-0 top-0 h-screen w-64 bg-dark-900 border-r border-dark-700 transform -translate-x-full lg:translate-x-0 transition-transform z-20 overflow-y-auto">
                 <div class="p-6">
                     <div class="text-center mb-8">
                         <img src="logo.jpg" alt="NestSian" class="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-primary-500/20">
@@ -602,7 +654,7 @@
             </aside>
 
             <!-- Main Content -->
-            <main class="flex-1 p-4 lg:p-6">
+            <main class="flex-1 p-4 lg:p-6 overflow-x-hidden">
                 <!-- Dashboard Section -->
                 <section id="dashboard" class="content-section active" data-aos="fade-up">
                     <div class="mb-8">
@@ -612,49 +664,49 @@
                     
                     <!-- Stats Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 hover:border-primary-500/50 transition-all cursor-pointer">
+                        <div class="stats-card">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm">Total Produk</p>
                                     <h3 id="totalProducts" class="text-3xl font-bold text-white mt-2">0</h3>
                                 </div>
-                                <div class="text-primary-400 text-2xl">
+                                <div class="stats-icon">
                                     <i class="fas fa-box"></i>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 hover:border-primary-500/50 transition-all cursor-pointer">
+                        <div class="stats-card">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm">Pesanan Hari Ini</p>
                                     <h3 id="todayOrders" class="text-3xl font-bold text-white mt-2">0</h3>
                                 </div>
-                                <div class="text-green-400 text-2xl">
+                                <div class="stats-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
                                     <i class="fas fa-shopping-cart"></i>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 hover:border-primary-500/50 transition-all cursor-pointer">
+                        <div class="stats-card">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm">Pendapatan Bulan Ini</p>
                                     <h3 id="monthlyRevenue" class="text-3xl font-bold text-white mt-2">Rp 0</h3>
                                 </div>
-                                <div class="text-yellow-400 text-2xl">
+                                <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
                                     <i class="fas fa-wallet"></i>
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 hover:border-primary-500/50 transition-all cursor-pointer">
+                        <div class="stats-card">
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-400 text-sm">Pelanggan Aktif</p>
                                     <h3 id="activeCustomers" class="text-3xl font-bold text-white mt-2">0</h3>
                                 </div>
-                                <div class="text-accent-400 text-2xl">
+                                <div class="stats-icon" style="background: rgba(217, 70, 239, 0.1); color: #d946ef;">
                                     <i class="fas fa-users"></i>
                                 </div>
                             </div>
@@ -662,15 +714,18 @@
                     </div>
                     
                     <!-- Recent Orders -->
-                    <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 mb-8">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-lg font-semibold text-white">Pesanan Terbaru</h3>
+                    <div class="card mb-8">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-shopping-cart"></i>
+                                Pesanan Terbaru
+                            </h3>
                             <a href="#orders" class="text-primary-400 hover:text-primary-300 text-sm">Lihat Semua</a>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full">
                                 <thead>
-                                    <tr class="text-left text-gray-400 border-b border-dark-700">
+                                    <tr>
                                         <th class="pb-3">ID Pesanan</th>
                                         <th class="pb-3">Pelanggan</th>
                                         <th class="pb-3">Produk</th>
@@ -680,6 +735,14 @@
                                 </thead>
                                 <tbody id="recentOrders">
                                     <!-- Data akan dimuat di sini -->
+                                    <tr>
+                                        <td colspan="5" class="text-center py-8 text-gray-400">
+                                            <div class="animate-pulse">
+                                                <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                                <div class="h-3 bg-dark-700 rounded w-1/2 mx-auto"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -696,81 +759,86 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- Product Form -->
                         <div class="lg:col-span-2">
-                            <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 mb-6">
-                                <h3 class="text-lg font-semibold text-white mb-4">Tambah/Edit Produk</h3>
+                            <div class="card mb-6">
+                                <h3 class="card-title">
+                                    <i class="fas fa-plus-circle"></i>
+                                    Tambah/Edit Produk
+                                </h3>
                                 <form id="productForm" class="space-y-4">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Nama Produk *</label>
+                                        <div class="form-group">
+                                            <label class="form-label">Nama Produk *</label>
                                             <input type="text" id="productName" required
-                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                                   class="form-control">
                                         </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Kategori *</label>
+                                        <div class="form-group">
+                                            <label class="form-label">Kategori *</label>
                                             <select id="productCategory" required
-                                                    class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                                    class="form-control">
                                             </select>
                                         </div>
                                     </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Harga (Rp) *</label>
+                                        <div class="form-group">
+                                            <label class="form-label">Harga (Rp) *</label>
                                             <input type="number" id="productPrice" required min="0"
-                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                                   class="form-control">
                                         </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Stok *</label>
+                                        <div class="form-group">
+                                            <label class="form-label">Stok *</label>
                                             <input type="number" id="productStock" required min="0"
-                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                                   class="form-control">
                                         </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Berat (gram)</label>
+                                        <div class="form-group">
+                                            <label class="form-label">Berat (gram)</label>
                                             <input type="number" id="productWeight" min="0"
-                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                                   class="form-control">
                                         </div>
                                     </div>
                                     
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-300 mb-2">Deskripsi *</label>
+                                    <div class="form-group">
+                                        <label class="form-label">Deskripsi *</label>
                                         <textarea id="productDescription" rows="3" required
-                                                  class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"></textarea>
+                                                  class="form-control resize-none"></textarea>
                                     </div>
                                     
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-300 mb-2">URL Gambar *</label>
+                                    <div class="form-group">
+                                        <label class="form-label">URL Gambar *</label>
                                         <input type="url" id="productImage" required
-                                               class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                               class="form-control"
                                                placeholder="https://example.com/image.jpg">
                                     </div>
                                     
                                     <div class="flex space-x-3">
-                                        <button type="submit" id="saveProduct" 
-                                                class="px-6 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all">
-                                            Simpan Produk
+                                        <button type="submit" id="saveProduct" class="btn btn-primary">
+                                            <i class="fas fa-save mr-2"></i>Simpan Produk
                                         </button>
                                         <button type="button" id="cancelEdit" 
-                                                class="px-6 py-2 bg-dark-700 text-gray-300 font-medium rounded-lg hover:bg-dark-600 transition-all hidden">
-                                            Batal Edit
+                                                class="btn btn-secondary hidden">
+                                            <i class="fas fa-times mr-2"></i>Batal Edit
                                         </button>
                                     </div>
                                 </form>
                             </div>
                             
                             <!-- Product List -->
-                            <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                                <div class="flex justify-between items-center mb-4">
-                                    <h3 class="text-lg font-semibold text-white">Daftar Produk</h3>
-                                    <div class="relative">
-                                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-list"></i>
+                                        Daftar Produk
+                                    </h3>
+                                    <div class="search-container">
+                                        <i class="fas fa-search"></i>
                                         <input type="text" id="searchProduct" placeholder="Cari produk..."
-                                               class="pl-10 pr-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm">
+                                               class="form-control text-sm pl-10">
                                     </div>
                                 </div>
                                 <div class="overflow-x-auto">
                                     <table class="w-full">
                                         <thead>
-                                            <tr class="text-left text-gray-400 border-b border-dark-700">
+                                            <tr>
                                                 <th class="pb-3">Produk</th>
                                                 <th class="pb-3">Kategori</th>
                                                 <th class="pb-3">Harga</th>
@@ -780,6 +848,14 @@
                                         </thead>
                                         <tbody id="productList">
                                             <!-- Data akan dimuat di sini -->
+                                            <tr>
+                                                <td colspan="5" class="text-center py-8 text-gray-400">
+                                                    <div class="animate-pulse">
+                                                        <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                                        <div class="h-3 bg-dark-700 rounded w-1/2 mx-auto"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -788,24 +864,26 @@
                         
                         <!-- Categories -->
                         <div>
-                            <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                                <h3 class="text-lg font-semibold text-white mb-4">Kategori Produk</h3>
+                            <div class="card">
+                                <h3 class="card-title">
+                                    <i class="fas fa-tags"></i>
+                                    Kategori Produk
+                                </h3>
                                 <form id="categoryForm" class="mb-6">
                                     <div class="space-y-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Nama Kategori *</label>
+                                        <div class="form-group">
+                                            <label class="form-label">Nama Kategori *</label>
                                             <input type="text" id="categoryName" required
-                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                                   class="form-control">
                                         </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Icon (Font Awesome)</label>
+                                        <div class="form-group">
+                                            <label class="form-label">Icon (Font Awesome)</label>
                                             <input type="text" id="categoryIcon" 
-                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                                   class="form-control"
                                                    placeholder="fas fa-shield-alt">
                                             <p class="text-xs text-gray-500 mt-1">Contoh: fas fa-shield-alt</p>
                                         </div>
-                                        <button type="submit" 
-                                                class="w-full px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all">
+                                        <button type="submit" class="btn btn-primary w-full">
                                             <i class="fas fa-plus mr-2"></i>Tambah Kategori
                                         </button>
                                     </div>
@@ -813,6 +891,12 @@
                                 
                                 <div class="space-y-2" id="categoryList">
                                     <!-- Kategori akan dimuat di sini -->
+                                    <div class="text-center py-8 text-gray-400">
+                                        <div class="animate-pulse">
+                                            <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                            <div class="h-3 bg-dark-700 rounded w-1/2 mx-auto"></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -828,6 +912,12 @@
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="categoriesGrid">
                         <!-- Categories will be loaded here -->
+                        <div class="text-center py-8 text-gray-400">
+                            <div class="animate-pulse">
+                                <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                <div class="h-3 bg-dark-700 rounded w-1/2 mx-auto"></div>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -838,17 +928,17 @@
                         <p class="text-gray-400">Kelola semua pesanan pelanggan dari website</p>
                     </div>
                     
-                    <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 space-y-4 md:space-y-0">
-                            <div class="flex space-x-2">
-                                <button id="filterAll" class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium">Semua</button>
-                                <button id="filterPending" class="px-4 py-2 bg-dark-700 text-gray-300 rounded-lg text-sm font-medium hover:bg-dark-600">Pending</button>
-                                <button id="filterProcessing" class="px-4 py-2 bg-dark-700 text-gray-300 rounded-lg text-sm font-medium hover:bg-dark-600">Diproses</button>
-                                <button id="filterCompleted" class="px-4 py-2 bg-dark-700 text-gray-300 rounded-lg text-sm font-medium hover:bg-dark-600">Selesai</button>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="flex flex-wrap gap-2">
+                                <button id="filterAll" class="btn btn-primary btn-sm">Semua</button>
+                                <button id="filterPending" class="btn btn-secondary btn-sm">Pending</button>
+                                <button id="filterProcessing" class="btn btn-secondary btn-sm">Diproses</button>
+                                <button id="filterCompleted" class="btn btn-secondary btn-sm">Selesai</button>
                             </div>
                             <div class="flex space-x-2">
-                                <input type="date" id="orderDateFilter" class="px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
-                                <button id="exportOrders" class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg text-sm font-medium">
+                                <input type="date" id="orderDateFilter" class="form-control text-sm">
+                                <button id="exportOrders" class="btn btn-primary btn-sm">
                                     <i class="fas fa-download mr-2"></i>Export
                                 </button>
                             </div>
@@ -857,7 +947,7 @@
                         <div class="overflow-x-auto">
                             <table class="w-full">
                                 <thead>
-                                    <tr class="text-left text-gray-400 border-b border-dark-700">
+                                    <tr>
                                         <th class="pb-3">ID Pesanan</th>
                                         <th class="pb-3">Tanggal</th>
                                         <th class="pb-3">Pelanggan</th>
@@ -869,6 +959,14 @@
                                 </thead>
                                 <tbody id="orderList">
                                     <!-- Data akan dimuat di sini -->
+                                    <tr>
+                                        <td colspan="7" class="text-center py-8 text-gray-400">
+                                            <div class="animate-pulse">
+                                                <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                                <div class="h-3 bg-dark-700 rounded w-1/2 mx-auto"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -885,76 +983,80 @@
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <!-- QRIS Settings -->
                         <div class="lg:col-span-2">
-                            <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 mb-6">
-                                <h3 class="text-lg font-semibold text-white mb-4">Pengaturan QRIS</h3>
+                            <div class="card mb-6">
+                                <h3 class="card-title">
+                                    <i class="fas fa-cog"></i>
+                                    Pengaturan QRIS
+                                </h3>
                                 <form id="qrisSettingsForm" class="space-y-4">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Nama Merchant *</label>
+                                        <div class="form-group">
+                                            <label class="form-label">Nama Merchant *</label>
                                             <input type="text" id="qrisMerchantName" required
-                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                                   class="form-control">
                                         </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">ID Merchant *</label>
+                                        <div class="form-group">
+                                            <label class="form-label">ID Merchant *</label>
                                             <input type="text" id="qrisMerchantId" required
-                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                                   class="form-control">
                                         </div>
                                     </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Kota *</label>
+                                        <div class="form-group">
+                                            <label class="form-label">Kota *</label>
                                             <input type="text" id="qrisCity" required
-                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                                   class="form-control">
                                         </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-300 mb-2">Kode Pos *</label>
+                                        <div class="form-group">
+                                            <label class="form-label">Kode Pos *</label>
                                             <input type="text" id="qrisPostalCode" required
-                                                   class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                                   class="form-control">
                                         </div>
                                     </div>
                                     
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-300 mb-2">Base QRIS String *</label>
+                                    <div class="form-group">
+                                        <label class="form-label">Base QRIS String *</label>
                                         <textarea id="qrisBase" rows="3" required
-                                                  class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm resize-none"></textarea>
+                                                  class="form-control font-mono text-sm resize-none"></textarea>
                                         <p class="text-xs text-gray-500 mt-1">String dasar untuk generate QRIS</p>
                                     </div>
                                     
-                                    <button type="submit" 
-                                            class="px-6 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all">
+                                    <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save mr-2"></i>Simpan Pengaturan
                                     </button>
                                 </form>
                             </div>
                             
                             <!-- QR Generator -->
-                            <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                                <h3 class="text-lg font-semibold text-white mb-4">Generator QR Dinamis</h3>
+                            <div class="card">
+                                <h3 class="card-title">
+                                    <i class="fas fa-qrcode"></i>
+                                    Generator QR Dinamis
+                                </h3>
                                 <div class="space-y-6">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-300 mb-2">Jumlah Pembayaran (Rp) *</label>
+                                    <div class="form-group">
+                                        <label class="form-label">Jumlah Pembayaran (Rp) *</label>
                                         <input type="number" id="qrisAmount" required min="1000"
-                                               class="w-full px-4 py-3 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
+                                               class="form-control text-lg"
                                                placeholder="Masukkan jumlah pembayaran">
                                     </div>
                                     
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-300 mb-2">Keterangan</label>
+                                    <div class="form-group">
+                                        <label class="form-label">Keterangan</label>
                                         <input type="text" id="qrisDescription" 
-                                               class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                               class="form-control"
                                                placeholder="Deskripsi pembayaran">
                                     </div>
                                     
                                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                        <button class="quick-amount px-4 py-3 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600 transition-all" data-amount="10000">Rp 10K</button>
-                                        <button class="quick-amount px-4 py-3 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600 transition-all" data-amount="50000">Rp 50K</button>
-                                        <button class="quick-amount px-4 py-3 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600 transition-all" data-amount="100000">Rp 100K</button>
-                                        <button class="quick-amount px-4 py-3 bg-dark-700 text-gray-300 rounded-lg hover:bg-dark-600 transition-all" data-amount="500000">Rp 500K</button>
+                                        <button class="quick-amount btn btn-secondary" data-amount="10000">Rp 10K</button>
+                                        <button class="quick-amount btn btn-secondary" data-amount="50000">Rp 50K</button>
+                                        <button class="quick-amount btn btn-secondary" data-amount="100000">Rp 100K</button>
+                                        <button class="quick-amount btn btn-secondary" data-amount="500000">Rp 500K</button>
                                     </div>
                                     
-                                    <button id="generateQris" 
-                                            class="w-full px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all text-lg">
+                                    <button id="generateQris" class="btn btn-primary w-full text-lg">
                                         <i class="fas fa-qrcode mr-2"></i>Generate QR Code
                                     </button>
                                 </div>
@@ -964,8 +1066,11 @@
                         <!-- QR Preview -->
                         <div>
                             <div class="sticky top-24">
-                                <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700 mb-6">
-                                    <h3 class="text-lg font-semibold text-white mb-4">Preview QR</h3>
+                                <div class="card mb-6">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-eye"></i>
+                                        Preview QR
+                                    </h3>
                                     <div class="flex justify-center mb-4">
                                         <div id="qrcodePreview" class="p-4 bg-white rounded-lg min-h-[250px] min-w-[250px] flex items-center justify-center">
                                             <div class="text-center text-gray-500">
@@ -992,12 +1097,12 @@
                                     
                                     <div class="mt-6 space-y-3">
                                         <button id="downloadQr" 
-                                                class="w-full px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                class="btn btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
                                                 disabled>
                                             <i class="fas fa-download mr-2"></i>Download QR
                                         </button>
                                         <button id="copyQr" 
-                                                class="w-full px-4 py-2 bg-dark-700 text-gray-300 rounded-lg font-medium hover:bg-dark-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                                class="btn btn-secondary w-full disabled:opacity-50 disabled:cursor-not-allowed"
                                                 disabled>
                                             <i class="fas fa-copy mr-2"></i>Copy QR String
                                         </button>
@@ -1005,8 +1110,11 @@
                                 </div>
                                 
                                 <!-- Countdown Timer -->
-                                <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                                    <h3 class="text-lg font-semibold text-white mb-4">Waktu Tersisa</h3>
+                                <div class="card">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-clock"></i>
+                                        Waktu Tersisa
+                                    </h3>
                                     <div class="text-center">
                                         <div class="text-3xl font-bold text-primary-400 mb-2" id="countdownTimer">05:00</div>
                                         <p class="text-sm text-gray-400">QR akan kedaluwarsa dalam:</p>
@@ -1024,14 +1132,14 @@
                         <p class="text-gray-400">Kelola data pelanggan dan riwayat transaksi dari website</p>
                     </div>
                     
-                    <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                            <div class="relative w-full md:w-64 mb-4 md:mb-0">
-                                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="search-container w-full md:w-64">
+                                <i class="fas fa-search"></i>
                                 <input type="text" id="searchCustomer" placeholder="Cari pelanggan..." 
-                                       class="w-full pl-10 pr-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                       class="form-control pl-10">
                             </div>
-                            <button id="exportCustomers" class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg font-medium">
+                            <button id="exportCustomers" class="btn btn-primary">
                                 <i class="fas fa-download mr-2"></i>Export Data
                             </button>
                         </div>
@@ -1039,7 +1147,7 @@
                         <div class="overflow-x-auto">
                             <table class="w-full">
                                 <thead>
-                                    <tr class="text-left text-gray-400 border-b border-dark-700">
+                                    <tr>
                                         <th class="pb-3">Nama</th>
                                         <th class="pb-3">Email</th>
                                         <th class="pb-3">Telepon</th>
@@ -1050,6 +1158,14 @@
                                 </thead>
                                 <tbody id="customerList">
                                     <!-- Data akan dimuat di sini -->
+                                    <tr>
+                                        <td colspan="6" class="text-center py-8 text-gray-400">
+                                            <div class="animate-pulse">
+                                                <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                                <div class="h-3 bg-dark-700 rounded w-1/2 mx-auto"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1065,41 +1181,62 @@
                     
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                         <!-- Sales Chart -->
-                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-semibold text-white">Penjualan 7 Hari Terakhir</h3>
-                                <select id="chartPeriod" class="px-3 py-1 bg-dark-700 border border-dark-600 rounded-lg text-sm">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-line"></i>
+                                    Penjualan 7 Hari Terakhir
+                                </h3>
+                                <select id="chartPeriod" class="form-control text-sm">
                                     <option value="7">7 Hari</option>
                                     <option value="30">30 Hari</option>
                                     <option value="90">90 Hari</option>
                                 </select>
                             </div>
-                            <div class="h-64 flex items-end space-x-2" id="salesChart">
+                            <div id="salesChart" class="chart-container">
                                 <!-- Chart bars will be generated here -->
+                                <div class="chart-placeholder">
+                                    <div class="text-center">
+                                        <i class="fas fa-chart-line text-4xl mb-4 text-gray-500"></i>
+                                        <p class="text-gray-400">Chart penjualan akan ditampilkan di sini</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
                         <!-- Top Products -->
-                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                            <h3 class="text-lg font-semibold text-white mb-4">Produk Terlaris</h3>
+                        <div class="card">
+                            <h3 class="card-title">
+                                <i class="fas fa-star"></i>
+                                Produk Terlaris
+                            </h3>
                             <div class="space-y-4" id="topProducts">
                                 <!-- Top products will be loaded here -->
+                                <div class="text-center py-8 text-gray-400">
+                                    <div class="animate-pulse">
+                                        <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                        <div class="h-3 bg-dark-700 rounded w-1/2 mx-auto"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Detailed Report -->
-                    <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                            <h3 class="text-lg font-semibold text-white">Laporan Detail Transaksi</h3>
-                            <div class="flex space-x-2 mt-4 md:mt-0">
-                                <select id="reportPeriod" class="px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-file-alt"></i>
+                                Laporan Detail Transaksi
+                            </h3>
+                            <div class="flex space-x-2">
+                                <select id="reportPeriod" class="form-control">
                                     <option value="today">Hari Ini</option>
                                     <option value="week">Minggu Ini</option>
                                     <option value="month">Bulan Ini</option>
                                     <option value="quarter">3 Bulan Terakhir</option>
                                 </select>
-                                <button id="exportReport" class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg font-medium">
+                                <button id="exportReport" class="btn btn-primary">
                                     <i class="fas fa-file-export mr-2"></i>Export PDF
                                 </button>
                             </div>
@@ -1108,7 +1245,7 @@
                         <div class="overflow-x-auto">
                             <table class="w-full">
                                 <thead>
-                                    <tr class="text-left text-gray-400 border-b border-dark-700">
+                                    <tr>
                                         <th class="pb-3">Tanggal</th>
                                         <th class="pb-3">ID Pesanan</th>
                                         <th class="pb-3">Pelanggan</th>
@@ -1120,6 +1257,14 @@
                                 </thead>
                                 <tbody id="reportDetails">
                                     <!-- Report details will be loaded here -->
+                                    <tr>
+                                        <td colspan="7" class="text-center py-8 text-gray-400">
+                                            <div class="animate-pulse">
+                                                <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                                <div class="h-3 bg-dark-700 rounded w-1/2 mx-auto"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -1135,78 +1280,83 @@
                     
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <!-- Website Settings -->
-                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                            <h3 class="text-lg font-semibold text-white mb-4">Pengaturan Website</h3>
+                        <div class="card">
+                            <h3 class="card-title">
+                                <i class="fas fa-cog"></i>
+                                Pengaturan Website
+                            </h3>
                             <form id="websiteSettingsForm" class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Nama Website</label>
+                                <div class="form-group">
+                                    <label class="form-label">Nama Website</label>
                                     <input type="text" id="websiteName" value="NestSian"
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                           class="form-control">
                                 </div>
                                 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Slogan</label>
+                                <div class="form-group">
+                                    <label class="form-label">Slogan</label>
                                     <input type="text" id="websiteSlogan" value="Secure. Stable. Futuristic."
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                           class="form-control">
                                 </div>
                                 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Deskripsi Website</label>
+                                <div class="form-group">
+                                    <label class="form-label">Deskripsi Website</label>
                                     <textarea id="websiteDescription" rows="3"
-                                              class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none">Solusi keamanan dan teknologi modern untuk bisnis Anda.</textarea>
+                                              class="form-control resize-none">Solusi keamanan dan teknologi modern untuk bisnis Anda.</textarea>
                                 </div>
                                 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Kontak Email</label>
+                                <div class="form-group">
+                                    <label class="form-label">Kontak Email</label>
                                     <input type="email" id="contactEmail" value="info@nestsian.com"
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                           class="form-control">
                                 </div>
                                 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Telepon</label>
+                                <div class="form-group">
+                                    <label class="form-label">Telepon</label>
                                     <input type="text" id="contactPhone" value="+62 21 1234 5678"
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                           class="form-control">
                                 </div>
                                 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Alamat</label>
+                                <div class="form-group">
+                                    <label class="form-label">Alamat</label>
                                     <textarea id="contactAddress" rows="2"
-                                              class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none">Jl. Teknologi No. 123, Jakarta Selatan, Indonesia</textarea>
+                                              class="form-control resize-none">Jl. Teknologi No. 123, Jakarta Selatan, Indonesia</textarea>
                                 </div>
                                 
-                                <button type="submit" 
-                                        class="w-full px-6 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all">
+                                <button type="submit" class="btn btn-primary w-full">
                                     <i class="fas fa-save mr-2"></i>Simpan Pengaturan
                                 </button>
                             </form>
                         </div>
                         
                         <!-- Hero Section Management -->
-                        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                            <h3 class="text-lg font-semibold text-white mb-4">Kelola Hero Section</h3>
+                        <div class="card">
+                            <h3 class="card-title">
+                                <i class="fas fa-images"></i>
+                                Kelola Hero Section
+                            </h3>
                             <form id="heroSettingsForm" class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Judul Utama</label>
+                                <div class="form-group">
+                                    <label class="form-label">Judul Utama</label>
                                     <input type="text" id="heroTitle" value="Keamanan Digital Terdepan"
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                           class="form-control">
                                 </div>
                                 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Sub Judul</label>
+                                <div class="form-group">
+                                    <label class="form-label">Sub Judul</label>
                                     <textarea id="heroSubtitle" rows="2"
-                                              class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none">Solusi keamanan dan teknologi modern untuk melindungi aset digital bisnis Anda.</textarea>
+                                              class="form-control resize-none">Solusi keamanan dan teknologi modern untuk melindungi aset digital bisnis Anda.</textarea>
                                 </div>
                                 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Teks Tombol Utama</label>
+                                <div class="form-group">
+                                    <label class="form-label">Teks Tombol Utama</label>
                                     <input type="text" id="heroButton1" value="Lihat Produk"
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                           class="form-control">
                                 </div>
                                 
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Teks Tombol Sekunder</label>
+                                <div class="form-group">
+                                    <label class="form-label">Teks Tombol Sekunder</label>
                                     <input type="text" id="heroButton2" value="Hubungi Kami"
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                                           class="form-control">
                                 </div>
                                 
                                 <div class="pt-4 border-t border-dark-700">
@@ -1214,38 +1364,117 @@
                                     <div class="space-y-3">
                                         <div class="grid grid-cols-2 gap-3">
                                             <input type="text" placeholder="Nama Fitur 1" value="Keamanan Tingkat Tinggi"
-                                                   class="px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-sm">
+                                                   class="form-control text-sm">
                                             <input type="text" placeholder="Icon" value="fas fa-shield-alt"
-                                                   class="px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-sm">
+                                                   class="form-control text-sm">
                                         </div>
                                         <div class="grid grid-cols-2 gap-3">
                                             <input type="text" placeholder="Nama Fitur 2" value="Perform Optimal"
-                                                   class="px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-sm">
+                                                   class="form-control text-sm">
                                             <input type="text" placeholder="Icon" value="fas fa-bolt"
-                                                   class="px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-sm">
+                                                   class="form-control text-sm">
                                         </div>
                                         <div class="grid grid-cols-2 gap-3">
                                             <input type="text" placeholder="Nama Fitur 3" value="Support 24/7"
-                                                   class="px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-sm">
+                                                   class="form-control text-sm">
                                             <input type="text" placeholder="Icon" value="fas fa-headset"
-                                                   class="px-3 py-2 bg-dark-700 border border-dark-600 rounded-lg text-sm">
+                                                   class="form-control text-sm">
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <button type="submit" 
-                                        class="w-full px-6 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg hover:opacity-90 transition-all">
+                                <button type="submit" class="btn btn-primary w-full">
                                     <i class="fas fa-sync-alt mr-2"></i>Perbarui Hero Section
                                 </button>
                             </form>
                         </div>
                     </div>
                     
+                    <!-- System Settings -->
+                    <div class="card mt-6">
+                        <h3 class="card-title">
+                            <i class="fas fa-sliders-h"></i>
+                            Pengaturan Sistem
+                        </h3>
+                        <form id="systemSettingsForm" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label class="form-label">Nama Sistem</label>
+                                    <input type="text" id="systemName" value="NestSian"
+                                           class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Logo URL</label>
+                                    <input type="url" id="systemLogo" value="logo.jpg"
+                                           class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Timezone</label>
+                                <select id="systemTimezone" class="form-control">
+                                    <option value="Asia/Jakarta" selected>WIB (Jakarta)</option>
+                                    <option value="Asia/Makassar">WITA (Makassar)</option>
+                                    <option value="Asia/Jayapura">WIT (Jayapura)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Currency</label>
+                                <select id="systemCurrency" class="form-control">
+                                    <option value="IDR" selected>IDR (Rupiah)</option>
+                                    <option value="USD">USD (Dollar)</option>
+                                    <option value="SGD">SGD (Dollar Singapura)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save mr-2"></i>Simpan Pengaturan
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Maintenance Settings -->
+                    <div class="card mt-6">
+                        <h3 class="card-title">
+                            <i class="fas fa-tools"></i>
+                            Mode Pemeliharaan
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-dark-800 rounded-lg">
+                                <div>
+                                    <h4 class="font-medium text-white">Aktifkan Mode Maintenance</h4>
+                                    <p class="text-sm text-gray-400">Hanya admin yang bisa mengakses website</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="maintenanceToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div id="maintenanceSettings" class="hidden space-y-4 p-4 bg-dark-800 rounded-lg">
+                                <div class="form-group">
+                                    <label class="form-label">Pesan Maintenance</label>
+                                    <textarea rows="3" id="maintenanceMessage" 
+                                              class="form-control">Sistem sedang dalam pemeliharaan. Silakan kembali beberapa saat lagi.</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Estimasi Selesai</label>
+                                    <input type="datetime-local" id="maintenanceEtaInput" 
+                                           class="form-control">
+                                </div>
+                                <button id="saveMaintenance" class="btn btn-primary">
+                                    <i class="fas fa-save mr-2"></i>Simpan Pengaturan Maintenance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Preview Section -->
-                    <div class="mt-6 bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl p-6 border border-dark-700">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-semibold text-white">Preview Website</h3>
-                            <a href="index.html" target="_blank" class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg text-sm font-medium">
+                    <div class="mt-6 card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-eye"></i>
+                                Preview Website
+                            </h3>
+                            <a href="index.html" target="_blank" class="btn btn-primary">
                                 <i class="fas fa-external-link-alt mr-2"></i>Lihat Website
                             </a>
                         </div>
@@ -1259,18 +1488,21 @@
     </div>
 
     <!-- Admin Panel Modal -->
-    <div id="adminPanelModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-        <div class="bg-gradient-to-br from-dark-800 to-dark-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div class="flex justify-between items-center p-6 border-b border-dark-700">
-                <h2 class="text-xl font-bold text-white">Panel Admin NestSian</h2>
-                <button id="closeAdminPanel" class="text-gray-400 hover:text-white text-xl">
+    <div id="adminPanelModal" class="modal hidden">
+        <div class="modal-content max-w-4xl">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-cogs mr-2"></i>
+                    Panel Admin NestSian
+                </h2>
+                <button id="closeAdminPanel" class="modal-close">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             
-            <div class="p-6 overflow-y-auto" style="max-height: calc(90vh - 120px)">
+            <div class="modal-body">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="nestSian.showAdminTab('settings')">
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('settings')">
                         <div class="text-primary-400 text-xl mb-2">
                             <i class="fas fa-cog"></i>
                         </div>
@@ -1278,7 +1510,7 @@
                         <p class="text-sm text-gray-400 mt-1">Konfigurasi website</p>
                     </div>
                     
-                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="nestSian.showAdminTab('users')">
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('users')">
                         <div class="text-green-400 text-xl mb-2">
                             <i class="fas fa-users-cog"></i>
                         </div>
@@ -1286,7 +1518,7 @@
                         <p class="text-sm text-gray-400 mt-1">Kelola admin & staff</p>
                     </div>
                     
-                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="nestSian.showAdminTab('security')">
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('security')">
                         <div class="text-red-400 text-xl mb-2">
                             <i class="fas fa-shield-alt"></i>
                         </div>
@@ -1294,7 +1526,7 @@
                         <p class="text-sm text-gray-400 mt-1">Pengaturan keamanan</p>
                     </div>
                     
-                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="nestSian.showAdminTab('maintenance')">
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('maintenance')">
                         <div class="text-yellow-400 text-xl mb-2">
                             <i class="fas fa-tools"></i>
                         </div>
@@ -1302,7 +1534,7 @@
                         <p class="text-sm text-gray-400 mt-1">Mode pemeliharaan</p>
                     </div>
                     
-                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="nestSian.showAdminTab('backup')">
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('backup')">
                         <div class="text-accent-400 text-xl mb-2">
                             <i class="fas fa-database"></i>
                         </div>
@@ -1310,7 +1542,7 @@
                         <p class="text-sm text-gray-400 mt-1">Cadangkan data</p>
                     </div>
                     
-                    <div class="bg-dark-800 rounded-lg p-4 border border-dark-700 hover:border-primary-500 transition-all cursor-pointer" onclick="nestSian.showAdminTab('logs')">
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('logs')">
                         <div class="text-gray-400 text-xl mb-2">
                             <i class="fas fa-history"></i>
                         </div>
@@ -1322,38 +1554,38 @@
                 <!-- Admin Content Sections -->
                 <div id="adminTabContent">
                     <!-- Settings -->
-                    <div id="adminSettings" class="admin-tab-content hidden">
+                    <div id="adminSettings" class="admin-tab-content">
                         <h3 class="text-lg font-semibold text-white mb-4">Pengaturan Sistem</h3>
-                        <form id="systemSettingsForm" class="space-y-4">
+                        <form id="adminSystemSettingsForm" class="space-y-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Nama Sistem</label>
-                                    <input type="text" id="systemName" value="NestSian"
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                                <div class="form-group">
+                                    <label class="form-label">Nama Sistem</label>
+                                    <input type="text" value="NestSian"
+                                           class="form-control">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Logo URL</label>
-                                    <input type="url" id="systemLogo" value="logo.jpg"
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                                <div class="form-group">
+                                    <label class="form-label">Logo URL</label>
+                                    <input type="url" value="logo.jpg"
+                                           class="form-control">
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Timezone</label>
-                                <select id="systemTimezone" class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                            <div class="form-group">
+                                <label class="form-label">Timezone</label>
+                                <select class="form-control">
                                     <option value="Asia/Jakarta" selected>WIB (Jakarta)</option>
                                     <option value="Asia/Makassar">WITA (Makassar)</option>
                                     <option value="Asia/Jayapura">WIT (Jayapura)</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-300 mb-2">Currency</label>
-                                <select id="systemCurrency" class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                            <div class="form-group">
+                                <label class="form-label">Currency</label>
+                                <select class="form-control">
                                     <option value="IDR" selected>IDR (Rupiah)</option>
                                     <option value="USD">USD (Dollar)</option>
                                     <option value="SGD">SGD (Dollar Singapura)</option>
                                 </select>
                             </div>
-                            <button type="submit" class="px-6 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-medium rounded-lg">
+                            <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save mr-2"></i>Simpan Pengaturan
                             </button>
                         </form>
@@ -1365,14 +1597,14 @@
                         <div class="space-y-4">
                             <div class="flex justify-between items-center">
                                 <h4 class="text-white font-medium">Daftar Admin & Staff</h4>
-                                <button class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white text-sm rounded-lg">
+                                <button class="btn btn-primary btn-sm">
                                     <i class="fas fa-plus mr-2"></i>Tambah User
                                 </button>
                             </div>
                             <div class="overflow-x-auto">
                                 <table class="w-full">
                                     <thead>
-                                        <tr class="text-left text-gray-400 border-b border-dark-700">
+                                        <tr>
                                             <th class="pb-2">Nama</th>
                                             <th class="pb-2">Email</th>
                                             <th class="pb-2">Role</th>
@@ -1381,13 +1613,24 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr class="border-b border-dark-700">
+                                        <tr>
                                             <td class="py-3 text-white">Super Admin</td>
                                             <td class="py-3 text-gray-300">admin@nestsian.com</td>
-                                            <td class="py-3"><span class="px-2 py-1 bg-red-900/30 text-red-400 rounded text-xs">Super Admin</span></td>
-                                            <td class="py-3"><span class="px-2 py-1 bg-green-900/30 text-green-400 rounded text-xs">Aktif</span></td>
+                                            <td class="py-3"><span class="badge badge-danger">Super Admin</span></td>
+                                            <td class="py-3"><span class="badge badge-success">Aktif</span></td>
                                             <td class="py-3">
-                                                <button class="text-primary-400 hover:text-primary-300">
+                                                <button class="btn btn-sm btn-outline">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-3 text-white">Staff User</td>
+                                            <td class="py-3 text-gray-300">staff@nestsian.com</td>
+                                            <td class="py-3"><span class="badge badge-primary">Staff</span></td>
+                                            <td class="py-3"><span class="badge badge-success">Aktif</span></td>
+                                            <td class="py-3">
+                                                <button class="btn btn-sm btn-outline">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
                                             </td>
@@ -1407,9 +1650,9 @@
                                     <h4 class="font-medium text-white">Two-Factor Authentication</h4>
                                     <p class="text-sm text-gray-400">Tambah lapisan keamanan untuk login</p>
                                 </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="twoFactorToggle" class="sr-only peer">
-                                    <div class="w-11 h-6 bg-dark-600 peer-focus:ring-4 peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="twoFactorToggle">
+                                    <span class="toggle-slider"></span>
                                 </label>
                             </div>
                             
@@ -1418,9 +1661,9 @@
                                     <h4 class="font-medium text-white">Auto Logout</h4>
                                     <p class="text-sm text-gray-400">Otomatis logout setelah tidak aktif</p>
                                 </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="autoLogoutToggle" checked class="sr-only peer">
-                                    <div class="w-11 h-6 bg-dark-600 peer-focus:ring-4 peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="autoLogoutToggle" checked>
+                                    <span class="toggle-slider"></span>
                                 </label>
                             </div>
                             
@@ -1428,13 +1671,13 @@
                                 <h4 class="font-medium text-white mb-2">Ubah Password</h4>
                                 <form class="space-y-3">
                                     <input type="password" placeholder="Password Saat Ini" 
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                                           class="form-control">
                                     <input type="password" placeholder="Password Baru" 
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                                           class="form-control">
                                     <input type="password" placeholder="Konfirmasi Password Baru" 
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
-                                    <button type="submit" class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg text-sm">
-                                        Ubah Password
+                                           class="form-control">
+                                    <button type="submit" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-key mr-2"></i>Ubah Password
                                     </button>
                                 </form>
                             </div>
@@ -1450,27 +1693,110 @@
                                     <h4 class="font-medium text-white">Aktifkan Mode Maintenance</h4>
                                     <p class="text-sm text-gray-400">Hanya admin yang bisa mengakses website</p>
                                 </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="maintenanceToggle" class="sr-only peer">
-                                    <div class="w-11 h-6 bg-dark-600 peer-focus:ring-4 peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="adminMaintenanceToggle">
+                                    <span class="toggle-slider"></span>
                                 </label>
                             </div>
                             
-                            <div id="maintenanceSettings" class="hidden space-y-4 p-4 bg-dark-800 rounded-lg">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Pesan Maintenance</label>
-                                    <textarea rows="3" id="maintenanceMessage" 
-                                              class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">Sistem sedang dalam pemeliharaan. Silakan kembali beberapa saat lagi.</textarea>
+                            <div id="adminMaintenanceSettings" class="space-y-4 p-4 bg-dark-800 rounded-lg">
+                                <div class="form-group">
+                                    <label class="form-label">Pesan Maintenance</label>
+                                    <textarea rows="3" 
+                                              class="form-control">Sistem sedang dalam pemeliharaan. Silakan kembali beberapa saat lagi.</textarea>
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-300 mb-2">Estimasi Selesai</label>
-                                    <input type="datetime-local" id="maintenanceEtaInput" 
-                                           class="w-full px-4 py-2 bg-dark-700 border border-dark-600 rounded-lg">
+                                <div class="form-group">
+                                    <label class="form-label">Estimasi Selesai</label>
+                                    <input type="datetime-local" 
+                                           class="form-control">
                                 </div>
-                                <button id="saveMaintenance" 
-                                        class="px-4 py-2 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-lg">
-                                    Simpan Pengaturan Maintenance
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-save mr-2"></i>Simpan Pengaturan Maintenance
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Backup -->
+                    <div id="adminBackup" class="admin-tab-content hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Backup & Restore</h3>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-dark-800 rounded-lg">
+                                <h4 class="font-medium text-white mb-3">Backup Database</h4>
+                                <p class="text-sm text-gray-400 mb-4">Cadangkan semua data sistem ke file</p>
+                                <button class="btn btn-primary">
+                                    <i class="fas fa-download mr-2"></i>Download Backup
+                                </button>
+                            </div>
+                            
+                            <div class="p-4 bg-dark-800 rounded-lg">
+                                <h4 class="font-medium text-white mb-3">Restore Database</h4>
+                                <p class="text-sm text-gray-400 mb-4">Pulihkan data dari file backup</p>
+                                <div class="file-upload">
+                                    <i class="fas fa-file-upload"></i>
+                                    <p class="text-sm text-gray-400 mb-2">Drag & drop file backup atau klik untuk upload</p>
+                                    <input type="file" accept=".json,.sql">
+                                    <button class="btn btn-secondary btn-sm mt-2">
+                                        <i class="fas fa-upload mr-2"></i>Pilih File
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Logs -->
+                    <div id="adminLogs" class="admin-tab-content hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Log Sistem</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h4 class="text-white font-medium">Riwayat Aktivitas</h4>
+                                <div class="flex space-x-2">
+                                    <select class="form-control text-sm">
+                                        <option value="all">Semua Level</option>
+                                        <option value="info">Info</option>
+                                        <option value="warning">Warning</option>
+                                        <option value="error">Error</option>
+                                    </select>
+                                    <button class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-download mr-2"></i>Export
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr>
+                                            <th class="pb-2">Waktu</th>
+                                            <th class="pb-2">User</th>
+                                            <th class="pb-2">Aksi</th>
+                                            <th class="pb-2">Level</th>
+                                            <th class="pb-2">Detail</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="py-3 text-gray-300 text-sm">2024-01-15 10:30</td>
+                                            <td class="py-3 text-white">admin@nestsian.com</td>
+                                            <td class="py-3 text-gray-300">Login</td>
+                                            <td class="py-3"><span class="badge badge-success">Info</span></td>
+                                            <td class="py-3 text-gray-300">User login berhasil</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-3 text-gray-300 text-sm">2024-01-15 10:35</td>
+                                            <td class="py-3 text-white">admin@nestsian.com</td>
+                                            <td class="py-3 text-gray-300">Tambah Produk</td>
+                                            <td class="py-3"><span class="badge badge-success">Info</span></td>
+                                            <td class="py-3 text-gray-300">Menambah produk "Security Panel"</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="py-3 text-gray-300 text-sm">2024-01-15 11:20</td>
+                                            <td class="py-3 text-white">admin@nestsian.com</td>
+                                            <td class="py-3 text-gray-300">Update Order</td>
+                                            <td class="py-3"><span class="badge badge-warning">Warning</span></td>
+                                            <td class="py-3 text-gray-300">Order status diubah ke completed</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -1479,18 +1805,50 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-10 opacity-0 transition-all duration-300 z-50">
-        <div class="flex items-center space-x-2">
-            <i class="fas fa-check-circle"></i>
-            <span id="toastMessage">Operasi berhasil!</span>
-        </div>
-    </div>
+    <!-- Custom Toast Notification -->
+    <div id="customToast" class="hidden"></div>
 
     <!-- Scripts -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <!-- Load Supabase from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
     <script src="config.js"></script>
     <script src="app.js"></script>
+
+    <script>
+        // Initialize AOS after DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof AOS !== 'undefined') {
+                AOS.init({
+                    duration: 600,
+                    once: true,
+                    offset: 100
+                });
+            }
+            
+            // Initialize tooltips
+            document.querySelectorAll('[data-tooltip]').forEach(element => {
+                element.addEventListener('mouseenter', function() {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'fixed bg-dark-900 text-white px-3 py-2 rounded-lg text-sm z-50';
+                    tooltip.textContent = this.getAttribute('data-tooltip');
+                    tooltip.style.left = (this.getBoundingClientRect().left + window.scrollX) + 'px';
+                    tooltip.style.top = (this.getBoundingClientRect().top + window.scrollY - 40) + 'px';
+                    tooltip.id = 'tooltip-' + Date.now();
+                    document.body.appendChild(tooltip);
+                    
+                    this._tooltip = tooltip;
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    if (this._tooltip) {
+                        this._tooltip.remove();
+                        this._tooltip = null;
+                    }
+                });
+            });
+        });
+    </script>
 </body>
 </html>
