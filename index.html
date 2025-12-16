@@ -1,258 +1,1715 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Form Biodata PanduKece</title>
-
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #000;
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0;
-      color: white;
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Glowy Bubble Hijau */
-    .bubble {
-      position: absolute;
-      width: 350px;
-      height: 350px;
-      background: rgba(0, 255, 120, 0.35);
-      filter: blur(120px);
-      border-radius: 50%;
-      top: 20%;
-      left: 15%;
-      animation: float 8s ease-in-out infinite alternate;
-    }
-
-    @keyframes float {
-      0% { transform: translate(0, 0); }
-      100% { transform: translate(80px, -40px); }
-    }
-
-    .form-container {
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 15px;
-      padding: 30px 40px;
-      width: 400px;
-      box-shadow: 0 0 25px rgba(0, 255, 120, 0.5);
-      border: 2px solid rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(15px);
-      position: relative;
-      overflow: hidden;
-      color: white;
-    }
-
-    /* LED Border */
-    .form-container::before {
-      content: "";
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: conic-gradient(from 0deg, #00ff88, #00cc55, #00ffbb, #00ff88);
-      animation: rotate 6s linear infinite;
-      z-index: 0;
-      opacity: 0.25;
-    }
-
-    @keyframes rotate {
-      100% { transform: rotate(360deg); }
-    }
-
-    h2 {
-      font-size: 24px;
-      font-weight: bold;
-      text-align: center;
-      color: white;
-      margin-bottom: 25px;
-      position: relative;
-      z-index: 2;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      z-index: 2;
-      position: relative;
-    }
-
-    label { font-weight: 500; color: white; }
-
-    input, textarea, select {
-      padding: 9px 12px;
-      border-radius: 8px;
-      border: none;
-      outline: none;
-      font-size: 14px;
-      background: rgba(255, 255, 255, 0.15);
-      color: white;
-      backdrop-filter: blur(4px);
-    }
-
-    textarea { height: 60px; resize: none; }
-
-    .radio-group, .checkbox-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      color: white;
-    }
-
-    .checkbox-group label,
-    .radio-group label {
-      color: #e0e0e0;
-    }
-
-    button {
-      flex: 1;
-      padding: 10px 0;
-      border-radius: 8px;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      color: white;
-      background: linear-gradient(45deg, #00ff88, #00994f);
-      transition: 0.3s;
-    }
-
-    button:hover {
-      box-shadow: 0 0 20px #00ff88;
-      transform: scale(1.05);
-    }
-
-    /* Notifikasi Sukses */
-    .success-box {
-      position: fixed;
-      top: 30px;
-      right: 30px;
-      background: rgba(0, 255, 120, 0.2);
-      padding: 20px 25px;
-      border-radius: 12px;
-      backdrop-filter: blur(10px);
-      color: white;
-      font-size: 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 0 20px rgba(0, 255, 120, 0.5);
-      border: 2px solid rgba(0, 255, 120, 0.4);
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(-15px);
-      transition: 0.4s;
-    }
-
-    .success-box.show {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
-
-    .checkmark {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      background: #00ff88;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #00331f;
-      font-weight: bold;
-      box-shadow: 0 0 15px #00ff88;
-      animation: pop 0.4s ease;
-    }
-
-    @keyframes pop {
-      0% { transform: scale(0); }
-      100% { transform: scale(1); }
-    }
-
-    .close-btn {
-      cursor: pointer;
-      margin-left: auto;
-      font-weight: bold;
-      color: white;
-    }
-
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NestSian - Layanan Produk Digital Murah & Cepat 24/7</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="logo.jpg">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- QRCode Generator -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <script>
+        // Tailwind Configuration
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#e6f7ff',
+                            100: '#b3e0ff',
+                            200: '#80caff',
+                            300: '#4db3ff',
+                            400: '#1a9dff',
+                            500: '#0080ff',
+                            600: '#0066cc',
+                            700: '#004d99',
+                            800: '#003366',
+                            900: '#001a33',
+                        },
+                        secondary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            200: '#f5d0fe',
+                            300: '#f0abfc',
+                            400: '#e879f9',
+                            500: '#d946ef',
+                            600: '#c026d3',
+                            700: '#a21caf',
+                            800: '#86198f',
+                            900: '#701a75',
+                        },
+                        dark: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'gradient': 'gradient 8s linear infinite',
+                        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'slide-up': 'slide-up 0.5s ease-out',
+                        'shimmer': 'shimmer 2s infinite linear',
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-in': 'slideIn 0.3s ease-out',
+                        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin': 'spin 1s linear infinite',
+                        'loading': 'loading 1.5s infinite',
+                        'checkmark': 'checkmark 0.5s ease-out',
+                        'important-pulse': 'important-pulse 2s infinite',
+                    },
+                    keyframes: {
+                        gradient: {
+                            '0%, 100%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'left center'
+                            },
+                            '50%': {
+                                'background-size': '200% 200%',
+                                'background-position': 'right center'
+                            }
+                        },
+                        'pulse-glow': {
+                            '0%, 100%': { opacity: 1 },
+                            '50%': { opacity: 0.7 }
+                        },
+                        'float': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' }
+                        },
+                        'slide-up': {
+                            '0%': { transform: 'translateY(20px)', opacity: 0 },
+                            '100%': { transform: 'translateY(0)', opacity: 1 }
+                        },
+                        shimmer: {
+                            '0%': { backgroundPosition: '-200% center' },
+                            '100%': { backgroundPosition: '200% center' }
+                        },
+                        fadeIn: {
+                            'from': { opacity: 0, transform: 'translateY(20px)' },
+                            'to': { opacity: 1, transform: 'translateY(0)' }
+                        },
+                        slideIn: {
+                            'from': { transform: 'translateX(-20px)', opacity: 0 },
+                            'to': { transform: 'translateX(0)', opacity: 1 }
+                        },
+                        pulse: {
+                            '0%, 100%': { opacity: 1, transform: 'scale(1)' },
+                            '50%': { opacity: 0.8, transform: 'scale(1.05)' }
+                        },
+                        spin: {
+                            'from': { transform: 'rotate(0deg)' },
+                            'to': { transform: 'rotate(360deg)' }
+                        },
+                        loading: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(100%)' }
+                        },
+                        checkmark: {
+                            '0%': { transform: 'scale(0)', opacity: 0 },
+                            '50%': { transform: 'scale(1.2)' },
+                            '100%': { transform: 'scale(1)', opacity: 1 }
+                        },
+                        'important-pulse': {
+                            '0%, 100%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
+                            '70%': { boxShadow: '0 0 0 10px rgba(239, 68, 68, 0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
+<body class="bg-gradient-to-br from-dark-950 via-dark-900 to-dark-800 text-gray-100 font-sans min-h-screen">
+    
+    <!-- Loading Overlay -->
+    <div id="loading" class="fixed inset-0 bg-dark-950 z-50 flex flex-col items-center justify-center">
+        <div class="relative">
+            <div class="w-32 h-32 border-4 border-primary-500/30 border-t-primary-500 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <img src="logo.jpg" alt="NestSian" class="w-20 h-20 rounded-full object-cover">
+            </div>
+        </div>
+        <p class="mt-6 text-lg font-medium text-primary-300 animate-pulse">Memuat Sistem...</p>
+        <p class="text-sm text-gray-500 mt-2">Initializing...</p>
+    </div>
 
-  <!-- Glowy bubble hijau -->
-  <div class="bubble"></div>
+    <!-- Website Frontend -->
+    <div id="frontend" class="min-h-screen hidden">
+        <!-- Navigation -->
+        <nav class="sticky top-0 z-40 bg-dark-900/90 backdrop-blur-lg border-b border-dark-700">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <img src="logo.jpg" alt="NestSian" class="w-10 h-10 rounded-full object-cover">
+                        <div>
+                            <h1 class="text-xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                                NestSian
+                            </h1>
+                            <p class="text-xs text-gray-400">Secure. Stable. Futuristic.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="hidden md:flex items-center space-x-8">
+                        <a href="#home" class="text-gray-300 hover:text-white transition-colors">Beranda</a>
+                        <a href="#products" class="text-gray-300 hover:text-white transition-colors">Produk</a>
+                        <a href="#about" class="text-gray-300 hover:text-white transition-colors">Tentang</a>
+                        <a href="#contact" class="text-gray-300 hover:text-white transition-colors">Kontak</a>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <button id="loginBtn" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Login Admin
+                        </button>
+                        <button id="cartBtn" class="btn btn-secondary">
+                            <i class="fas fa-shopping-cart mr-2"></i>
+                            <span id="cartCount">0</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
 
-  <div class="form-container">
-    <h2>Formulir Biodata</h2>
+        <!-- Hero Section -->
+        <section id="home" class="py-20 px-4">
+            <div class="container mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div data-aos="fade-right">
+                        <h2 class="text-4xl md:text-5xl font-bold mb-6">
+                            <span class="bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                                Keamanan Digital
+                            </span>
+                            <br>
+                            <span class="text-white">Terdepan untuk Bisnis Anda</span>
+                        </h2>
+                        <p class="text-gray-400 text-lg mb-8">
+                            NestSian adalah penyedia layanan digital terintegrasi yang menawarkan berbagai solusi kebutuhan online, termasuk layanan suntik media sosial, aplikasi premium, nomor virtual (nokos), VPN, hosting, panel, serta layanan digital lainnya.
 
-    <form onsubmit="showSuccess(event)">
-      <label>NIK</label>
-      <input type="text" required>
+Didukung oleh sistem pembayaran otomatis, NestSian memastikan proses transaksi yang cepat, aman, dan efisien, dengan layanan pelanggan yang responsif dan tersedia 24/7.
+                        </p>
+                        <div class="flex flex-wrap gap-4">
+                            <a href="#products" class="btn btn-primary">
+                                <i class="fas fa-shopping-cart mr-2"></i>Lihat Produk
+                            </a>
+                            <a href="#contact" class="btn btn-secondary">
+                                <i class="fas fa-phone-alt mr-2"></i>Hubungi Kami
+                            </a>
+                        </div>
+                    </div>
+                    <div data-aos="fade-left">
+                        <div class="relative">
+                            <div class="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-accent-500/20 rounded-3xl blur-3xl"></div>
+                            <div class="relative card">
+                                <div class="grid grid-cols-2 gap-6">
+                                    <div class="stats-card">
+                                        <div class="stats-icon">
+                                            <i class="fas fa-shield-alt"></i>
+                                        </div>
+                                        <h3 class="text-lg font-semibold text-white mb-2">Keamanan Tingkat Tinggi</h3>
+                                        <p class="text-gray-400 text-sm">Proteksi maksimal untuk data Anda</p>
+                                    </div>
+                                    <div class="stats-card">
+                                        <div class="stats-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                                            <i class="fas fa-bolt"></i>
+                                        </div>
+                                        <h3 class="text-lg font-semibold text-white mb-2">Perform Optimal</h3>
+                                        <p class="text-gray-400 text-sm">Server cepat dan stabil</p>
+                                    </div>
+                                    <div class="stats-card">
+                                        <div class="stats-icon" style="background: rgba(217, 70, 239, 0.1); color: #d946ef;">
+                                            <i class="fas fa-headset"></i>
+                                        </div>
+                                        <h3 class="text-lg font-semibold text-white mb-2">Support 24/7</h3>
+                                        <p class="text-gray-400 text-sm">Tim support siap membantu</p>
+                                    </div>
+                                    <div class="stats-card">
+                                        <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                                            <i class="fas fa-chart-line"></i>
+                                        </div>
+                                        <h3 class="text-lg font-semibold text-white mb-2">Monitoring Real-time</h3>
+                                        <p class="text-gray-400 text-sm">Pantau sistem secara langsung</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-      <label>Nama Peserta</label>
-      <input type="text" required>
+        <!-- Products Section -->
+        <section id="frontend-products-section" class="py-20 px-4 bg-dark-900/50">
+            <div class="container mx-auto">
+                <div class="text-center mb-12" data-aos="fade-up">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Produk & Layanan</h2>
+                    <p class="text-gray-400 max-w-2xl mx-auto">Temukan produk terbaik untuk kebutuhan digital Anda</p>
+                </div>
+                
+                <div class="products-grid">
+                    <div id="frontendProducts"></div>
+                </div>
+                
+                <div class="text-center mt-8">
+                    <button id="loadMoreProducts" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus mr-2"></i>Muat Lebih Banyak
+                    </button>
+                </div>
+            </div>
+        </section>
 
-      <label>Alamat</label>
-      <textarea required></textarea>
+        <!-- Shopping Cart Modal -->
+        <div id="cartModal" class="modal hidden">
+            <div class="modal-content max-w-lg">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <i class="fas fa-shopping-cart mr-2"></i>
+                        Keranjang Belanja
+                    </h3>
+                    <button class="modal-close" onclick="nestSian.hideCartModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="cartItems" class="space-y-4 max-h-96 overflow-y-auto">
+                        <!-- Cart items will be loaded here -->
+                        <div class="text-center py-8 text-gray-400">
+                            <i class="fas fa-shopping-cart text-4xl mb-4"></i>
+                            <p>Keranjang belanja kosong</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 pt-6 border-t border-dark-700">
+                        <div class="flex justify-between mb-4">
+                            <span class="text-gray-400">Total:</span>
+                            <span class="text-xl font-bold text-white" id="cartTotal">Rp 0</span>
+                        </div>
+                        <button id="checkoutBtn" class="btn btn-primary w-full" disabled>
+                            <i class="fas fa-credit-card mr-2"></i>Checkout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-      <label>Jenis Kelamin</label>
-      <select>
-        <option>Laki-laki</option>
-        <option>Perempuan</option>
-      </select>
+        <!-- Checkout Modal -->
+        <div id="checkoutModal" class="modal hidden">
+            <div class="modal-content max-w-md">
+                <div class="modal-header">
+                    <h3 class="modal-title">
+                        <i class="fas fa-credit-card mr-2"></i>
+                        Checkout
+                    </h3>
+                    <button class="modal-close" onclick="nestSian.hideCheckoutModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form id="checkoutForm" class="space-y-4">
+                        <div class="form-group">
+                            <label class="form-label">Nama Lengkap *</label>
+                            <input type="text" name="name" required class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email *</label>
+                            <input type="email" name="email" required class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Telepon *</label>
+                            <input type="tel" name="phone" required class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Alamat Pengiriman *</label>
+                            <textarea name="address" rows="3" required class="form-control"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Metode Pembayaran *</label>
+                            <select name="payment_method" required class="form-control">
+                                <option value="qris">QRIS</option>
+                                <option value="bank_transfer">Transfer Bank</option>
+                                <option value="cash">Cash</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-full">
+                            <i class="fas fa-paper-plane mr-2"></i>Proses Pesanan
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-      <label>Kelas</label>
-      <div class="radio-group">
-        <label><input type="radio" name="jenjang"> 10</label>
-        <label><input type="radio" name="jenjang"> 11</label>
-        <label><input type="radio" name="jenjang"> 12</label>
-      </div>
+        <!-- About Section -->
+        <section id="about" class="py-20 px-4">
+            <div class="container mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    <div data-aos="fade-right">
+                        <div class="relative">
+                            <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                                 alt="NestSian Team" 
+                                 class="rounded-2xl shadow-2xl">
+                            <div class="absolute -bottom-6 -right-6 bg-gradient-to-r from-primary-600 to-secondary-600 text-white p-6 rounded-2xl shadow-xl">
+                                <div class="text-3xl font-bold">2+</div>
+                                <div class="text-sm">Tahun Pengalaman</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div data-aos="fade-left">
+                        <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Tentang NestSian</h2>
+                        <div class="space-y-4 text-gray-400">
+                            <p>
+                                NestSian adalah perusahaan e-commerce yang berfokus pada layanan dan jasa di era globalisasi serta menambahkan sistem reseller yang aktif melakukan transaksi kepada customer. 
+                                Didirikan pada tahun 2025, kami telah membantu puluhan ribu orang dalam memenuhi aktivitas digital Anda.
+                            </p>
+                            <p>
+                                Dengan tim ahli yang berpengalaman di bidang Development Engineering, Content Creator, dan Entrepreneur Sales Management, 
+                                kami memberikan solusi terbaik untuk memenuhi kebutuhan teknologi Anda.
+                            </p>
+                        </div>
+                        
+                        <div class="mt-8 grid grid-cols-2 gap-6">
+                            <div class="flex items-center space-x-3">
+                                <div class="text-primary-400">
+                                    <i class="fas fa-check-circle text-xl"></i>
+                                </div>
+                                <span class="text-white">Garansi 24/7</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="text-primary-400">
+                                    <i class="fas fa-check-circle text-xl"></i>
+                                </div>
+                                <span class="text-white">Support Teknis</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="text-primary-400">
+                                    <i class="fas fa-check-circle text-xl"></i>
+                                </div>
+                                <span class="text-white">Update Berkala</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="text-primary-400">
+                                    <i class="fas fa-check-circle text-xl"></i>
+                                </div>
+                                <span class="text-white">Training Gratis</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-      <label>Bidang</label>
-      <div class="checkbox-group">
-        <label><input type="checkbox"> Skill Development</label>
-        <label><input type="checkbox"> Digital Design</label>
-        <label><input type="checkbox"> Data Analyst</label>
-      </div>
+        <!-- Contact Section -->
+        <section id="contact" class="py-20 px-4 bg-dark-900/50">
+            <div class="container mx-auto">
+                <div class="text-center mb-12" data-aos="fade-up">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Hubungi Kami</h2>
+                    <p class="text-gray-400 max-w-2xl mx-auto">Siap membantu memberikan Layanan & Jasa,murah dan cepat!</p>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div data-aos="fade-right">
+                        <div class="space-y-6">
+                            <div class="flex items-start space-x-4">
+                                <div class="text-primary-400 text-xl mt-1">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-white mb-1">Lokasi</h3>
+                                    <p class="text-gray-400">Jl.Veteran, Sulawesi Selatan, Indonesia</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-4">
+                                <div class="text-primary-400 text-xl mt-1">
+                                    <i class="fas fa-phone"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-white mb-1">Kontak CS</h3>
+                                    <p class="text-gray-400">+62 77 2998 6266</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-4">
+                                <div class="text-primary-400 text-xl mt-1">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-white mb-1">Email</h3>
+                                    <p class="text-gray-400">nestsianofficial@gmail.com</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start space-x-4">
+                                <div class="text-primary-400 text-xl mt-1">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-white mb-1">Jam Operasional</h3>
+                                    <p class="text-gray-400">Senin - Jumat: 08:00 - 00:00</p>
+                                    <p class="text-gray-400">Sabtu - Minggu: 08:00 - 22:00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div data-aos="fade-left">
+                        <div class="card">
+                            <h3 class="text-xl font-bold text-white mb-6">Kirim Pesan</h3>
+                            <form id="contactForm" class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="form-group">
+                                        <input type="text" name="name" placeholder="Nama Lengkap" 
+                                               class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="email" name="email" placeholder="Email" 
+                                               class="form-control" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" name="subject" placeholder="Subjek" 
+                                           class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <textarea name="message" rows="4" placeholder="Pesan Anda" 
+                                              class="form-control resize-none" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-full">
+                                    <i class="fas fa-paper-plane mr-2"></i>Kirim Pesan
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-      <div style="display:flex; gap:10px; margin-top:10px;">
-        <button type="submit">Proses</button>
-        <button type="reset">Reset</button>
-      </div>
-    </form>
-  </div>
+        <!-- Footer -->
+        <footer class="bg-dark-900 border-t border-dark-700 py-8">
+            <div class="container mx-auto px-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div>
+                        <div class="flex items-center space-x-3 mb-4">
+                            <img src="logo.jpg" alt="NestSian" class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <h3 class="text-lg font-bold text-white">NestSian</h3>
+                                <p class="text-xs text-gray-400">Secure. Stable. Futuristic.</p>
+                            </div>
+                        </div>
+                        <p class="text-gray-400 text-sm">
+                            Penyedia Jasa & Layanan Digital untuk seluruh Indonesia.
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-white font-semibold mb-4">Tautan Cepat</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#home" class="text-gray-400 hover:text-white transition-colors text-sm">Beranda</a></li>
+                            <li><a href="#frontend-products-section" class="text-gray-400 hover:text-white transition-colors text-sm">Produk</a></li>
+                            <li><a href="#about" class="text-gray-400 hover:text-white transition-colors text-sm">Tentang</a></li>
+                            <li><a href="#contact" class="text-gray-400 hover:text-white transition-colors text-sm">Kontak</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="text-white font-semibold mb-4">Tetap Terhubung</h4>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-gray-400 hover:text-primary-400 transition-colors">
+                                <i class="fab fa-facebook text-xl"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-primary-400 transition-colors">
+                                <i class="fab fa-twitter text-xl"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-primary-400 transition-colors">
+                                <i class="fab fa-instagram text-xl"></i>
+                            </a>
+                            <a href="#" class="text-gray-400 hover:text-primary-400 transition-colors">
+                                <i class="fab fa-linkedin text-xl"></i>
+                            </a>
+                        </div>
+                        <p class="text-gray-400 text-sm mt-4">
+                            © 2025 NestSian. e-commerce trusted and mostly.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
 
-  <!-- Notifikasi -->
-  <div id="successBox" class="success-box">
-    <div class="checkmark">✓</div>
-    <span>Pengisian formulir lu berhasil coy!</span>
-    <span class="close-btn" onclick="closeBox()">✕</span>
-  </div>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal hidden">
+        <div class="modal-content max-w-md">
+            <div class="modal-header">
+                <div class="text-center w-full">
+                    <div class="flex justify-center mb-4">
+                        <img src="logo.jpg" alt="NestSian" class="w-20 h-20 rounded-full object-cover border-4 border-primary-500/20">
+                    </div>
+                    <h2 class="text-2xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                        NestSian Admin
+                    </h2>
+                    <p class="text-gray-400 mt-2">Sistem Manajemen Keamanan</p>
+                </div>
+            </div>
+            
+            <div class="modal-body">
+                <div id="loginForm">
+                    <div class="space-y-4">
+                        <div class="form-group">
+                            <label class="form-label">Email/Username</label>
+                            <input type="text" id="loginEmail" 
+                                   class="form-control"
+                                   placeholder="Masukkan email atau username" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="loginPassword" 
+                                   class="form-control"
+                                   placeholder="••••••••" required>
+                        </div>
+                        <button id="loginSubmit" class="btn btn-primary w-full">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Masuk ke Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <script>
-    function showSuccess(event) {
-      event.preventDefault();
-      const box = document.getElementById("successBox");
-      box.classList.add("show");
+    <!-- Admin Panel -->
+    <div id="mainLayout" class="hidden min-h-screen">
+        <!-- Header -->
+        <header class="sticky top-0 z-30 bg-dark-900/90 backdrop-blur-lg border-b border-dark-700">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <button id="sidebarToggle" class="lg:hidden text-gray-400 hover:text-white">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <div class="flex items-center space-x-3">
+                            <img src="logo.jpg" alt="NestSian" class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <h1 class="text-xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
+                                    NestSian Admin
+                                </h1>
+                                <p class="text-xs text-gray-400">Sistem Manajemen Terpadu</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="hidden md:flex items-center space-x-2 text-sm text-gray-400">
+                            <i class="fas fa-shield-alt text-primary-400"></i>
+                            <span id="serverStatus" class="text-green-400">● Online</span>
+                        </div>
+                        <div id="clock" class="hidden md:block px-3 py-1 bg-dark-800 rounded-lg text-sm"></div>
+                        <button id="adminPanelBtn" class="btn btn-primary">
+                            <i class="fas fa-cog mr-2"></i>Admin Panel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
 
-      setTimeout(() => {
-        box.classList.remove("show");
-      }, 3000);
-    }
+        <div class="flex">
+            <!-- Sidebar -->
+            <aside id="sidebar" class="fixed lg:relative left-0 top-0 h-screen w-64 bg-dark-900 border-r border-dark-700 transform -translate-x-full lg:translate-x-0 transition-transform z-20 overflow-y-auto">
+                <div class="p-6">
+                    <div class="text-center mb-8">
+                        <img src="logo.jpg" alt="NestSian" class="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-primary-500/20">
+                        <h3 class="font-bold text-white">Admin Dashboard</h3>
+                        <p class="text-xs text-gray-400">Manajemen Sistem</p>
+                    </div>
+                    
+                    <nav class="space-y-2">
+                        <a href="#dashboard" class="sidebar-link active">
+                            <i class="fas fa-home"></i>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="#products" class="sidebar-link">
+                            <i class="fas fa-box"></i>
+                            <span>Produk</span>
+                        </a>
+                        <a href="#categories" class="sidebar-link">
+                            <i class="fas fa-tags"></i>
+                            <span>Kategori</span>
+                        </a>
+                        <a href="#orders" class="sidebar-link">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span>Pesanan</span>
+                            <span id="orderBadge" class="sidebar-badge">0</span>
+                        </a>
+                        <a href="#qris" class="sidebar-link">
+                            <i class="fas fa-qrcode"></i>
+                            <span>QRIS Dinamis</span>
+                        </a>
+                        <a href="#customers" class="sidebar-link">
+                            <i class="fas fa-users"></i>
+                            <span>Pelanggan</span>
+                        </a>
+                        <a href="#reports" class="sidebar-link">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Laporan</span>
+                        </a>
+                        <a href="#frontend" class="sidebar-link">
+                            <i class="fas fa-globe"></i>
+                            <span>Kelola Website</span>
+                        </a>
+                    </nav>
+                    
+                    <div class="mt-8 pt-8 border-t border-dark-700">
+                        <div class="sidebar-link text-red-400 cursor-pointer" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Keluar</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
 
-    function closeBox() {
-      document.getElementById("successBox").classList.remove("show");
-    }
-  </script>
+            <!-- Main Content -->
+            <main class="flex-1 p-4 lg:p-6 overflow-x-hidden">
+                <!-- Dashboard Section -->
+                <section id="dashboard" class="content-section active" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Dashboard</h2>
+                        <p class="text-gray-400">Selamat datang di Panel Admin NestSian</p>
+                    </div>
+                    
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="stats-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Total Produk</p>
+                                    <h3 id="totalProducts" class="text-3xl font-bold text-white mt-2">0</h3>
+                                </div>
+                                <div class="stats-icon">
+                                    <i class="fas fa-box"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Pesanan Hari Ini</p>
+                                    <h3 id="todayOrders" class="text-3xl font-bold text-white mt-2">0</h3>
+                                </div>
+                                <div class="stats-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Pendapatan Bulan Ini</p>
+                                    <h3 id="monthlyRevenue" class="text-3xl font-bold text-white mt-2">Rp 0</h3>
+                                </div>
+                                <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                                    <i class="fas fa-wallet"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">Pelanggan Aktif</p>
+                                    <h3 id="activeCustomers" class="text-3xl font-bold text-white mt-2">0</h3>
+                                </div>
+                                <div class="stats-icon" style="background: rgba(217, 70, 239, 0.1); color: #d946ef;">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Orders -->
+                    <div class="card mb-8">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-shopping-cart"></i>
+                                Pesanan Terbaru
+                            </h3>
+                            <a href="#orders" class="text-primary-400 hover:text-primary-300 text-sm">Lihat Semua</a>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="pb-3">ID Pesanan</th>
+                                        <th class="pb-3">Pelanggan</th>
+                                        <th class="pb-3">Total</th>
+                                        <th class="pb-3">Status</th>
+                                        <th class="pb-3">Tanggal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentOrders">
+                                    <tr>
+                                        <td colspan="5" class="text-center py-8 text-gray-400">
+                                            <div class="animate-pulse">
+                                                <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
 
+                <!-- Products Section -->
+                <section id="products" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Manajemen Produk</h2>
+                        <p class="text-gray-400">Kelola produk, stok, dan kategori untuk website</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Product Form -->
+                        <div class="lg:col-span-2">
+                            <div class="card mb-6">
+                                <h3 class="card-title">
+                                    <i class="fas fa-plus-circle"></i>
+                                    Tambah/Edit Produk
+                                </h3>
+                                <form id="productForm" class="space-y-4">
+                                    <input type="hidden" id="productId">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="form-group">
+                                            <label class="form-label">Nama Produk *</label>
+                                            <input type="text" id="productName" required class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Kategori *</label>
+                                            <select id="productCategory" required class="form-control"></select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div class="form-group">
+                                            <label class="form-label">Harga (Rp) *</label>
+                                            <input type="number" id="productPrice" required min="0" class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Stok *</label>
+                                            <input type="number" id="productStock" required min="0" class="form-control">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Deskripsi *</label>
+                                        <textarea id="productDescription" rows="3" required class="form-control resize-none"></textarea>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">URL Gambar *</label>
+                                        <input type="url" id="productImage" required class="form-control" placeholder="https://example.com/image.jpg">
+                                        <div class="mt-2">
+                                            <button type="button" id="previewImage" class="btn btn-secondary btn-sm">
+                                                <i class="fas fa-eye mr-2"></i>Preview Gambar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="custom-checkbox">
+                                            <input type="checkbox" id="productFeatured">
+                                            <span class="checkbox-box"></span>
+                                            <span>Tampilkan di halaman depan</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="flex space-x-3">
+                                        <button type="submit" id="saveProduct" class="btn btn-primary">
+                                            <i class="fas fa-save mr-2"></i>Simpan Produk
+                                        </button>
+                                        <button type="button" id="resetProduct" class="btn btn-secondary">
+                                            <i class="fas fa-times mr-2"></i>Reset Form
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <!-- Product List -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-list"></i>
+                                        Daftar Produk
+                                    </h3>
+                                    <div class="search-container w-64">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" id="searchProduct" placeholder="Cari produk..." class="form-control text-sm pl-10">
+                                    </div>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full">
+                                        <thead>
+                                            <tr>
+                                                <th class="pb-3">Produk</th>
+                                                <th class="pb-3">Kategori</th>
+                                                <th class="pb-3">Harga</th>
+                                                <th class="pb-3">Stok</th>
+                                                <th class="pb-3">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="productList">
+                                            <tr>
+                                                <td colspan="5" class="text-center py-8 text-gray-400">
+                                                    <div class="animate-pulse">
+                                                        <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="p-4 border-t border-dark-700">
+                                    <div class="flex justify-between items-center">
+                                        <div class="text-sm text-gray-400">
+                                            Menampilkan <span id="productCount">0</span> produk
+                                        </div>
+                                        <div class="pagination" id="productPagination">
+                                            <!-- Pagination will be inserted here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Categories -->
+                        <div>
+                            <div class="card mb-6">
+                                <h3 class="card-title">
+                                    <i class="fas fa-tags"></i>
+                                    Kategori Produk
+                                </h3>
+                                <form id="categoryForm">
+                                    <div class="space-y-4">
+                                        <input type="hidden" id="categoryId">
+                                        <div class="form-group">
+                                            <label class="form-label">Nama Kategori *</label>
+                                            <input type="text" id="categoryName" required class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Icon (Font Awesome)</label>
+                                            <input type="text" id="categoryIcon" class="form-control" placeholder="fas fa-shield-alt">
+                                            <p class="text-xs text-gray-500 mt-1">Contoh: fas fa-shield-alt</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Deskripsi</label>
+                                            <textarea id="categoryDescription" rows="2" class="form-control resize-none"></textarea>
+                                        </div>
+                                        <div class="flex space-x-2">
+                                            <button type="submit" class="btn btn-primary flex-1">
+                                                <i class="fas fa-plus mr-2"></i>Tambah
+                                            </button>
+                                            <button type="button" id="resetCategory" class="btn btn-secondary">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <div class="card">
+                                <h3 class="card-title">
+                                    <i class="fas fa-list"></i>
+                                    Daftar Kategori
+                                </h3>
+                                <div class="space-y-3" id="categoryList">
+                                    <div class="text-center py-8 text-gray-400">
+                                        <div class="animate-pulse">
+                                            <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Categories Section -->
+                <section id="categories" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Kategori Produk</h2>
+                        <p class="text-gray-400">Kelola kategori produk untuk organisasi yang lebih baik</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="categoriesGrid">
+                        <div class="text-center py-8 text-gray-400">
+                            <div class="animate-pulse">
+                                <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Orders Section -->
+                <section id="orders" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Manajemen Pesanan</h2>
+                        <p class="text-gray-400">Kelola semua pesanan pelanggan dari website</p>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="flex flex-wrap gap-2">
+                                <button id="filterAll" class="btn btn-primary btn-sm">Semua</button>
+                                <button id="filterPending" class="btn btn-secondary btn-sm">Pending</button>
+                                <button id="filterProcessing" class="btn btn-secondary btn-sm">Diproses</button>
+                                <button id="filterCompleted" class="btn btn-secondary btn-sm">Selesai</button>
+                                <button id="filterCancelled" class="btn btn-secondary btn-sm">Dibatalkan</button>
+                            </div>
+                            <div class="flex space-x-2">
+                                <input type="date" id="orderDateFilter" class="form-control text-sm">
+                                <button id="exportOrders" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-download mr-2"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="pb-3">ID Pesanan</th>
+                                        <th class="pb-3">Tanggal</th>
+                                        <th class="pb-3">Pelanggan</th>
+                                        <th class="pb-3">Produk</th>
+                                        <th class="pb-3">Total</th>
+                                        <th class="pb-3">Status</th>
+                                        <th class="pb-3">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orderList">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-8 text-gray-400">
+                                            <div class="animate-pulse">
+                                                <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-4 border-t border-dark-700">
+                            <div class="flex justify-between items-center">
+                                <div class="text-sm text-gray-400">
+                                    Menampilkan <span id="orderCount">0</span> pesanan
+                                </div>
+                                <div class="pagination" id="orderPagination">
+                                    <!-- Pagination will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- QRIS Section -->
+                <section id="qris" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">QRIS Dinamis</h2>
+                        <p class="text-gray-400">Kelola QRIS untuk pembayaran dinamis dari pelanggan</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- QRIS Settings -->
+                        <div class="lg:col-span-2">
+                            <div class="card mb-6">
+                                <h3 class="card-title">
+                                    <i class="fas fa-cog"></i>
+                                    Pengaturan QRIS
+                                </h3>
+                                <form id="qrisSettingsForm" class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="form-group">
+                                            <label class="form-label">Nama Merchant *</label>
+                                            <input type="text" id="qrisMerchantName" required class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">ID Merchant *</label>
+                                            <input type="text" id="qrisMerchantId" required class="form-control">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="form-group">
+                                            <label class="form-label">Kota *</label>
+                                            <input type="text" id="qrisCity" required class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="form-label">Kode Pos *</label>
+                                            <input type="text" id="qrisPostalCode" required class="form-control">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Base QRIS String *</label>
+                                        <textarea id="qrisBase" rows="3" required class="form-control font-mono text-sm resize-none"></textarea>
+                                        <p class="text-xs text-gray-500 mt-1">String dasar untuk generate QRIS</p>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save mr-2"></i>Simpan Pengaturan
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- QR Generator -->
+                            <div class="card">
+                                <h3 class="card-title">
+                                    <i class="fas fa-qrcode"></i>
+                                    Generator QR Dinamis
+                                </h3>
+                                <div class="space-y-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Jumlah Pembayaran (Rp) *</label>
+                                        <input type="number" id="qrisAmount" required min="1000" class="form-control text-lg" placeholder="Masukkan jumlah pembayaran">
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">Keterangan</label>
+                                        <input type="text" id="qrisDescription" class="form-control" placeholder="Deskripsi pembayaran">
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        <button type="button" class="quick-amount btn btn-secondary" data-amount="10000">Rp 10K</button>
+                                        <button type="button" class="quick-amount btn btn-secondary" data-amount="50000">Rp 50K</button>
+                                        <button type="button" class="quick-amount btn btn-secondary" data-amount="100000">Rp 100K</button>
+                                        <button type="button" class="quick-amount btn btn-secondary" data-amount="500000">Rp 500K</button>
+                                    </div>
+                                    
+                                    <button type="button" id="generateQris" class="btn btn-primary w-full text-lg">
+                                        <i class="fas fa-qrcode mr-2"></i>Generate QR Code
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- QR Preview -->
+                        <div>
+                            <div class="sticky top-24">
+                                <div class="card mb-6">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-eye"></i>
+                                        Preview QR
+                                    </h3>
+                                    <div class="flex justify-center mb-4">
+                                        <div id="qrcodePreview" class="p-4 bg-white rounded-lg min-h-[250px] min-w-[250px] flex items-center justify-center">
+                                            <div class="text-center text-gray-500">
+                                                <i class="fas fa-qrcode text-4xl mb-2"></i>
+                                                <p class="text-sm">QR akan muncul di sini</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-3" id="qrisInfo">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Jumlah:</span>
+                                            <span class="text-white font-medium" id="previewAmount">Rp 0</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Merchant:</span>
+                                            <span class="text-white font-medium truncate max-w-[150px]" id="previewMerchant">-</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Status:</span>
+                                            <span class="text-yellow-400 font-medium" id="previewStatus">Belum Digenerate</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6 space-y-3">
+                                        <button id="downloadQr" class="btn btn-primary w-full" disabled>
+                                            <i class="fas fa-download mr-2"></i>Download QR
+                                        </button>
+                                        <button id="copyQr" class="btn btn-secondary w-full" disabled>
+                                            <i class="fas fa-copy mr-2"></i>Copy QR String
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Countdown Timer -->
+                                <div class="card">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-clock"></i>
+                                        Waktu Tersisa
+                                    </h3>
+                                    <div class="text-center">
+                                        <div class="text-3xl font-bold text-primary-400 mb-2" id="countdownTimer">05:00</div>
+                                        <p class="text-sm text-gray-400">QR akan kedaluwarsa dalam:</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Customers Section -->
+                <section id="customers" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Manajemen Pelanggan</h2>
+                        <p class="text-gray-400">Kelola data pelanggan dan riwayat transaksi dari website</p>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="search-container w-full md:w-64">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchCustomer" placeholder="Cari pelanggan..." class="form-control pl-10">
+                            </div>
+                            <button id="exportCustomers" class="btn btn-primary">
+                                <i class="fas fa-download mr-2"></i>Export Data
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="pb-3">Nama</th>
+                                        <th class="pb-3">Email</th>
+                                        <th class="pb-3">Telepon</th>
+                                        <th class="pb-3">Total Transaksi</th>
+                                        <th class="pb-3">Status</th>
+                                        <th class="pb-3">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customerList">
+                                    <tr>
+                                        <td colspan="6" class="text-center py-8 text-gray-400">
+                                            <div class="animate-pulse">
+                                                <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-4 border-t border-dark-700">
+                            <div class="flex justify-between items-center">
+                                <div class="text-sm text-gray-400">
+                                    Menampilkan <span id="customerCount">0</span> pelanggan
+                                </div>
+                                <div class="pagination" id="customerPagination">
+                                    <!-- Pagination will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Reports Section -->
+                <section id="reports" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Laporan dan Analisis</h2>
+                        <p class="text-gray-400">Analisis performa bisnis dan transaksi dari website</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- Sales Chart -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-line"></i>
+                                    Penjualan 7 Hari Terakhir
+                                </h3>
+                                <select id="chartPeriod" class="form-control text-sm">
+                                    <option value="7">7 Hari</option>
+                                    <option value="30">30 Hari</option>
+                                    <option value="90">90 Hari</option>
+                                </select>
+                            </div>
+                            <div id="salesChart" class="chart-container">
+                                <canvas id="salesChartCanvas" height="250"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Top Products -->
+                        <div class="card">
+                            <h3 class="card-title">
+                                <i class="fas fa-star"></i>
+                                Produk Terlaris
+                            </h3>
+                            <div class="space-y-4" id="topProducts">
+                                <div class="text-center py-8 text-gray-400">
+                                    <div class="animate-pulse">
+                                        <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed Report -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-file-alt"></i>
+                                Laporan Detail Transaksi
+                            </h3>
+                            <div class="flex space-x-2">
+                                <select id="reportPeriod" class="form-control">
+                                    <option value="today">Hari Ini</option>
+                                    <option value="week">Minggu Ini</option>
+                                    <option value="month">Bulan Ini</option>
+                                    <option value="quarter">3 Bulan Terakhir</option>
+                                </select>
+                                <button id="exportReport" class="btn btn-primary">
+                                    <i class="fas fa-file-export mr-2"></i>Export PDF
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="pb-3">Tanggal</th>
+                                        <th class="pb-3">ID Pesanan</th>
+                                        <th class="pb-3">Pelanggan</th>
+                                        <th class="pb-3">Produk</th>
+                                        <th class="pb-3">Jumlah</th>
+                                        <th class="pb-3">Total</th>
+                                        <th class="pb-3">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportDetails">
+                                    <tr>
+                                        <td colspan="7" class="text-center py-8 text-gray-400">
+                                            <div class="animate-pulse">
+                                                <div class="h-4 bg-dark-700 rounded w-3/4 mx-auto mb-2"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Frontend Management Section -->
+                <section id="frontend" class="content-section hidden" data-aos="fade-up">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold text-white mb-2">Kelola Website</h2>
+                        <p class="text-gray-400">Atur konten dan tampilan website utama</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Website Settings -->
+                        <div class="card">
+                            <h3 class="card-title">
+                                <i class="fas fa-cog"></i>
+                                Pengaturan Website
+                            </h3>
+                            <form id="websiteSettingsForm" class="space-y-4">
+                                <div class="form-group">
+                                    <label class="form-label">Nama Website</label>
+                                    <input type="text" id="websiteName" class="form-control">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Slogan</label>
+                                    <input type="text" id="websiteSlogan" class="form-control">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Deskripsi Website</label>
+                                    <textarea id="websiteDescription" rows="3" class="form-control resize-none"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Kontak Email</label>
+                                    <input type="email" id="contactEmail" class="form-control">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Telepon</label>
+                                    <input type="text" id="contactPhone" class="form-control">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Alamat</label>
+                                    <textarea id="contactAddress" rows="2" class="form-control resize-none"></textarea>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-full">
+                                    <i class="fas fa-save mr-2"></i>Simpan Pengaturan
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Hero Section Management -->
+                        <div class="card">
+                            <h3 class="card-title">
+                                <i class="fas fa-images"></i>
+                                Kelola Hero Section
+                            </h3>
+                            <form id="heroSettingsForm" class="space-y-4">
+                                <div class="form-group">
+                                    <label class="form-label">Judul Utama</label>
+                                    <input type="text" id="heroTitle" class="form-control">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Sub Judul</label>
+                                    <textarea id="heroSubtitle" rows="2" class="form-control resize-none"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Teks Tombol Utama</label>
+                                    <input type="text" id="heroButton1" class="form-control">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">Teks Tombol Sekunder</label>
+                                    <input type="text" id="heroButton2" class="form-control">
+                                </div>
+                                
+                                <div class="pt-4 border-t border-dark-700">
+                                    <h4 class="text-white font-medium mb-3">Fitur Unggulan</h4>
+                                    <div class="space-y-3" id="heroFeatures">
+                                        <!-- Features will be loaded here -->
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-full">
+                                    <i class="fas fa-sync-alt mr-2"></i>Perbarui Hero Section
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- System Settings -->
+                    <div class="card mt-6">
+                        <h3 class="card-title">
+                            <i class="fas fa-sliders-h"></i>
+                            Pengaturan Sistem
+                        </h3>
+                        <form id="systemSettingsForm" class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="form-group">
+                                    <label class="form-label">Nama Sistem</label>
+                                    <input type="text" id="systemName" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Logo URL</label>
+                                    <input type="url" id="systemLogo" class="form-control">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Timezone</label>
+                                <select id="systemTimezone" class="form-control">
+                                    <option value="Asia/Jakarta">WIB (Jakarta)</option>
+                                    <option value="Asia/Makassar">WITA (Makassar)</option>
+                                    <option value="Asia/Jayapura">WIT (Jayapura)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Currency</label>
+                                <select id="systemCurrency" class="form-control">
+                                    <option value="IDR">IDR (Rupiah)</option>
+                                    <option value="USD">USD (Dollar)</option>
+                                    <option value="SGD">SGD (Dollar Singapura)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save mr-2"></i>Simpan Pengaturan
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Maintenance Settings -->
+                    <div class="card mt-6">
+                        <h3 class="card-title">
+                            <i class="fas fa-tools"></i>
+                            Mode Pemeliharaan
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-dark-800 rounded-lg">
+                                <div>
+                                    <h4 class="font-medium text-white">Aktifkan Mode Maintenance</h4>
+                                    <p class="text-sm text-gray-400">Hanya admin yang bisa mengakses website</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="maintenanceToggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            
+                            <div id="maintenanceSettings" class="hidden space-y-4 p-4 bg-dark-800 rounded-lg">
+                                <div class="form-group">
+                                    <label class="form-label">Pesan Maintenance</label>
+                                    <textarea rows="3" id="maintenanceMessage" class="form-control"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Estimasi Selesai</label>
+                                    <input type="datetime-local" id="maintenanceEtaInput" class="form-control">
+                                </div>
+                                <button id="saveMaintenance" class="btn btn-primary">
+                                    <i class="fas fa-save mr-2"></i>Simpan Pengaturan Maintenance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview Section -->
+                    <div class="mt-6 card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-eye"></i>
+                                Preview Website
+                            </h3>
+                            <button id="refreshPreview" class="btn btn-primary">
+                                <i class="fas fa-sync-alt mr-2"></i>Refresh Preview
+                            </button>
+                        </div>
+                        <div class="bg-dark-950 rounded-lg p-4 border border-dark-700">
+                            <div class="aspect-video bg-dark-800 rounded-lg overflow-hidden border border-dark-700">
+                                <iframe id="websitePreview" src="about:blank" class="w-full h-full" frameborder="0"></iframe>
+                            </div>
+                            <p class="text-gray-400 text-sm text-center mt-4">Perubahan yang disimpan akan langsung terlihat di website utama</p>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminPanelModal" class="modal hidden">
+        <div class="modal-content max-w-4xl">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-cogs mr-2"></i>
+                    Panel Admin NestSian
+                </h2>
+                <button id="closeAdminPanel" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('settings')">
+                        <div class="text-primary-400 text-xl mb-2">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Pengaturan Sistem</h3>
+                        <p class="text-sm text-gray-400 mt-1">Konfigurasi website</p>
+                    </div>
+                    
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('users')">
+                        <div class="text-green-400 text-xl mb-2">
+                            <i class="fas fa-users-cog"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Manajemen User</h3>
+                        <p class="text-sm text-gray-400 mt-1">Kelola admin & staff</p>
+                    </div>
+                    
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('security')">
+                        <div class="text-red-400 text-xl mb-2">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Keamanan</h3>
+                        <p class="text-sm text-gray-400 mt-1">Pengaturan keamanan</p>
+                    </div>
+                    
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('maintenance')">
+                        <div class="text-yellow-400 text-xl mb-2">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Maintenance</h3>
+                        <p class="text-sm text-gray-400 mt-1">Mode pemeliharaan</p>
+                    </div>
+                    
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('backup')">
+                        <div class="text-accent-400 text-xl mb-2">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Backup & Restore</h3>
+                        <p class="text-sm text-gray-400 mt-1">Cadangkan data</p>
+                    </div>
+                    
+                    <div class="card hover-lift cursor-pointer" onclick="nestSian.showAdminTab('logs')">
+                        <div class="text-gray-400 text-xl mb-2">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <h3 class="font-medium text-white">Log Sistem</h3>
+                        <p class="text-sm text-gray-400 mt-1">Riwayat aktivitas</p>
+                    </div>
+                </div>
+                
+                <!-- Admin Content Sections -->
+                <div id="adminTabContent">
+                    <!-- Settings Tab Content -->
+                    <div id="adminSettings" class="admin-tab-content">
+                        <h3 class="text-lg font-semibold text-white mb-4">Pengaturan Sistem</h3>
+                        <form id="adminSystemSettingsForm" class="space-y-4">
+                            <!-- Settings form content -->
+                        </form>
+                    </div>
+                    
+                    <!-- Other tabs content -->
+                    <div id="adminUsers" class="admin-tab-content hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Manajemen User</h3>
+                        <!-- Users management content -->
+                    </div>
+                    
+                    <div id="adminSecurity" class="admin-tab-content hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Pengaturan Keamanan</h3>
+                        <!-- Security settings content -->
+                    </div>
+                    
+                    <div id="adminMaintenance" class="admin-tab-content hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Mode Pemeliharaan</h3>
+                        <!-- Maintenance settings content -->
+                    </div>
+                    
+                    <div id="adminBackup" class="admin-tab-content hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Backup & Restore</h3>
+                        <!-- Backup content -->
+                    </div>
+                    
+                    <div id="adminLogs" class="admin-tab-content hidden">
+                        <h3 class="text-lg font-semibold text-white mb-4">Log Sistem</h3>
+                        <!-- Logs content -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Preview Modal -->
+    <div id="imagePreviewModal" class="modal hidden">
+        <div class="modal-content max-w-4xl">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-image mr-2"></i>
+                    Preview Gambar
+                </h3>
+                <button class="modal-close" onclick="nestSian.hideImagePreview()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="flex justify-center">
+                    <img id="previewImageSrc" src="" alt="Preview" class="max-w-full max-h-[70vh] rounded-lg">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div id="orderDetailsModal" class="modal hidden">
+        <div class="modal-content max-w-4xl">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-file-invoice mr-2"></i>
+                    Detail Pesanan
+                </h3>
+                <button class="modal-close" onclick="nestSian.hideOrderDetails()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="orderDetailsContent">
+                    <!-- Order details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="customToast" class="hidden"></div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+
+    <script>
+        // Initialize AOS
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof AOS !== 'undefined') {
+                AOS.init({
+                    duration: 600,
+                    once: true,
+                    offset: 100
+                });
+            }
+            
+            // Initialize tooltips
+            const initTooltips = () => {
+                document.querySelectorAll('[data-tooltip]').forEach(element => {
+                    element.addEventListener('mouseenter', function() {
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'fixed bg-dark-900 text-white px-3 py-2 rounded-lg text-sm z-50';
+                        tooltip.textContent = this.getAttribute('data-tooltip');
+                        tooltip.style.left = (this.getBoundingClientRect().left + window.scrollX) + 'px';
+                        tooltip.style.top = (this.getBoundingClientRect().top + window.scrollY - 40) + 'px';
+                        tooltip.id = 'tooltip-' + Date.now();
+                        document.body.appendChild(tooltip);
+                        
+                        this._tooltip = tooltip;
+                    });
+                    
+                    element.addEventListener('mouseleave', function() {
+                        if (this._tooltip) {
+                            this._tooltip.remove();
+                            this._tooltip = null;
+                        }
+                    });
+                });
+            };
+            
+            // Initialize after a short delay
+            setTimeout(initTooltips, 1000);
+        });
+    </script>
 </body>
 </html>
