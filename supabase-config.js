@@ -1,4 +1,4 @@
-// Supabase Configuration for NestSian
+// Supabase Configuration for NestSian (FULLY FIXED VERSION)
 const SUPABASE_CONFIG = {
     URL: 'https://fumkbpwwyolzthowbkus.supabase.co',
     KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1bWticHd3eW9senRob3dia3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MDM0ODIsImV4cCI6MjA4MTM3OTQ4Mn0.Lc-Jw_zDBbkXAgIw5NTOfX_dBPQpD42IpVxQ-2EvZ2I'
@@ -106,6 +106,9 @@ class SupabaseService {
             }),
             limit: (count) => ({ 
                 select: (columns = '*') => this.mockSelect(table, columns, { limit: count })
+            }),
+            range: (start, end) => ({
+                select: (columns = '*') => this.mockSelect(table, columns, { range: [start, end] })
             })
         };
     }
@@ -238,7 +241,10 @@ class SupabaseService {
                     .eq('id', id)
                     .single();
                 
-                if (error) throw error;
+                if (error) {
+                    console.error('Error getting product:', error);
+                    throw error;
+                }
                 return data;
                 
             } else {
@@ -254,11 +260,19 @@ class SupabaseService {
         try {
             if (this.initialized) {
                 const productData = {
-                    ...product,
+                    name: product.name,
+                    category_id: product.category_id,
+                    price: product.price,
+                    stock: product.stock,
+                    description: product.description,
+                    image_url: product.image_url,
+                    weight: product.weight || 0,
+                    featured: product.featured || false,
                     updated_at: new Date().toISOString()
                 };
                 
                 if (product.id) {
+                    // Update existing product
                     const { data, error } = await this.supabase
                         .from('products')
                         .update(productData)
@@ -269,6 +283,7 @@ class SupabaseService {
                     if (error) throw error;
                     return data;
                 } else {
+                    // Insert new product
                     const { data, error } = await this.supabase
                         .from('products')
                         .insert([{
@@ -287,13 +302,29 @@ class SupabaseService {
             }
         } catch (error) {
             console.error('Error saving product:', error);
-            return this.saveLocalProduct(product);
+            throw error;
         }
     }
 
     async deleteProduct(id) {
         try {
             if (this.initialized) {
+                // Check if product exists in any orders
+                const { data: orderItems, error: checkError } = await this.supabase
+                    .from('order_items')
+                    .select('id')
+                    .eq('product_id', id)
+                    .limit(1);
+                
+                if (checkError) throw checkError;
+                
+                if (orderItems && orderItems.length > 0) {
+                    return { 
+                        success: false, 
+                        error: 'Produk tidak dapat dihapus karena sudah ada dalam pesanan' 
+                    };
+                }
+                
                 const { error } = await this.supabase
                     .from('products')
                     .delete()
@@ -308,7 +339,6 @@ class SupabaseService {
             }
         } catch (error) {
             console.error('Error deleting product:', error);
-            this.deleteLocalProduct(id);
             return { success: false, error: error.message };
         }
     }
@@ -366,7 +396,9 @@ class SupabaseService {
         try {
             if (this.initialized) {
                 const categoryData = {
-                    ...category,
+                    name: category.name,
+                    icon: category.icon || 'fas fa-tag',
+                    description: category.description || '',
                     updated_at: new Date().toISOString()
                 };
                 
@@ -399,7 +431,7 @@ class SupabaseService {
             }
         } catch (error) {
             console.error('Error saving category:', error);
-            return this.saveLocalCategory(category);
+            throw error;
         }
     }
 
@@ -436,7 +468,6 @@ class SupabaseService {
             }
         } catch (error) {
             console.error('Error deleting category:', error);
-            this.deleteLocalCategory(id);
             return { success: false, error: error.message };
         }
     }
@@ -447,9 +478,9 @@ class SupabaseService {
             if (this.initialized) {
                 let query = this.supabase
                     .from('orders')
-                    .select('*, order_items(*, products(name, price))', { count: 'exact' });
+                    .select('*', { count: 'exact' });
                 
-                if (filters.status) {
+                if (filters.status && filters.status !== 'all') {
                     query = query.eq('status', filters.status);
                 }
                 
@@ -468,12 +499,26 @@ class SupabaseService {
                 
                 query = query.order('created_at', { ascending: false });
                 
-                const { data, error, count } = await query;
+                const { data: orders, error, count } = await query;
                 
                 if (error) throw error;
                 
+                // Get order items for each order
+                const ordersWithItems = [];
+                for (const order of orders || []) {
+                    const { data: orderItems } = await this.supabase
+                        .from('order_items')
+                        .select('*, products(name, price, image_url)')
+                        .eq('order_id', order.id);
+                    
+                    ordersWithItems.push({
+                        ...order,
+                        order_items: orderItems || []
+                    });
+                }
+                
                 return {
-                    data: data || [],
+                    data: ordersWithItems,
                     total: count || 0,
                     page,
                     limit,
@@ -492,14 +537,27 @@ class SupabaseService {
     async getOrderById(id) {
         try {
             if (this.initialized) {
-                const { data, error } = await this.supabase
+                // Get order
+                const { data: order, error: orderError } = await this.supabase
                     .from('orders')
-                    .select('*, order_items(*, products(name, price, image_url))')
+                    .select('*')
                     .eq('id', id)
                     .single();
                 
-                if (error) throw error;
-                return data;
+                if (orderError) throw orderError;
+                
+                // Get order items
+                const { data: orderItems, error: itemsError } = await this.supabase
+                    .from('order_items')
+                    .select('*, products(name, price, image_url)')
+                    .eq('order_id', id);
+                
+                if (itemsError) throw itemsError;
+                
+                return {
+                    ...order,
+                    order_items: orderItems || []
+                };
                 
             } else {
                 return this.getLocalOrderById(id);
@@ -513,12 +571,24 @@ class SupabaseService {
     async saveOrder(order) {
         try {
             const orderData = {
-                ...order,
+                customer_name: order.customer_name,
+                customer_email: order.customer_email,
+                customer_phone: order.customer_phone,
+                shipping_address: order.shipping_address,
+                total_amount: order.total_amount,
+                status: order.status || 'pending',
+                payment_method: order.payment_method,
+                notes: order.notes || '',
+                shipping_cost: order.shipping_cost || 0,
+                discount: order.discount || 0,
                 updated_at: new Date().toISOString()
             };
             
             if (this.initialized) {
+                let savedOrder;
+                
                 if (order.id) {
+                    // Update existing order
                     const { data, error } = await this.supabase
                         .from('orders')
                         .update(orderData)
@@ -527,8 +597,9 @@ class SupabaseService {
                         .single();
                     
                     if (error) throw error;
-                    return data;
+                    savedOrder = data;
                 } else {
+                    // Create new order
                     const { data, error } = await this.supabase
                         .from('orders')
                         .insert([{
@@ -539,6 +610,7 @@ class SupabaseService {
                         .single();
                     
                     if (error) throw error;
+                    savedOrder = data;
                     
                     // Save order items
                     if (order.order_items && order.order_items.length > 0) {
@@ -546,10 +618,12 @@ class SupabaseService {
                             await this.supabase
                                 .from('order_items')
                                 .insert([{
-                                    order_id: data.id,
+                                    order_id: savedOrder.id,
                                     product_id: item.product_id,
+                                    product_name: item.product_name || item.name,
                                     quantity: item.quantity,
                                     price: item.price,
+                                    total_price: item.quantity * item.price,
                                     created_at: new Date().toISOString()
                                 }]);
                             
@@ -557,16 +631,16 @@ class SupabaseService {
                             await this.updateProductStock(item.product_id, -item.quantity);
                         }
                     }
-                    
-                    return data;
                 }
+                
+                return savedOrder;
                 
             } else {
                 return this.saveLocalOrder(order);
             }
         } catch (error) {
             console.error('Error saving order:', error);
-            return this.saveLocalOrder(order);
+            throw error;
         }
     }
 
@@ -618,7 +692,6 @@ class SupabaseService {
             }
         } catch (error) {
             console.error('Error deleting order:', error);
-            this.deleteLocalOrder(id);
             return { success: false, error: error.message };
         }
     }
@@ -669,10 +742,19 @@ class SupabaseService {
     async saveCustomer(customer) {
         try {
             if (this.initialized) {
+                const customerData = {
+                    name: customer.name,
+                    email: customer.email || null,
+                    phone: customer.phone || null,
+                    address: customer.address || null,
+                    is_active: customer.is_active !== undefined ? customer.is_active : true,
+                    updated_at: new Date().toISOString()
+                };
+                
                 if (customer.id) {
                     const { data, error } = await this.supabase
                         .from('customers')
-                        .update(customer)
+                        .update(customerData)
                         .eq('id', customer.id)
                         .select()
                         .single();
@@ -683,7 +765,7 @@ class SupabaseService {
                     const { data, error } = await this.supabase
                         .from('customers')
                         .insert([{
-                            ...customer,
+                            ...customerData,
                             created_at: new Date().toISOString()
                         }])
                         .select()
@@ -698,7 +780,7 @@ class SupabaseService {
             }
         } catch (error) {
             console.error('Error saving customer:', error);
-            return this.saveLocalCustomer(customer);
+            throw error;
         }
     }
 
@@ -755,8 +837,7 @@ class SupabaseService {
             }
         } catch (error) {
             console.error('Error saving setting:', error);
-            this.saveLocalSetting(key, value);
-            return { success: false, error: error.message };
+            throw error;
         }
     }
 
@@ -781,7 +862,7 @@ class SupabaseService {
                 
                 if (ordersError) throw ordersError;
                 
-                // Get monthly revenue
+                // Get monthly revenue (completed orders only)
                 const startOfMonth = new Date();
                 startOfMonth.setDate(1);
                 startOfMonth.setHours(0, 0, 0, 0);
@@ -789,15 +870,13 @@ class SupabaseService {
                 const { data: monthlyOrders, error: revenueError } = await this.supabase
                     .from('orders')
                     .select('total_amount, status')
-                    .gte('created_at', startOfMonth.toISOString());
+                    .gte('created_at', startOfMonth.toISOString())
+                    .in('status', ['completed', 'delivered']);
                 
                 if (revenueError) throw revenueError;
                 
                 const monthlyRevenue = monthlyOrders?.reduce((sum, order) => {
-                    if (order.status === 'completed') {
-                        return sum + (order.total_amount || 0);
-                    }
-                    return sum;
+                    return sum + (order.total_amount || 0);
                 }, 0) || 0;
                 
                 // Get active customers (customers with orders in last 30 days)
@@ -808,7 +887,7 @@ class SupabaseService {
                     .from('orders')
                     .select('customer_email')
                     .gte('created_at', thirtyDaysAgo.toISOString())
-                    .eq('status', 'completed');
+                    .in('status', ['completed', 'delivered']);
                 
                 if (customersError) throw customersError;
                 
@@ -839,10 +918,10 @@ class SupabaseService {
             if (this.initialized) {
                 const { data, error } = await this.supabase
                     .from('orders')
-                    .select('created_at, total_amount, status')
+                    .select('created_at, total_amount')
                     .gte('created_at', startDate.toISOString())
                     .lte('created_at', endDate.toISOString())
-                    .eq('status', 'completed')
+                    .in('status', ['completed', 'delivered'])
                     .order('created_at', { ascending: true });
                 
                 if (error) throw error;
@@ -885,7 +964,7 @@ class SupabaseService {
             if (this.initialized) {
                 const { data, error } = await this.supabase
                     .from('order_items')
-                    .select('product_id, quantity, products(name, image_url)')
+                    .select('product_id, quantity, products(name, price)')
                     .limit(limit)
                     .order('quantity', { ascending: false });
                 
@@ -968,7 +1047,11 @@ class SupabaseService {
                 const { data, error } = await this.supabase
                     .from('contact_messages')
                     .insert([{
-                        ...message,
+                        name: message.name,
+                        email: message.email,
+                        phone: message.phone || '',
+                        subject: message.subject,
+                        message: message.message,
                         created_at: new Date().toISOString()
                     }])
                     .select()
@@ -982,7 +1065,7 @@ class SupabaseService {
             }
         } catch (error) {
             console.error('Error saving contact message:', error);
-            return this.saveLocalContactMessage(message);
+            throw error;
         }
     }
 
@@ -1126,16 +1209,16 @@ class SupabaseService {
                     data = data.slice(0, options.limit);
                 }
                 
-                // Apply count option
-                if (options.count === 'exact' && options.head === true) {
-                    resolve({ count: data.length, error: null });
-                    return;
-                }
-                
                 // Apply range
                 if (options.range) {
                     const [start, end] = options.range;
                     data = data.slice(start, end + 1);
+                }
+                
+                // Apply count option
+                if (options.count === 'exact' && options.head === true) {
+                    resolve({ count: data.length, error: null });
+                    return;
                 }
                 
                 resolve({ 
@@ -1372,7 +1455,7 @@ class SupabaseService {
                 const searchTerm = filters.search.toLowerCase();
                 filteredProducts = filteredProducts.filter(p => 
                     p.name.toLowerCase().includes(searchTerm) || 
-                    p.description.toLowerCase().includes(searchTerm)
+                    (p.description && p.description.toLowerCase().includes(searchTerm))
                 );
             }
             
@@ -1472,7 +1555,7 @@ class SupabaseService {
     deleteLocalProduct(id) {
         try {
             const products = JSON.parse(localStorage.getItem('nestsian_products') || '[]');
-            const updatedProducts = products.filter(p => p.id !== id);
+            const updatedProducts = products.filter(p => p.id != id);
             localStorage.setItem('nestsian_products', JSON.stringify(updatedProducts));
         } catch (error) {
             console.error('Error deleting local product:', error);
@@ -1545,7 +1628,7 @@ class SupabaseService {
     deleteLocalCategory(id) {
         try {
             const categories = this.getLocalCategories();
-            const updatedCategories = categories.filter(c => c.id !== id);
+            const updatedCategories = categories.filter(c => c.id != id);
             localStorage.setItem('nestsian_categories', JSON.stringify(updatedCategories));
         } catch (error) {
             console.error('Error deleting local category:', error);
@@ -1558,7 +1641,7 @@ class SupabaseService {
             let filteredOrders = [...orders];
             
             // Apply filters
-            if (filters.status) {
+            if (filters.status && filters.status !== 'all') {
                 filteredOrders = filteredOrders.filter(o => o.status === filters.status);
             }
             
@@ -1585,6 +1668,12 @@ class SupabaseService {
             const end = start + limit;
             const paginatedOrders = filteredOrders.slice(start, end);
             
+            // Get order items for each order
+            const orderItems = this.getLocalOrderItems();
+            paginatedOrders.forEach(order => {
+                order.order_items = orderItems.filter(item => item.order_id === order.id);
+            });
+            
             return {
                 data: paginatedOrders,
                 total: filteredOrders.length,
@@ -1601,7 +1690,14 @@ class SupabaseService {
     getLocalOrderById(id) {
         try {
             const orders = JSON.parse(localStorage.getItem('nestsian_orders') || '[]');
-            return orders.find(o => o.id === id);
+            const order = orders.find(o => o.id === id);
+            
+            if (order) {
+                const orderItems = this.getLocalOrderItems();
+                order.order_items = orderItems.filter(item => item.order_id === order.id);
+            }
+            
+            return order;
         } catch (error) {
             console.error('Error getting local order by ID:', error);
             return null;
@@ -1636,6 +1732,24 @@ class SupabaseService {
             }
             
             localStorage.setItem('nestsian_orders', JSON.stringify(orders));
+            
+            // Save order items
+            if (order.order_items && order.order_items.length > 0) {
+                const orderItems = JSON.parse(localStorage.getItem('nestsian_order_items') || '[]');
+                order.order_items.forEach(item => {
+                    orderItems.push({
+                        id: Date.now(),
+                        order_id: updatedOrder.id,
+                        product_id: item.product_id,
+                        product_name: item.product_name || item.name,
+                        quantity: item.quantity,
+                        price: item.price,
+                        total_price: item.quantity * item.price,
+                        created_at: new Date().toISOString()
+                    });
+                });
+                localStorage.setItem('nestsian_order_items', JSON.stringify(orderItems));
+            }
             
             // Update customer data
             if (order.customer_email) {
@@ -1676,6 +1790,11 @@ class SupabaseService {
             const orders = JSON.parse(localStorage.getItem('nestsian_orders') || '[]');
             const updatedOrders = orders.filter(o => o.id !== id);
             localStorage.setItem('nestsian_orders', JSON.stringify(updatedOrders));
+            
+            // Delete order items
+            const orderItems = this.getLocalOrderItems();
+            const updatedOrderItems = orderItems.filter(item => item.order_id !== id);
+            localStorage.setItem('nestsian_order_items', JSON.stringify(updatedOrderItems));
         } catch (error) {
             console.error('Error deleting local order:', error);
         }
@@ -1700,8 +1819,8 @@ class SupabaseService {
                 const searchTerm = filters.search.toLowerCase();
                 filteredCustomers = filteredCustomers.filter(c => 
                     c.name.toLowerCase().includes(searchTerm) ||
-                    c.email.toLowerCase().includes(searchTerm) ||
-                    c.phone.toLowerCase().includes(searchTerm)
+                    (c.email && c.email.toLowerCase().includes(searchTerm)) ||
+                    (c.phone && c.phone.toLowerCase().includes(searchTerm))
                 );
             }
             
@@ -1833,7 +1952,7 @@ class SupabaseService {
                     const now = new Date();
                     return orderDate.getMonth() === now.getMonth() && 
                            orderDate.getFullYear() === now.getFullYear() &&
-                           order.status === 'completed';
+                           ['completed', 'delivered'].includes(order.status);
                 })
                 .reduce((sum, order) => sum + (order.total_amount || 0), 0);
             
@@ -1865,7 +1984,7 @@ class SupabaseService {
             
             const salesByDate = {};
             orders.forEach(order => {
-                if (order.status === 'completed') {
+                if (['completed', 'delivered'].includes(order.status)) {
                     const orderDate = new Date(order.created_at);
                     if (orderDate >= startDate && orderDate <= endDate) {
                         const dateStr = orderDate.toISOString().split('T')[0];
@@ -1911,11 +2030,12 @@ class SupabaseService {
             const topProducts = Object.keys(productSales)
                 .map(productId => {
                     const product = products.find(p => p.id == productId);
-                    return {
+                    return product ? {
                         ...product,
                         total_quantity: productSales[productId]
-                    };
+                    } : null;
                 })
+                .filter(Boolean)
                 .sort((a, b) => b.total_quantity - a.total_quantity)
                 .slice(0, limit);
             
