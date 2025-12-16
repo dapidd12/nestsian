@@ -105,13 +105,38 @@ const CONFIG = {
         }
     },
     
-    // Theme Configuration
+    // Theme Configuration - UPDATED FOR CONSISTENCY
     THEME: {
-        PRIMARY_COLOR: '#0080ff',
-        SECONDARY_COLOR: '#0ea5e9',
-        ACCENT_COLOR: '#d946ef',
-        DARK_BG: '#0f172a',
-        LIGHT_BG: '#1e293b'
+        COLORS: {
+            primary: '#0080ff',
+            secondary: '#0ea5e9',
+            accent: '#d946ef',
+            success: '#10b981',
+            warning: '#f59e0b',
+            danger: '#ef4444',
+            info: '#3b82f6'
+        },
+        DARK: {
+            50: '#f8fafc',
+            100: '#f1f5f9',
+            200: '#e2e8f0',
+            300: '#cbd5e1',
+            400: '#94a3b8',
+            500: '#64748b',
+            600: '#475569',
+            700: '#334155',
+            800: '#1e293b',
+            900: '#0f172a',
+            950: '#020617'
+        },
+        GRADIENTS: {
+            primary: 'linear-gradient(45deg, #0080ff, #0ea5e9)',
+            secondary: 'linear-gradient(45deg, #475569, #64748b)',
+            success: 'linear-gradient(45deg, #10b981, #34d399)',
+            danger: 'linear-gradient(45deg, #ef4444, #f87171)',
+            warning: 'linear-gradient(45deg, #f59e0b, #fbbf24)',
+            accent: 'linear-gradient(45deg, #d946ef, #e879f9)'
+        }
     },
     
     // API Configuration
@@ -134,23 +159,42 @@ const CONFIG = {
     // Product Configuration
     PRODUCT: {
         DEFAULT_CATEGORIES: [
-            { name: 'Security', icon: 'fas fa-shield-alt' },
-            { name: 'Networking', icon: 'fas fa-network-wired' },
-            { name: 'Software', icon: 'fas fa-code' },
-            { name: 'Hardware', icon: 'fas fa-server' },
-            { name: 'Service', icon: 'fas fa-concierge-bell' }
+            { id: 1, name: 'Security', icon: 'fas fa-shield-alt', description: 'Security products and solutions' },
+            { id: 2, name: 'Networking', icon: 'fas fa-network-wired', description: 'Networking equipment and infrastructure' },
+            { id: 3, name: 'Software', icon: 'fas fa-code', description: 'Software applications and tools' },
+            { id: 4, name: 'Hardware', icon: 'fas fa-server', description: 'Hardware devices and equipment' },
+            { id: 5, name: 'Service', icon: 'fas fa-concierge-bell', description: 'Professional services and support' }
         ],
-        STOCK_LOW_THRESHOLD: 5,
-        STOCK_CRITICAL_THRESHOLD: 2
+        STOCK: {
+            LOW_THRESHOLD: 5,
+            CRITICAL_THRESHOLD: 2,
+            IN_STOCK_COLOR: '#10b981',
+            LOW_STOCK_COLOR: '#f59e0b',
+            OUT_OF_STOCK_COLOR: '#ef4444'
+        },
+        CURRENCY: 'IDR',
+        CURRENCY_SYMBOL: 'Rp'
     },
     
-    // Order Configuration
+    // Order Configuration - UPDATED FOR CONSISTENCY
     ORDER: {
         STATUSES: {
-            PENDING: 'pending',
-            PROCESSING: 'processing',
-            COMPLETED: 'completed',
-            CANCELLED: 'cancelled'
+            pending: 'pending',
+            processing: 'processing',
+            completed: 'completed',
+            cancelled: 'cancelled'
+        },
+        STATUS_LABELS: {
+            pending: 'Pending',
+            processing: 'Processing',
+            completed: 'Completed',
+            cancelled: 'Cancelled'
+        },
+        STATUS_COLORS: {
+            pending: '#f59e0b',
+            processing: '#3b82f6',
+            completed: '#10b981',
+            cancelled: '#ef4444'
         },
         PAYMENT_METHODS: ['QRIS', 'Transfer Bank', 'E-Wallet', 'Cash'],
         SHIPPING_METHODS: ['Regular', 'Express', 'Same Day']
@@ -169,6 +213,60 @@ const CONFIG = {
         MAX_LOGIN_ATTEMPTS: 5,
         PASSWORD_MIN_LENGTH: 8,
         ENABLE_2FA: false
+    },
+    
+    // UI Configuration - NEW SECTION FOR CONSISTENCY
+    UI: {
+        BORDER_RADIUS: {
+            sm: '6px',
+            md: '10px',
+            lg: '16px',
+            xl: '20px',
+            full: '9999px'
+        },
+        SPACING: {
+            1: '4px',
+            2: '8px',
+            3: '12px',
+            4: '16px',
+            5: '20px',
+            6: '24px',
+            8: '32px',
+            10: '40px'
+        },
+        SHADOWS: {
+            sm: '0 1px 3px rgba(0, 0, 0, 0.12)',
+            md: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            lg: '0 10px 25px rgba(0, 0, 0, 0.15)',
+            xl: '0 20px 40px rgba(0, 0, 0, 0.2)',
+            primary: '0 8px 25px rgba(0, 128, 255, 0.3)'
+        },
+        FONT_SIZES: {
+            xs: '12px',
+            sm: '14px',
+            base: '16px',
+            lg: '18px',
+            xl: '20px',
+            '2xl': '24px',
+            '3xl': '30px',
+            '4xl': '36px'
+        },
+        Z_INDEX: {
+            dropdown: 1000,
+            sticky: 1020,
+            fixed: 1030,
+            modalBackdrop: 1040,
+            modal: 1050,
+            popover: 1060,
+            tooltip: 1070,
+            toast: 1080
+        },
+        ANIMATIONS: {
+            fast: '150ms',
+            normal: '300ms',
+            slow: '500ms',
+            slower: '750ms'
+        }
     }
 };
 
@@ -178,7 +276,6 @@ class DatabaseHelper {
         try {
             console.log('Initializing database...');
             
-            // Cek apakah supabaseService sudah ada
             if (!window.supabaseService) {
                 console.warn('Supabase service not available');
                 return;
@@ -191,7 +288,7 @@ class DatabaseHelper {
                 return;
             }
             
-            // Test connection first
+            // Test connection
             const { error: testError } = await supabase
                 .from('products')
                 .select('id')
@@ -204,7 +301,7 @@ class DatabaseHelper {
             
             console.log('Database connection test passed');
             
-            // Insert default categories if table exists and is empty
+            // Insert default categories if empty
             try {
                 const { data: categories, error: categoriesError } = await supabase
                     .from('categories')
@@ -241,7 +338,6 @@ class DatabaseHelper {
 
 // Initialize database when ready
 document.addEventListener('DOMContentLoaded', function() {
-    // Tunggu supabaseService siap
     const checkService = setInterval(function() {
         if (window.supabaseService) {
             clearInterval(checkService);
@@ -252,7 +348,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 
-// Utility Functions
+// Configuration Helper Class
 class ConfigHelper {
     static get(key, defaultValue = null) {
         const keys = key.split('.');
@@ -282,6 +378,30 @@ class ConfigHelper {
         }
         
         config[keys[keys.length - 1]] = value;
+    }
+    
+    static getThemeColor(name) {
+        return CONFIG.THEME.COLORS[name] || CONFIG.THEME.COLORS.primary;
+    }
+    
+    static getStatusColor(status) {
+        return CONFIG.ORDER.STATUS_COLORS[status] || CONFIG.THEME.COLORS.warning;
+    }
+    
+    static getStatusLabel(status) {
+        return CONFIG.ORDER.STATUS_LABELS[status] || 'Unknown';
+    }
+    
+    static getStockColor(stock) {
+        if (stock === 0) return CONFIG.PRODUCT.STOCK.OUT_OF_STOCK_COLOR;
+        if (stock <= CONFIG.PRODUCT.STOCK.CRITICAL_THRESHOLD) return CONFIG.THEME.COLORS.danger;
+        if (stock <= CONFIG.PRODUCT.STOCK.LOW_THRESHOLD) return CONFIG.THEME.COLORS.warning;
+        return CONFIG.PRODUCT.STOCK.IN_STOCK_COLOR;
+    }
+    
+    static formatCurrency(amount) {
+        if (!amount) amount = 0;
+        return `${CONFIG.PRODUCT.CURRENCY_SYMBOL} ${amount.toLocaleString('id-ID')}`;
     }
 }
 

@@ -6,6 +6,17 @@ class NestSian {
         this.supabaseService = null;
         this.currentUser = null;
         this.qrCountdownInterval = null;
+        this.currentCart = [];
+        this.currentProductPage = 1;
+        this.currentOrderPage = 1;
+        this.currentCustomerPage = 1;
+        this.currentProducts = [];
+        this.currentOrders = [];
+        this.currentCustomers = [];
+        this.productsPerPage = 10;
+        this.ordersPerPage = 10;
+        this.customersPerPage = 10;
+        this.chart = null;
         this.init();
     }
 
@@ -38,6 +49,9 @@ class NestSian {
         
         // Start real-time clock
         this.startClock();
+        
+        // Load cart from localStorage
+        this.loadCart();
         
         // Wait for services to initialize
         const initInterval = setInterval(() => {
@@ -138,6 +152,16 @@ class NestSian {
             });
         }
         
+        const cartBtn = document.getElementById('cartBtn');
+        if (cartBtn) {
+            cartBtn.addEventListener('click', () => this.showCartModal());
+        }
+        
+        const loadMoreProducts = document.getElementById('loadMoreProducts');
+        if (loadMoreProducts) {
+            loadMoreProducts.addEventListener('click', () => this.loadMoreFrontendProducts());
+        }
+        
         // Contact Form
         const contactForm = document.getElementById('contactForm');
         if (contactForm) {
@@ -178,9 +202,14 @@ class NestSian {
             productForm.addEventListener('submit', (e) => this.saveProduct(e));
         }
         
-        const cancelEdit = document.getElementById('cancelEdit');
-        if (cancelEdit) {
-            cancelEdit.addEventListener('click', () => this.cancelProductEdit());
+        const resetProduct = document.getElementById('resetProduct');
+        if (resetProduct) {
+            resetProduct.addEventListener('click', () => this.resetProductForm());
+        }
+        
+        const previewImage = document.getElementById('previewImage');
+        if (previewImage) {
+            previewImage.addEventListener('click', () => this.previewProductImage());
         }
         
         const searchProduct = document.getElementById('searchProduct');
@@ -192,6 +221,11 @@ class NestSian {
         const categoryForm = document.getElementById('categoryForm');
         if (categoryForm) {
             categoryForm.addEventListener('submit', (e) => this.saveCategory(e));
+        }
+        
+        const resetCategory = document.getElementById('resetCategory');
+        if (resetCategory) {
+            resetCategory.addEventListener('click', () => this.resetCategoryForm());
         }
         
         // QRIS Settings
@@ -245,6 +279,11 @@ class NestSian {
             filterCompleted.addEventListener('click', () => this.filterOrders('completed'));
         }
         
+        const filterCancelled = document.getElementById('filterCancelled');
+        if (filterCancelled) {
+            filterCancelled.addEventListener('click', () => this.filterOrders('cancelled'));
+        }
+        
         // Search Customers
         const searchCustomer = document.getElementById('searchCustomer');
         if (searchCustomer) {
@@ -254,7 +293,7 @@ class NestSian {
         // Reports
         const chartPeriod = document.getElementById('chartPeriod');
         if (chartPeriod) {
-            chartPeriod.addEventListener('change', (e) => this.updateSalesChart(e.target.value));
+            chartPeriod.addEventListener('change', (e) => this.updateSalesChart(parseInt(e.target.value)));
         }
         
         const reportPeriod = document.getElementById('reportPeriod');
@@ -297,10 +336,31 @@ class NestSian {
             logoutBtn.addEventListener('click', () => this.handleLogout());
         }
         
+        // Checkout
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        if (checkoutBtn) {
+            checkoutBtn.addEventListener('click', () => this.showCheckoutModal());
+        }
+        
+        const checkoutForm = document.getElementById('checkoutForm');
+        if (checkoutForm) {
+            checkoutForm.addEventListener('submit', (e) => this.handleCheckout(e));
+        }
+        
+        // Refresh Preview
+        const refreshPreview = document.getElementById('refreshPreview');
+        if (refreshPreview) {
+            refreshPreview.addEventListener('click', () => this.refreshWebsitePreview());
+        }
+        
         // Close modals on outside click
         document.addEventListener('click', (e) => {
             const loginModal = document.getElementById('loginModal');
             const adminPanelModal = document.getElementById('adminPanelModal');
+            const cartModal = document.getElementById('cartModal');
+            const checkoutModal = document.getElementById('checkoutModal');
+            const imagePreviewModal = document.getElementById('imagePreviewModal');
+            const orderDetailsModal = document.getElementById('orderDetailsModal');
             
             if (loginModal && !loginModal.classList.contains('hidden') && 
                 !loginModal.contains(e.target) && e.target.id !== 'loginBtn') {
@@ -310,6 +370,26 @@ class NestSian {
             if (adminPanelModal && !adminPanelModal.classList.contains('hidden') && 
                 !adminPanelModal.contains(e.target) && e.target.id !== 'adminPanelBtn') {
                 adminPanelModal.classList.add('hidden');
+            }
+            
+            if (cartModal && !cartModal.classList.contains('hidden') && 
+                !cartModal.contains(e.target) && e.target.id !== 'cartBtn') {
+                this.hideCartModal();
+            }
+            
+            if (checkoutModal && !checkoutModal.classList.contains('hidden') && 
+                !checkoutModal.contains(e.target)) {
+                this.hideCheckoutModal();
+            }
+            
+            if (imagePreviewModal && !imagePreviewModal.classList.contains('hidden') && 
+                !imagePreviewModal.contains(e.target)) {
+                this.hideImagePreview();
+            }
+            
+            if (orderDetailsModal && !orderDetailsModal.classList.contains('hidden') && 
+                !orderDetailsModal.contains(e.target)) {
+                this.hideOrderDetails();
             }
         });
         
@@ -420,11 +500,85 @@ class NestSian {
         }
     }
 
-    // ==================== PRODUCTS ====================
-    async loadProducts() {
+    async loadRecentOrders() {
         try {
-            const products = await this.supabaseService.getProducts();
-            this.updateProductList(products);
+            const result = await this.supabaseService.getOrders({}, 1, 5);
+            this.updateRecentOrders(result.data);
+        } catch (error) {
+            console.error('Error loading recent orders:', error);
+        }
+    }
+
+    updateRecentOrders(orders) {
+        const recentOrders = document.getElementById('recentOrders');
+        if (!recentOrders) return;
+        
+        recentOrders.innerHTML = '';
+        
+        if (!orders || orders.length === 0) {
+            recentOrders.innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-gray-400">
+                        Tidak ada pesanan baru
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        orders.forEach(order => {
+            const statusClass = {
+                'pending': 'bg-yellow-900/30 text-yellow-400',
+                'processing': 'bg-blue-900/30 text-blue-400',
+                'completed': 'bg-green-900/30 text-green-400',
+                'cancelled': 'bg-red-900/30 text-red-400'
+            }[order.status] || 'bg-gray-900/30 text-gray-400';
+            
+            const row = document.createElement('tr');
+            row.className = 'border-b border-dark-700';
+            row.innerHTML = `
+                <td class="py-3">
+                    <span class="text-sm text-primary-400 font-medium">${order.id}</span>
+                </td>
+                <td class="py-3 text-gray-300">${order.customer_name}</td>
+                <td class="py-3 font-medium text-white">
+                    Rp ${(order.total_amount || 0).toLocaleString()}
+                </td>
+                <td class="py-3">
+                    <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
+                        ${order.status}
+                    </span>
+                </td>
+                <td class="py-3 text-gray-300 text-sm">
+                    ${new Date(order.created_at).toLocaleDateString('id-ID')}
+                </td>
+            `;
+            recentOrders.appendChild(row);
+        });
+    }
+
+    // ==================== PRODUCTS MANAGEMENT ====================
+    async loadProducts(page = 1) {
+        try {
+            this.currentProductPage = page;
+            const searchTerm = document.getElementById('searchProduct')?.value || '';
+            
+            const filters = {};
+            if (searchTerm) {
+                filters.search = searchTerm;
+            }
+            
+            const result = await this.supabaseService.getProducts(filters, page, this.productsPerPage);
+            this.currentProducts = result;
+            this.updateProductList(result.data);
+            this.updateProductPagination(result.totalPages, page);
+            
+            // Update product count
+            const productCount = document.getElementById('productCount');
+            if (productCount) {
+                productCount.textContent = result.total;
+            }
+            
         } catch (error) {
             console.error('Error loading products:', error);
             this.showError('Gagal memuat produk');
@@ -433,47 +587,140 @@ class NestSian {
 
     async loadFrontendProducts() {
         try {
-            const products = await this.supabaseService.getProducts({ featured: true });
-            const container = document.getElementById('frontendProducts');
-            
-            if (!container) return;
-            
-            container.innerHTML = '';
-            
-            products.slice(0, 6).forEach(product => {
-                const category = product.categories || {};
-                
-                const productCard = document.createElement('div');
-                productCard.className = 'product-card';
-                productCard.innerHTML = `
-                    <div class="overflow-hidden h-48">
-                        <img src="${product.image_url}" alt="${product.name}" 
-                             class="product-image w-full h-full object-cover">
-                    </div>
-                    <div class="product-content">
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="product-category">${category.name || 'Uncategorized'}</span>
-                            <span class="product-price">Rp ${product.price.toLocaleString()}</span>
-                        </div>
-                        <h3 class="product-title">${product.name}</h3>
-                        <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
-                        <div class="product-footer">
-                            <span class="product-stock ${product.stock > 5 ? 'in-stock' : product.stock > 0 ? 'low-stock' : 'out-of-stock'}">
-                                <i class="fas fa-box mr-1"></i> ${product.stock} tersedia
-                            </span>
-                            <button class="btn btn-primary btn-sm">
-                                <i class="fas fa-cart-plus mr-2"></i>Pesan
-                            </button>
-                        </div>
-                    </div>
-                `;
-                
-                container.appendChild(productCard);
-            });
-            
+            const result = await this.supabaseService.getProducts({ featured: true }, 1, 12);
+            this.updateFrontendProducts(result.data);
         } catch (error) {
             console.error('Error loading frontend products:', error);
         }
+    }
+
+    async loadMoreFrontendProducts() {
+        try {
+            const currentCount = document.querySelectorAll('#frontendProducts .product-card').length;
+            const result = await this.supabaseService.getProducts({}, Math.floor(currentCount / 6) + 1, 6);
+            
+            if (result.data.length > 0) {
+                this.appendFrontendProducts(result.data);
+            } else {
+                document.getElementById('loadMoreProducts').disabled = true;
+                this.showInfo('Semua produk telah dimuat');
+            }
+        } catch (error) {
+            console.error('Error loading more products:', error);
+        }
+    }
+
+    updateFrontendProducts(products) {
+        const container = document.getElementById('frontendProducts');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (!products || products.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-box-open text-4xl text-gray-500 mb-4"></i>
+                    <p class="text-gray-400">Tidak ada produk tersedia</p>
+                </div>
+            `;
+            return;
+        }
+        
+        products.forEach(product => {
+            const category = product.categories || {};
+            const productCard = this.createProductCard(product, category, false);
+            container.appendChild(productCard);
+        });
+    }
+
+    appendFrontendProducts(products) {
+        const container = document.getElementById('frontendProducts');
+        if (!container) return;
+        
+        products.forEach(product => {
+            const category = product.categories || {};
+            const productCard = this.createProductCard(product, category, false);
+            container.appendChild(productCard);
+        });
+    }
+
+    createProductCard(product, category, isAdmin = true) {
+        const productCard = document.createElement('div');
+        productCard.className = 'product-card';
+        
+        if (isAdmin) {
+            productCard.innerHTML = `
+                <div class="overflow-hidden h-48">
+                    <img src="${product.image_url}" alt="${product.name}" 
+                         class="product-image w-full h-full object-cover">
+                </div>
+                <div class="product-content">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="product-category">${category.name || 'Uncategorized'}</span>
+                        <span class="product-price">Rp ${product.price.toLocaleString()}</span>
+                    </div>
+                    <h3 class="product-title">${product.name}</h3>
+                    <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
+                    <div class="product-footer">
+                        <span class="product-stock ${product.stock > 5 ? 'in-stock' : product.stock > 0 ? 'low-stock' : 'out-of-stock'}">
+                            <i class="fas fa-box mr-1"></i> ${product.stock} tersedia
+                        </span>
+                        <div class="flex space-x-2">
+                            <button class="btn btn-sm btn-outline edit-product" data-id="${product.id}" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-product" data-id="${product.id}" title="Hapus">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            productCard.innerHTML = `
+                <div class="overflow-hidden h-48">
+                    <img src="${product.image_url}" alt="${product.name}" 
+                         class="product-image w-full h-full object-cover">
+                </div>
+                <div class="product-content">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="product-category">${category.name || 'Uncategorized'}</span>
+                        <span class="product-price">Rp ${product.price.toLocaleString()}</span>
+                    </div>
+                    <h3 class="product-title">${product.name}</h3>
+                    <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
+                    <div class="product-footer">
+                        <span class="product-stock ${product.stock > 5 ? 'in-stock' : product.stock > 0 ? 'low-stock' : 'out-of-stock'}">
+                            <i class="fas fa-box mr-1"></i> ${product.stock} tersedia
+                        </span>
+                        <button class="btn btn-primary btn-sm add-to-cart" data-id="${product.id}">
+                            <i class="fas fa-cart-plus mr-2"></i>Tambah
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Add event listeners
+        if (isAdmin) {
+            const editBtn = productCard.querySelector('.edit-product');
+            const deleteBtn = productCard.querySelector('.delete-product');
+            
+            if (editBtn) {
+                editBtn.addEventListener('click', () => this.editProduct(product.id));
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => this.deleteProduct(product.id));
+            }
+        } else {
+            const addToCartBtn = productCard.querySelector('.add-to-cart');
+            if (addToCartBtn) {
+                addToCartBtn.addEventListener('click', () => this.addToCart(product.id));
+            }
+        }
+        
+        return productCard;
     }
 
     updateProductList(products) {
@@ -482,7 +729,7 @@ class NestSian {
         
         productList.innerHTML = '';
         
-        if (products.length === 0) {
+        if (!products || products.length === 0) {
             productList.innerHTML = `
                 <tr>
                     <td colspan="5" class="text-center py-8 text-gray-400">
@@ -546,28 +793,81 @@ class NestSian {
         document.querySelectorAll('.edit-product').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.editProduct(e.target.closest('button').dataset.id);
+                const productId = e.target.closest('button').dataset.id;
+                this.editProduct(productId);
             });
         });
         
         document.querySelectorAll('.delete-product').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.deleteProduct(e.target.closest('button').dataset.id);
+                const productId = e.target.closest('button').dataset.id;
+                this.deleteProduct(productId);
             });
         });
         
         document.querySelectorAll('.feature-product').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.toggleProductFeature(e.target.closest('button').dataset.id);
+                const productId = e.target.closest('button').dataset.id;
+                this.toggleProductFeature(productId);
             });
         });
+    }
+
+    updateProductPagination(totalPages, currentPage) {
+        const pagination = document.getElementById('productPagination');
+        if (!pagination) return;
+        
+        pagination.innerHTML = '';
+        
+        if (totalPages <= 1) return;
+        
+        // Previous button
+        const prevButton = document.createElement('button');
+        prevButton.className = `pagination-btn ${currentPage === 1 ? 'disabled' : ''}`;
+        prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                this.loadProducts(currentPage - 1);
+            }
+        });
+        pagination.appendChild(prevButton);
+        
+        // Page numbers
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+            pageButton.textContent = i;
+            pageButton.addEventListener('click', () => {
+                if (i !== currentPage) {
+                    this.loadProducts(i);
+                }
+            });
+            pagination.appendChild(pageButton);
+        }
+        
+        // Next button
+        const nextButton = document.createElement('button');
+        nextButton.className = `pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                this.loadProducts(currentPage + 1);
+            }
+        });
+        pagination.appendChild(nextButton);
     }
 
     async saveProduct(e) {
         e.preventDefault();
         
+        const productId = document.getElementById('productId').value;
         const name = document.getElementById('productName').value.trim();
         const categoryId = parseInt(document.getElementById('productCategory').value);
         const price = parseInt(document.getElementById('productPrice').value);
@@ -575,6 +875,7 @@ class NestSian {
         const description = document.getElementById('productDescription').value.trim();
         const image = document.getElementById('productImage').value.trim();
         const weight = parseInt(document.getElementById('productWeight').value) || 0;
+        const featured = document.getElementById('productFeatured').checked;
         
         // Validation
         if (!name) {
@@ -610,27 +911,26 @@ class NestSian {
                 stock,
                 description,
                 image_url: image,
-                weight
+                weight,
+                featured
             };
             
-            if (this.currentEditingProductId) {
-                productData.id = this.currentEditingProductId;
+            if (productId) {
+                productData.id = productId;
             }
             
             const savedProduct = await this.supabaseService.saveProduct(productData);
             
-            this.showSuccess(`Produk "${name}" berhasil ${this.currentEditingProductId ? 'diperbarui' : 'disimpan'}!`);
+            this.showSuccess(`Produk "${name}" berhasil ${productId ? 'diperbarui' : 'disimpan'}!`);
             
             // Reset form
             this.resetProductForm();
             
             // Reload products
-            await this.loadProducts();
+            await this.loadProducts(this.currentProductPage);
             
             // Update frontend products if featured
-            if (savedProduct.featured) {
-                this.loadFrontendProducts();
-            }
+            this.loadFrontendProducts();
             
         } catch (error) {
             console.error('Error saving product:', error);
@@ -640,8 +940,7 @@ class NestSian {
 
     async editProduct(productId) {
         try {
-            const products = await this.supabaseService.getProducts();
-            const product = products.find(p => p.id == productId);
+            const product = await this.supabaseService.getProductById(productId);
             
             if (!product) {
                 this.showError('Produk tidak ditemukan');
@@ -649,6 +948,7 @@ class NestSian {
             }
             
             // Populate form
+            document.getElementById('productId').value = product.id;
             document.getElementById('productName').value = product.name;
             document.getElementById('productCategory').value = product.category_id;
             document.getElementById('productPrice').value = product.price;
@@ -656,22 +956,13 @@ class NestSian {
             document.getElementById('productDescription').value = product.description || '';
             document.getElementById('productImage').value = product.image_url;
             document.getElementById('productWeight').value = product.weight || 0;
+            document.getElementById('productFeatured').checked = product.featured || false;
             
             // Change button text
             const saveButton = document.getElementById('saveProduct');
             if (saveButton) {
-                saveButton.textContent = 'Update Produk';
                 saveButton.innerHTML = '<i class="fas fa-save mr-2"></i>Update Produk';
             }
-            
-            // Show cancel button
-            const cancelEdit = document.getElementById('cancelEdit');
-            if (cancelEdit) {
-                cancelEdit.classList.remove('hidden');
-            }
-            
-            // Store editing product ID
-            this.currentEditingProductId = productId;
             
             // Scroll to form
             document.getElementById('productName').scrollIntoView({ behavior: 'smooth' });
@@ -688,20 +979,13 @@ class NestSian {
         const form = document.getElementById('productForm');
         if (form) {
             form.reset();
+            document.getElementById('productId').value = '';
         }
         
         const saveButton = document.getElementById('saveProduct');
         if (saveButton) {
-            saveButton.textContent = 'Simpan Produk';
             saveButton.innerHTML = '<i class="fas fa-save mr-2"></i>Simpan Produk';
         }
-        
-        const cancelEdit = document.getElementById('cancelEdit');
-        if (cancelEdit) {
-            cancelEdit.classList.add('hidden');
-        }
-        
-        this.currentEditingProductId = null;
     }
 
     async deleteProduct(productId) {
@@ -710,8 +994,7 @@ class NestSian {
         }
         
         try {
-            const products = await this.supabaseService.getProducts();
-            const product = products.find(p => p.id == productId);
+            const product = await this.supabaseService.getProductById(productId);
             
             if (!product) {
                 this.showError('Produk tidak ditemukan');
@@ -723,7 +1006,7 @@ class NestSian {
             this.showSuccess(`Produk "${product.name}" berhasil dihapus!`);
             
             // Reload products
-            await this.loadProducts();
+            await this.loadProducts(this.currentProductPage);
             
             // Update frontend if featured
             if (product.featured) {
@@ -738,8 +1021,7 @@ class NestSian {
 
     async toggleProductFeature(productId) {
         try {
-            const products = await this.supabaseService.getProducts();
-            const product = products.find(p => p.id == productId);
+            const product = await this.supabaseService.getProductById(productId);
             
             if (!product) {
                 this.showError('Produk tidak ditemukan');
@@ -756,7 +1038,7 @@ class NestSian {
             this.showSuccess(`Produk ${updatedProduct.featured ? 'ditampilkan' : 'disembunyikan'} di halaman depan`);
             
             // Reload products
-            await this.loadProducts();
+            await this.loadProducts(this.currentProductPage);
             
             // Update frontend
             this.loadFrontendProducts();
@@ -768,18 +1050,32 @@ class NestSian {
     }
 
     searchProducts(searchTerm) {
-        const productRows = document.querySelectorAll('#productList tr');
-        productRows.forEach(row => {
-            const productName = row.querySelector('td:first-child .font-medium')?.textContent.toLowerCase() || '';
-            if (productName.includes(searchTerm.toLowerCase()) || searchTerm === '') {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
+        this.loadProducts(1);
     }
 
-    // ==================== CATEGORIES ====================
+    previewProductImage() {
+        const imageUrl = document.getElementById('productImage').value;
+        if (!imageUrl) {
+            this.showError('Silakan masukkan URL gambar terlebih dahulu');
+            return;
+        }
+        
+        const previewImageSrc = document.getElementById('previewImageSrc');
+        if (previewImageSrc) {
+            previewImageSrc.src = imageUrl;
+            previewImageSrc.onerror = () => {
+                this.showError('Gagal memuat gambar. Pastikan URL valid.');
+            };
+        }
+        
+        document.getElementById('imagePreviewModal').classList.remove('hidden');
+    }
+
+    hideImagePreview() {
+        document.getElementById('imagePreviewModal').classList.add('hidden');
+    }
+
+    // ==================== CATEGORIES MANAGEMENT ====================
     async loadCategories() {
         try {
             const categories = await this.supabaseService.getCategories();
@@ -793,53 +1089,101 @@ class NestSian {
 
     updateCategoryList(categories) {
         const categoryList = document.getElementById('categoryList');
-        if (!categoryList) return;
+        const categoriesGrid = document.getElementById('categoriesGrid');
         
-        categoryList.innerHTML = '';
+        if (!categoryList && !categoriesGrid) return;
         
-        if (categories.length === 0) {
-            categoryList.innerHTML = `
-                <div class="text-center py-8 text-gray-400">
+        if (categoryList) {
+            categoryList.innerHTML = '';
+        }
+        
+        if (categoriesGrid) {
+            categoriesGrid.innerHTML = '';
+        }
+        
+        if (!categories || categories.length === 0) {
+            const emptyMessage = `
+                <div class="col-span-full text-center py-8 text-gray-400">
                     <i class="fas fa-tags text-4xl mb-4"></i>
                     <p>Tidak ada kategori tersedia</p>
                 </div>
             `;
+            
+            if (categoryList) {
+                categoryList.innerHTML = emptyMessage;
+            }
+            if (categoriesGrid) {
+                categoriesGrid.innerHTML = emptyMessage;
+            }
             return;
         }
         
-        categories.forEach(async (category) => {
-            const products = await this.supabaseService.getProducts({ category_id: category.id });
-            const productCount = products.length;
+        // Update category list in admin panel
+        if (categoryList) {
+            categories.forEach(async (category) => {
+                const products = await this.supabaseService.getProducts({ category_id: category.id }, 1, 1);
+                const productCount = products.total || 0;
+                
+                const item = document.createElement('div');
+                item.className = 'card mb-3';
+                item.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="stats-icon">
+                                <i class="${category.icon || 'fas fa-tag'}"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-white">${category.name}</h4>
+                                <p class="text-sm text-gray-400">${productCount} produk</p>
+                                ${category.description ? `<p class="text-xs text-gray-500 mt-1">${category.description}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="btn btn-sm btn-outline edit-category" data-id="${category.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-category" data-id="${category.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                categoryList.appendChild(item);
+            });
             
-            const item = document.createElement('div');
-            item.className = 'card mb-3';
-            item.innerHTML = `
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <div class="stats-icon">
-                            <i class="${category.icon || 'fas fa-tag'}"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-medium text-white">${category.name}</h4>
-                            <p class="text-sm text-gray-400">${productCount} produk</p>
-                            ${category.description ? `<p class="text-xs text-gray-500 mt-1">${category.description}</p>` : ''}
-                        </div>
-                    </div>
-                    <div class="flex space-x-2">
-                        <button class="btn btn-sm btn-outline edit-category" data-id="${category.id}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger delete-category" data-id="${category.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            categoryList.appendChild(item);
-        });
+            // Attach event listeners
+            this.attachCategoryEventListeners();
+        }
         
-        // Attach event listeners
-        this.attachCategoryEventListeners();
+        // Update categories grid in categories section
+        if (categoriesGrid) {
+            categories.forEach(category => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="text-center">
+                        <div class="stats-icon mx-auto mb-4">
+                            <i class="${category.icon || 'fas fa-tag'} text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-white mb-2">${category.name}</h3>
+                        ${category.description ? `<p class="text-gray-400 text-sm mb-4">${category.description}</p>` : ''}
+                        <button class="btn btn-sm btn-outline edit-category" data-id="${category.id}">
+                            <i class="fas fa-edit mr-2"></i>Edit
+                        </button>
+                    </div>
+                `;
+                categoriesGrid.appendChild(card);
+            });
+            
+            // Attach event listeners to grid buttons
+            document.querySelectorAll('#categoriesGrid .edit-category').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const categoryId = e.target.closest('button').dataset.id;
+                    this.editCategory(categoryId);
+                });
+            });
+        }
     }
 
     populateCategorySelect(categories) {
@@ -859,14 +1203,16 @@ class NestSian {
         document.querySelectorAll('.edit-category').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.editCategory(e.target.closest('button').dataset.id);
+                const categoryId = e.target.closest('button').dataset.id;
+                this.editCategory(categoryId);
             });
         });
         
         document.querySelectorAll('.delete-category').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.deleteCategory(e.target.closest('button').dataset.id);
+                const categoryId = e.target.closest('button').dataset.id;
+                this.deleteCategory(categoryId);
             });
         });
     }
@@ -874,8 +1220,10 @@ class NestSian {
     async saveCategory(e) {
         e.preventDefault();
         
+        const categoryId = document.getElementById('categoryId').value;
         const name = document.getElementById('categoryName').value.trim();
         const icon = document.getElementById('categoryIcon').value.trim() || 'fas fa-tag';
+        const description = document.getElementById('categoryDescription').value.trim();
         
         if (!name) {
             this.showError('Nama kategori wajib diisi');
@@ -886,23 +1234,25 @@ class NestSian {
             const categoryData = {
                 name,
                 icon,
-                description: ''
+                description
             };
             
-            if (this.currentEditingCategoryId) {
-                categoryData.id = this.currentEditingCategoryId;
+            if (categoryId) {
+                categoryData.id = categoryId;
             }
             
             await this.supabaseService.saveCategory(categoryData);
             
-            this.showSuccess(`Kategori "${name}" berhasil ${this.currentEditingCategoryId ? 'diperbarui' : 'ditambahkan'}!`);
+            this.showSuccess(`Kategori "${name}" berhasil ${categoryId ? 'diperbarui' : 'ditambahkan'}!`);
             
             // Reset form
-            document.getElementById('categoryForm').reset();
-            this.currentEditingCategoryId = null;
+            this.resetCategoryForm();
             
             // Reload categories
             await this.loadCategories();
+            
+            // Reload products to update category select
+            await this.loadProducts(this.currentProductPage);
             
         } catch (error) {
             console.error('Error saving category:', error);
@@ -921,11 +1271,10 @@ class NestSian {
             }
             
             // Populate form
+            document.getElementById('categoryId').value = category.id;
             document.getElementById('categoryName').value = category.name;
             document.getElementById('categoryIcon').value = category.icon || 'fas fa-tag';
-            
-            // Store editing category ID
-            this.currentEditingCategoryId = categoryId;
+            document.getElementById('categoryDescription').value = category.description || '';
             
             this.showSuccess('Mode edit kategori diaktifkan');
             
@@ -935,36 +1284,28 @@ class NestSian {
         }
     }
 
+    resetCategoryForm() {
+        const form = document.getElementById('categoryForm');
+        if (form) {
+            form.reset();
+            document.getElementById('categoryId').value = '';
+        }
+    }
+
     async deleteCategory(categoryId) {
         if (!confirm(`Apakah Anda yakin ingin menghapus kategori ini? Produk dalam kategori ini akan kehilangan kategori.`)) {
             return;
         }
         
         try {
-            const categories = await this.supabaseService.getCategories();
-            const category = categories.find(c => c.id == categoryId);
+            const result = await this.supabaseService.deleteCategory(categoryId);
             
-            if (!category) {
-                this.showError('Kategori tidak ditemukan');
-                return;
+            if (result.success) {
+                this.showSuccess('Kategori berhasil dihapus!');
+                await this.loadCategories();
+            } else {
+                this.showError(result.error || 'Gagal menghapus kategori');
             }
-            
-            // Check if category has products
-            const products = await this.supabaseService.getProducts({ category_id: categoryId });
-            if (products.length > 0) {
-                if (!confirm(`Kategori ini memiliki ${products.length} produk. Apakah Anda tetap ingin menghapus?`)) {
-                    return;
-                }
-            }
-            
-            // In a real app, you would update the category_id in products table first
-            // For now, we'll just delete the category
-            // Note: This is a simplified version
-            
-            this.showSuccess(`Kategori "${category.name}" berhasil dihapus!`);
-            
-            // Reload categories
-            await this.loadCategories();
             
         } catch (error) {
             console.error('Error deleting category:', error);
@@ -972,24 +1313,31 @@ class NestSian {
         }
     }
 
-    // ==================== ORDERS ====================
-    async loadOrders() {
+    // ==================== ORDERS MANAGEMENT ====================
+    async loadOrders(page = 1, status = 'all') {
         try {
-            const orders = await this.supabaseService.getOrders();
-            this.updateOrderList(orders);
-            this.updateOrderBadge(orders);
+            this.currentOrderPage = page;
+            
+            const filters = {};
+            if (status !== 'all') {
+                filters.status = status;
+            }
+            
+            const result = await this.supabaseService.getOrders(filters, page, this.ordersPerPage);
+            this.currentOrders = result;
+            this.updateOrderList(result.data);
+            this.updateOrderPagination(result.totalPages, page);
+            this.updateOrderBadge(result.data);
+            
+            // Update order count
+            const orderCount = document.getElementById('orderCount');
+            if (orderCount) {
+                orderCount.textContent = result.total;
+            }
+            
         } catch (error) {
             console.error('Error loading orders:', error);
             this.showError('Gagal memuat pesanan');
-        }
-    }
-
-    async loadRecentOrders() {
-        try {
-            const orders = await this.supabaseService.getOrders();
-            this.updateRecentOrders(orders.slice(0, 5));
-        } catch (error) {
-            console.error('Error loading recent orders:', error);
         }
     }
 
@@ -999,7 +1347,7 @@ class NestSian {
         
         orderList.innerHTML = '';
         
-        if (orders.length === 0) {
+        if (!orders || orders.length === 0) {
             orderList.innerHTML = `
                 <tr>
                     <td colspan="7" class="text-center py-8 text-gray-400">
@@ -1019,6 +1367,10 @@ class NestSian {
                 'cancelled': 'status-cancelled'
             }[order.status] || 'status-pending';
             
+            const itemCount = order.order_items?.length || 0;
+            const firstItem = order.order_items?.[0]?.products?.name || 'Produk';
+            const productText = itemCount > 1 ? `${firstItem} +${itemCount - 1} lainnya` : firstItem;
+            
             const row = document.createElement('tr');
             row.className = 'hover:bg-dark-800/50 transition-colors';
             row.innerHTML = `
@@ -1035,7 +1387,7 @@ class NestSian {
                     </div>
                 </td>
                 <td class="py-4 text-gray-300">
-                    ${order.order_items?.length || 1} item
+                    ${productText}
                 </td>
                 <td class="py-4 font-bold text-white">
                     Rp ${(order.total_amount || 0).toLocaleString()}
@@ -1063,50 +1415,65 @@ class NestSian {
         this.attachOrderEventListeners();
     }
 
-    updateRecentOrders(orders) {
-        const recentOrders = document.getElementById('recentOrders');
-        if (!recentOrders) return;
+    updateOrderPagination(totalPages, currentPage) {
+        const pagination = document.getElementById('orderPagination');
+        if (!pagination) return;
         
-        recentOrders.innerHTML = '';
+        pagination.innerHTML = '';
         
-        if (orders.length === 0) {
-            recentOrders.innerHTML = `
-                <tr>
-                    <td colspan="5" class="text-center py-4 text-gray-400">
-                        Tidak ada pesanan baru
-                    </td>
-                </tr>
-            `;
-            return;
+        if (totalPages <= 1) return;
+        
+        // Previous button
+        const prevButton = document.createElement('button');
+        prevButton.className = `pagination-btn ${currentPage === 1 ? 'disabled' : ''}`;
+        prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                this.loadOrders(currentPage - 1, this.getCurrentOrderFilter());
+            }
+        });
+        pagination.appendChild(prevButton);
+        
+        // Page numbers
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+            pageButton.textContent = i;
+            pageButton.addEventListener('click', () => {
+                if (i !== currentPage) {
+                    this.loadOrders(i, this.getCurrentOrderFilter());
+                }
+            });
+            pagination.appendChild(pageButton);
         }
         
-        orders.forEach(order => {
-            const statusClass = {
-                'pending': 'bg-yellow-900/30 text-yellow-400',
-                'processing': 'bg-blue-900/30 text-blue-400',
-                'completed': 'bg-green-900/30 text-green-400',
-                'cancelled': 'bg-red-900/30 text-red-400'
-            }[order.status] || 'bg-gray-900/30 text-gray-400';
-            
-            const row = document.createElement('tr');
-            row.className = 'border-b border-dark-700';
-            row.innerHTML = `
-                <td class="py-3">
-                    <span class="text-sm text-primary-400 font-medium">${order.id}</span>
-                </td>
-                <td class="py-3 text-gray-300">${order.customer_name}</td>
-                <td class="py-3 text-gray-300">${order.order_items?.length || 1} item</td>
-                <td class="py-3 font-medium text-white">
-                    Rp ${(order.total_amount || 0).toLocaleString()}
-                </td>
-                <td class="py-3">
-                    <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
-                        ${order.status}
-                    </span>
-                </td>
-            `;
-            recentOrders.appendChild(row);
+        // Next button
+        const nextButton = document.createElement('button');
+        nextButton.className = `pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                this.loadOrders(currentPage + 1, this.getCurrentOrderFilter());
+            }
         });
+        pagination.appendChild(nextButton);
+    }
+
+    getCurrentOrderFilter() {
+        const activeFilter = document.querySelector('.card-header .btn-primary');
+        if (activeFilter) {
+            const filterId = activeFilter.id;
+            if (filterId === 'filterPending') return 'pending';
+            if (filterId === 'filterProcessing') return 'processing';
+            if (filterId === 'filterCompleted') return 'completed';
+            if (filterId === 'filterCancelled') return 'cancelled';
+        }
+        return 'all';
     }
 
     updateOrderBadge(orders) {
@@ -1143,7 +1510,7 @@ class NestSian {
 
     filterOrders(status) {
         // Update button styles
-        const buttons = ['filterAll', 'filterPending', 'filterProcessing', 'filterCompleted'];
+        const buttons = ['filterAll', 'filterPending', 'filterProcessing', 'filterCompleted', 'filterCancelled'];
         buttons.forEach(btnId => {
             const btn = document.getElementById(btnId);
             if (btn) {
@@ -1158,86 +1525,95 @@ class NestSian {
             }
         });
         
-        // Filter table rows
-        const orderRows = document.querySelectorAll('#orderList tr');
-        orderRows.forEach(row => {
-            if (status === 'all') {
-                row.style.display = '';
-            } else {
-                const statusCell = row.querySelector('td:nth-child(6) .status-badge');
-                if (statusCell) {
-                    const rowStatus = statusCell.textContent.toLowerCase().trim();
-                    if (rowStatus === status) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                }
-            }
-        });
+        // Load orders with filter
+        this.loadOrders(1, status);
     }
 
     async viewOrderDetails(orderId) {
         try {
-            const orders = await this.supabaseService.getOrders();
-            const order = orders.find(o => o.id === orderId);
+            const order = await this.supabaseService.getOrderById(orderId);
             
             if (!order) {
                 this.showError('Pesanan tidak ditemukan');
                 return;
             }
             
-            // Create modal for order details
-            const modalContent = `
-                <div class="modal-header">
-                    <h3 class="modal-title">
-                        <i class="fas fa-file-invoice mr-2"></i>
-                        Detail Pesanan: ${order.id}
-                    </h3>
-                    <button class="modal-close">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
+            const orderDetailsContent = document.getElementById('orderDetailsContent');
+            if (!orderDetailsContent) return;
+            
+            // Format order items
+            let orderItemsHtml = '';
+            if (order.order_items && order.order_items.length > 0) {
+                orderItemsHtml = `
+                    <h4 class="font-medium text-white mb-3">Item Pesanan</h4>
+                    <div class="space-y-2">
+                        ${order.order_items.map(item => `
+                            <div class="flex justify-between items-center p-3 bg-dark-800 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    ${item.products?.image_url ? `
+                                        <img src="${item.products.image_url}" alt="${item.products.name}" 
+                                             class="w-12 h-12 rounded-lg object-cover">
+                                    ` : ''}
+                                    <div>
+                                        <p class="font-medium text-white">${item.products?.name || 'Produk'}</p>
+                                        <p class="text-sm text-gray-400">${item.quantity} x Rp ${item.price.toLocaleString()}</p>
+                                    </div>
+                                </div>
+                                <p class="font-bold text-white">Rp ${(item.quantity * item.price).toLocaleString()}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            orderDetailsContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <h4 class="font-medium text-white mb-2">Informasi Pelanggan</h4>
-                            <p class="text-gray-300">Nama: ${order.customer_name}</p>
-                            <p class="text-gray-300">Email: ${order.customer_email || '-'}</p>
-                            <p class="text-gray-300">Telepon: ${order.customer_phone || '-'}</p>
+                            <h4 class="font-medium text-white mb-3">Informasi Pelanggan</h4>
+                            <div class="space-y-2">
+                                <p><span class="text-gray-400">Nama:</span> <span class="text-white">${order.customer_name}</span></p>
+                                <p><span class="text-gray-400">Email:</span> <span class="text-white">${order.customer_email || '-'}</span></p>
+                                <p><span class="text-gray-400">Telepon:</span> <span class="text-white">${order.customer_phone || '-'}</span></p>
+                            </div>
                         </div>
                         <div>
-                            <h4 class="font-medium text-white mb-2">Informasi Pesanan</h4>
-                            <p class="text-gray-300">Tanggal: ${new Date(order.created_at).toLocaleString('id-ID')}</p>
-                            <p class="text-gray-300">Status: <span class="status-badge status-${order.status}">${order.status}</span></p>
-                            <p class="text-gray-300">Total: Rp ${(order.total_amount || 0).toLocaleString()}</p>
+                            <h4 class="font-medium text-white mb-3">Informasi Pesanan</h4>
+                            <div class="space-y-2">
+                                <p><span class="text-gray-400">ID Pesanan:</span> <span class="text-primary-400">${order.id}</span></p>
+                                <p><span class="text-gray-400">Tanggal:</span> <span class="text-white">${new Date(order.created_at).toLocaleString('id-ID')}</span></p>
+                                <p><span class="text-gray-400">Status:</span> <span class="status-badge status-${order.status}">${order.status}</span></p>
+                                <p><span class="text-gray-400">Metode Pembayaran:</span> <span class="text-white">${order.payment_method || '-'}</span></p>
+                            </div>
                         </div>
                     </div>
                     
                     ${order.shipping_address ? `
                     <div>
-                        <h4 class="font-medium text-white mb-2">Alamat Pengiriman</h4>
-                        <p class="text-gray-300">${order.shipping_address}</p>
+                        <h4 class="font-medium text-white mb-3">Alamat Pengiriman</h4>
+                        <p class="text-white p-3 bg-dark-800 rounded-lg">${order.shipping_address}</p>
                     </div>
                     ` : ''}
                     
                     ${order.notes ? `
                     <div>
-                        <h4 class="font-medium text-white mb-2">Catatan</h4>
-                        <p class="text-gray-300">${order.notes}</p>
+                        <h4 class="font-medium text-white mb-3">Catatan</h4>
+                        <p class="text-white p-3 bg-dark-800 rounded-lg">${order.notes}</p>
                     </div>
                     ` : ''}
                     
-                    <div>
-                        <h4 class="font-medium text-white mb-2">Item Pesanan</h4>
-                        <div class="bg-dark-800 rounded-lg p-4">
-                            <p class="text-gray-400">Detail item akan ditampilkan di sini</p>
+                    ${orderItemsHtml}
+                    
+                    <div class="pt-4 border-t border-dark-700">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xl font-bold text-white">Total:</span>
+                            <span class="text-2xl font-bold text-primary-400">Rp ${(order.total_amount || 0).toLocaleString()}</span>
                         </div>
                     </div>
                 </div>
             `;
             
-            this.showModal('Detail Pesanan', modalContent);
+            document.getElementById('orderDetailsModal').classList.remove('hidden');
             
         } catch (error) {
             console.error('Error viewing order details:', error);
@@ -1245,10 +1621,13 @@ class NestSian {
         }
     }
 
+    hideOrderDetails() {
+        document.getElementById('orderDetailsModal').classList.add('hidden');
+    }
+
     async updateOrderStatus(orderId) {
         try {
-            const orders = await this.supabaseService.getOrders();
-            const order = orders.find(o => o.id === orderId);
+            const order = await this.supabaseService.getOrderById(orderId);
             
             if (!order) {
                 this.showError('Pesanan tidak ditemukan');
@@ -1258,14 +1637,14 @@ class NestSian {
             const newStatus = prompt(`Ubah status pesanan ${order.id}:\n(pending, processing, completed, cancelled)`, order.status);
             
             if (newStatus && ['pending', 'processing', 'completed', 'cancelled'].includes(newStatus.toLowerCase())) {
-                const updatedOrder = {
-                    ...order,
-                    status: newStatus.toLowerCase()
-                };
+                const result = await this.supabaseService.updateOrderStatus(orderId, newStatus.toLowerCase());
                 
-                await this.supabaseService.saveOrder(updatedOrder);
-                this.showSuccess(`Status pesanan berhasil diubah menjadi ${newStatus}`);
-                await this.loadOrders();
+                if (result.success) {
+                    this.showSuccess(`Status pesanan berhasil diubah menjadi ${newStatus}`);
+                    await this.loadOrders(this.currentOrderPage, this.getCurrentOrderFilter());
+                } else {
+                    this.showError(result.error || 'Gagal mengubah status pesanan');
+                }
             }
             
         } catch (error) {
@@ -1274,11 +1653,28 @@ class NestSian {
         }
     }
 
-    // ==================== CUSTOMERS ====================
-    async loadCustomers() {
+    // ==================== CUSTOMERS MANAGEMENT ====================
+    async loadCustomers(page = 1) {
         try {
-            const customers = await this.supabaseService.getCustomers();
-            this.updateCustomerList(customers);
+            this.currentCustomerPage = page;
+            const searchTerm = document.getElementById('searchCustomer')?.value || '';
+            
+            const filters = {};
+            if (searchTerm) {
+                filters.search = searchTerm;
+            }
+            
+            const result = await this.supabaseService.getCustomers(filters, page, this.customersPerPage);
+            this.currentCustomers = result;
+            this.updateCustomerList(result.data);
+            this.updateCustomerPagination(result.totalPages, page);
+            
+            // Update customer count
+            const customerCount = document.getElementById('customerCount');
+            if (customerCount) {
+                customerCount.textContent = result.total;
+            }
+            
         } catch (error) {
             console.error('Error loading customers:', error);
             this.showError('Gagal memuat pelanggan');
@@ -1291,7 +1687,7 @@ class NestSian {
         
         customerList.innerHTML = '';
         
-        if (customers.length === 0) {
+        if (!customers || customers.length === 0) {
             customerList.innerHTML = `
                 <tr>
                     <td colspan="6" class="text-center py-8 text-gray-400">
@@ -1303,7 +1699,7 @@ class NestSian {
             return;
         }
         
-        customers.slice(0, 20).forEach(customer => {
+        customers.forEach(customer => {
             const row = document.createElement('tr');
             row.className = 'hover:bg-dark-800/50 transition-colors';
             row.innerHTML = `
@@ -1336,22 +1732,57 @@ class NestSian {
         this.attachCustomerEventListeners();
     }
 
-    searchCustomers(searchTerm) {
-        const customerRows = document.querySelectorAll('#customerList tr');
-        customerRows.forEach(row => {
-            const customerName = row.querySelector('td:first-child')?.textContent.toLowerCase() || '';
-            const customerEmail = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
-            const customerPhone = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || '';
-            
-            if (customerName.includes(searchTerm.toLowerCase()) || 
-                customerEmail.includes(searchTerm.toLowerCase()) || 
-                customerPhone.includes(searchTerm.toLowerCase()) || 
-                searchTerm === '') {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
+    updateCustomerPagination(totalPages, currentPage) {
+        const pagination = document.getElementById('customerPagination');
+        if (!pagination) return;
+        
+        pagination.innerHTML = '';
+        
+        if (totalPages <= 1) return;
+        
+        // Previous button
+        const prevButton = document.createElement('button');
+        prevButton.className = `pagination-btn ${currentPage === 1 ? 'disabled' : ''}`;
+        prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        prevButton.disabled = currentPage === 1;
+        prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+                this.loadCustomers(currentPage - 1);
             }
         });
+        pagination.appendChild(prevButton);
+        
+        // Page numbers
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+            pageButton.textContent = i;
+            pageButton.addEventListener('click', () => {
+                if (i !== currentPage) {
+                    this.loadCustomers(i);
+                }
+            });
+            pagination.appendChild(pageButton);
+        }
+        
+        // Next button
+        const nextButton = document.createElement('button');
+        nextButton.className = `pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        nextButton.disabled = currentPage === totalPages;
+        nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                this.loadCustomers(currentPage + 1);
+            }
+        });
+        pagination.appendChild(nextButton);
+    }
+
+    searchCustomers(searchTerm) {
+        this.loadCustomers(1);
     }
 
     attachCustomerEventListeners() {
@@ -1372,7 +1803,154 @@ class NestSian {
         });
     }
 
-    // ==================== QRIS ====================
+    async viewCustomerDetails(customerId) {
+        try {
+            const customers = await this.supabaseService.getCustomers();
+            const customer = customers.data.find(c => c.id == customerId);
+            
+            if (!customer) {
+                this.showError('Pelanggan tidak ditemukan');
+                return;
+            }
+            
+            // Get customer orders
+            const orders = await this.supabaseService.getOrders({ search: customer.email });
+            
+            let ordersHtml = '';
+            if (orders.data && orders.data.length > 0) {
+                ordersHtml = `
+                    <h4 class="font-medium text-white mb-3">Riwayat Pesanan</h4>
+                    <div class="space-y-2">
+                        ${orders.data.slice(0, 5).map(order => `
+                            <div class="flex justify-between items-center p-3 bg-dark-800 rounded-lg">
+                                <div>
+                                    <p class="font-medium text-white">${order.id}</p>
+                                    <p class="text-sm text-gray-400">${new Date(order.created_at).toLocaleDateString('id-ID')}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-bold text-white">Rp ${(order.total_amount || 0).toLocaleString()}</p>
+                                    <span class="status-badge status-${order.status}">${order.status}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            const modalContent = `
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-medium text-white mb-3">Informasi Pelanggan</h4>
+                            <div class="space-y-2">
+                                <p><span class="text-gray-400">Nama:</span> <span class="text-white">${customer.name}</span></p>
+                                <p><span class="text-gray-400">Email:</span> <span class="text-white">${customer.email || '-'}</span></p>
+                                <p><span class="text-gray-400">Telepon:</span> <span class="text-white">${customer.phone || '-'}</span></p>
+                                <p><span class="text-gray-400">Alamat:</span> <span class="text-white">${customer.address || '-'}</span></p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-white mb-3">Statistik</h4>
+                            <div class="space-y-2">
+                                <p><span class="text-gray-400">Total Pesanan:</span> <span class="text-white">${customer.total_orders || 0}</span></p>
+                                <p><span class="text-gray-400">Total Belanja:</span> <span class="text-white">Rp ${(customer.total_spent || 0).toLocaleString()}</span></p>
+                                <p><span class="text-gray-400">Status:</span> <span class="badge ${customer.is_active ? 'badge-success' : 'badge-danger'}">${customer.is_active ? 'Aktif' : 'Nonaktif'}</span></p>
+                                <p><span class="text-gray-400">Bergabung:</span> <span class="text-white">${new Date(customer.created_at).toLocaleDateString('id-ID')}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    ${ordersHtml}
+                </div>
+            `;
+            
+            this.showModal('Detail Pelanggan', modalContent);
+            
+        } catch (error) {
+            console.error('Error viewing customer details:', error);
+            this.showError('Gagal memuat detail pelanggan');
+        }
+    }
+
+    async editCustomer(customerId) {
+        try {
+            const customers = await this.supabaseService.getCustomers();
+            const customer = customers.data.find(c => c.id == customerId);
+            
+            if (!customer) {
+                this.showError('Pelanggan tidak ditemukan');
+                return;
+            }
+            
+            const modalContent = `
+                <form id="editCustomerForm" class="space-y-4">
+                    <input type="hidden" name="id" value="${customer.id}">
+                    <div class="form-group">
+                        <label class="form-label">Nama Lengkap</label>
+                        <input type="text" name="name" value="${customer.name}" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" value="${customer.email || ''}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Telepon</label>
+                        <input type="tel" name="phone" value="${customer.phone || ''}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Alamat</label>
+                        <textarea name="address" rows="3" class="form-control">${customer.address || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="is_active" ${customer.is_active ? 'checked' : ''}>
+                            <span class="checkbox-box"></span>
+                            <span>Pelanggan Aktif</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">
+                        <i class="fas fa-save mr-2"></i>Simpan Perubahan
+                    </button>
+                </form>
+            `;
+            
+            const modal = this.showModal('Edit Pelanggan', modalContent);
+            
+            // Add form submit event
+            setTimeout(() => {
+                const form = document.getElementById('editCustomerForm');
+                if (form) {
+                    form.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(form);
+                        const customerData = {
+                            id: formData.get('id'),
+                            name: formData.get('name'),
+                            email: formData.get('email'),
+                            phone: formData.get('phone'),
+                            address: formData.get('address'),
+                            is_active: formData.get('is_active') === 'on'
+                        };
+                        
+                        try {
+                            await this.supabaseService.saveCustomer(customerData);
+                            this.showSuccess('Data pelanggan berhasil diperbarui');
+                            this.loadCustomers(this.currentCustomerPage);
+                            modal.remove();
+                        } catch (error) {
+                            console.error('Error updating customer:', error);
+                            this.showError('Gagal memperbarui data pelanggan');
+                        }
+                    });
+                }
+            }, 100);
+            
+        } catch (error) {
+            console.error('Error editing customer:', error);
+            this.showError('Gagal memuat data pelanggan');
+        }
+    }
+
+    // ==================== QRIS MANAGEMENT ====================
     async loadQrisSettings() {
         try {
             const settings = await this.supabaseService.getSettings();
@@ -1487,12 +2065,10 @@ class NestSian {
             
             if (downloadQr) {
                 downloadQr.disabled = false;
-                downloadQr.classList.remove('disabled:opacity-50', 'disabled:cursor-not-allowed');
             }
             
             if (copyQr) {
                 copyQr.disabled = false;
-                copyQr.classList.remove('disabled:opacity-50', 'disabled:cursor-not-allowed');
             }
             
             // Store QR data
@@ -1532,7 +2108,6 @@ class NestSian {
 
     calculateCRC16(str) {
         // Simplified CRC16 calculation
-        // In production, use proper CRC16 implementation
         let crc = 0xFFFF;
         for (let i = 0; i < str.length; i++) {
             crc ^= str.charCodeAt(i) << 8;
@@ -1563,6 +2138,13 @@ class NestSian {
                     previewStatus.textContent = 'Kedaluwarsa';
                     previewStatus.className = 'text-red-400 font-medium';
                 }
+                
+                // Disable buttons
+                const downloadQr = document.getElementById('downloadQr');
+                const copyQr = document.getElementById('copyQr');
+                
+                if (downloadQr) downloadQr.disabled = true;
+                if (copyQr) copyQr.disabled = true;
                 
                 return;
             }
@@ -1625,7 +2207,7 @@ class NestSian {
         }
     }
 
-    // ==================== SETTINGS ====================
+    // ==================== SETTINGS MANAGEMENT ====================
     async loadSettings() {
         try {
             const settings = await this.supabaseService.getSettings();
@@ -1658,6 +2240,35 @@ class NestSian {
                 if (systemLogo) systemLogo.value = settings.system.logo || '';
                 if (systemTimezone) systemTimezone.value = settings.system.timezone || '';
                 if (systemCurrency) systemCurrency.value = settings.system.currency || '';
+            }
+            
+            // Hero settings
+            if (settings.hero) {
+                const heroTitle = document.getElementById('heroTitle');
+                const heroSubtitle = document.getElementById('heroSubtitle');
+                const heroButton1 = document.getElementById('heroButton1');
+                const heroButton2 = document.getElementById('heroButton2');
+                const heroFeatures = document.getElementById('heroFeatures');
+                
+                if (heroTitle) heroTitle.value = settings.hero.title || '';
+                if (heroSubtitle) heroSubtitle.value = settings.hero.subtitle || '';
+                if (heroButton1) heroButton1.value = settings.hero.button1 || '';
+                if (heroButton2) heroButton2.value = settings.hero.button2 || '';
+                
+                if (heroFeatures && settings.hero.features) {
+                    heroFeatures.innerHTML = '';
+                    settings.hero.features.forEach((feature, index) => {
+                        const featureHtml = `
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="text" name="feature_name_${index}" value="${feature.name}" 
+                                       class="form-control text-sm" placeholder="Nama Fitur">
+                                <input type="text" name="feature_icon_${index}" value="${feature.icon}" 
+                                       class="form-control text-sm" placeholder="fas fa-icon">
+                            </div>
+                        `;
+                        heroFeatures.innerHTML += featureHtml;
+                    });
+                }
             }
             
             // Maintenance settings
@@ -1730,6 +2341,31 @@ class NestSian {
         e.preventDefault();
         
         try {
+            const heroFeatures = [];
+            const featureInputs = document.querySelectorAll('#heroFeatures input');
+            
+            for (let i = 0; i < featureInputs.length; i += 2) {
+                const nameInput = featureInputs[i];
+                const iconInput = featureInputs[i + 1];
+                
+                if (nameInput && iconInput && nameInput.value && iconInput.value) {
+                    heroFeatures.push({
+                        name: nameInput.value,
+                        icon: iconInput.value
+                    });
+                }
+            }
+            
+            const heroSettings = {
+                title: document.getElementById('heroTitle').value,
+                subtitle: document.getElementById('heroSubtitle').value,
+                button1: document.getElementById('heroButton1').value,
+                button2: document.getElementById('heroButton2').value,
+                features: heroFeatures
+            };
+            
+            await this.supabaseService.saveSetting('hero', heroSettings);
+            
             this.showSuccess('Hero section berhasil diperbarui!');
             
         } catch (error) {
@@ -1767,6 +2403,497 @@ class NestSian {
         }
     }
 
+    refreshWebsitePreview() {
+        const previewFrame = document.getElementById('websitePreview');
+        if (previewFrame) {
+            previewFrame.src = window.location.href.split('#')[0] + '?preview=' + Date.now();
+        }
+    }
+
+    // ==================== SHOPPING CART ====================
+    loadCart() {
+        try {
+            const cart = JSON.parse(localStorage.getItem('nestsian_cart') || '[]');
+            this.currentCart = cart;
+            this.updateCartCount();
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            this.currentCart = [];
+        }
+    }
+
+    saveCart() {
+        try {
+            localStorage.setItem('nestsian_cart', JSON.stringify(this.currentCart));
+            this.updateCartCount();
+        } catch (error) {
+            console.error('Error saving cart:', error);
+        }
+    }
+
+    async addToCart(productId) {
+        try {
+            const product = await this.supabaseService.getProductById(productId);
+            
+            if (!product) {
+                this.showError('Produk tidak ditemukan');
+                return;
+            }
+            
+            if (product.stock < 1) {
+                this.showError('Stok produk habis');
+                return;
+            }
+            
+            // Check if product already in cart
+            const existingItem = this.currentCart.find(item => item.id === product.id);
+            
+            if (existingItem) {
+                if (existingItem.quantity >= product.stock) {
+                    this.showError('Stok tidak mencukupi');
+                    return;
+                }
+                existingItem.quantity += 1;
+            } else {
+                this.currentCart.push({
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    image_url: product.image_url,
+                    quantity: 1,
+                    stock: product.stock
+                });
+            }
+            
+            this.saveCart();
+            this.showSuccess(`${product.name} ditambahkan ke keranjang`);
+            
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            this.showError('Gagal menambahkan ke keranjang');
+        }
+    }
+
+    removeFromCart(productId) {
+        this.currentCart = this.currentCart.filter(item => item.id !== productId);
+        this.saveCart();
+        this.updateCartModal();
+    }
+
+    updateCartQuantity(productId, quantity) {
+        const item = this.currentCart.find(item => item.id === productId);
+        if (item) {
+            if (quantity < 1) {
+                this.removeFromCart(productId);
+            } else if (quantity <= item.stock) {
+                item.quantity = quantity;
+                this.saveCart();
+                this.updateCartModal();
+            } else {
+                this.showError('Stok tidak mencukupi');
+            }
+        }
+    }
+
+    updateCartCount() {
+        const cartCount = document.getElementById('cartCount');
+        if (cartCount) {
+            const totalItems = this.currentCart.reduce((sum, item) => sum + item.quantity, 0);
+            cartCount.textContent = totalItems;
+        }
+    }
+
+    showCartModal() {
+        this.updateCartModal();
+        document.getElementById('cartModal').classList.remove('hidden');
+    }
+
+    hideCartModal() {
+        document.getElementById('cartModal').classList.add('hidden');
+    }
+
+    updateCartModal() {
+        const cartItems = document.getElementById('cartItems');
+        const cartTotal = document.getElementById('cartTotal');
+        const checkoutBtn = document.getElementById('checkoutBtn');
+        
+        if (!cartItems || !cartTotal || !checkoutBtn) return;
+        
+        if (this.currentCart.length === 0) {
+            cartItems.innerHTML = `
+                <div class="text-center py-8 text-gray-400">
+                    <i class="fas fa-shopping-cart text-4xl mb-4"></i>
+                    <p>Keranjang belanja kosong</p>
+                </div>
+            `;
+            cartTotal.textContent = 'Rp 0';
+            checkoutBtn.disabled = true;
+            return;
+        }
+        
+        let total = 0;
+        cartItems.innerHTML = '';
+        
+        this.currentCart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            total += itemTotal;
+            
+            const cartItem = document.createElement('div');
+            cartItem.className = 'flex items-center space-x-4 p-4 bg-dark-800 rounded-lg';
+            cartItem.innerHTML = `
+                <img src="${item.image_url}" alt="${item.name}" class="w-16 h-16 rounded-lg object-cover">
+                <div class="flex-1">
+                    <h4 class="font-medium text-white">${item.name}</h4>
+                    <p class="text-primary-400 font-bold">Rp ${item.price.toLocaleString()}</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <button class="btn btn-sm btn-outline decrease-quantity" data-id="${item.id}">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span class="text-white font-medium w-8 text-center">${item.quantity}</span>
+                    <button class="btn btn-sm btn-outline increase-quantity" data-id="${item.id}">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger remove-item" data-id="${item.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            cartItems.appendChild(cartItem);
+        });
+        
+        cartTotal.textContent = `Rp ${total.toLocaleString()}`;
+        checkoutBtn.disabled = false;
+        
+        // Add event listeners
+        document.querySelectorAll('.decrease-quantity').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.target.closest('button').dataset.id;
+                const item = this.currentCart.find(item => item.id == productId);
+                if (item) {
+                    this.updateCartQuantity(item.id, item.quantity - 1);
+                }
+            });
+        });
+        
+        document.querySelectorAll('.increase-quantity').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.target.closest('button').dataset.id;
+                const item = this.currentCart.find(item => item.id == productId);
+                if (item) {
+                    this.updateCartQuantity(item.id, item.quantity + 1);
+                }
+            });
+        });
+        
+        document.querySelectorAll('.remove-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.target.closest('button').dataset.id;
+                this.removeFromCart(productId);
+            });
+        });
+    }
+
+    showCheckoutModal() {
+        if (this.currentCart.length === 0) {
+            this.showError('Keranjang belanja kosong');
+            return;
+        }
+        
+        document.getElementById('checkoutModal').classList.remove('hidden');
+    }
+
+    hideCheckoutModal() {
+        document.getElementById('checkoutModal').classList.add('hidden');
+    }
+
+    async handleCheckout(e) {
+        e.preventDefault();
+        
+        const form = e.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Validation
+        if (!data.name || !data.email || !data.phone || !data.address) {
+            this.showError('Silakan isi semua field yang wajib diisi');
+            return;
+        }
+        
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(data.email)) {
+            this.showError('Format email tidak valid');
+            return;
+        }
+        
+        try {
+            // Calculate total
+            const total = this.currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            // Create order
+            const order = {
+                customer_name: data.name,
+                customer_email: data.email,
+                customer_phone: data.phone,
+                total_amount: total,
+                status: 'pending',
+                payment_method: data.payment_method,
+                shipping_address: data.address,
+                notes: data.notes || '',
+                order_items: this.currentCart.map(item => ({
+                    product_id: item.id,
+                    quantity: item.quantity,
+                    price: item.price
+                }))
+            };
+            
+            const savedOrder = await this.supabaseService.saveOrder(order);
+            
+            if (savedOrder) {
+                // Clear cart
+                this.currentCart = [];
+                this.saveCart();
+                this.updateCartCount();
+                
+                // Hide modals
+                this.hideCartModal();
+                this.hideCheckoutModal();
+                
+                // Reset form
+                form.reset();
+                
+                // Show success message
+                this.showSuccess('Pesanan berhasil dibuat! ID Pesanan: ' + savedOrder.id);
+                
+                // If logged in, reload orders
+                if (this.currentUser) {
+                    this.loadOrders();
+                }
+            } else {
+                throw new Error('Gagal menyimpan pesanan');
+            }
+            
+        } catch (error) {
+            console.error('Error processing checkout:', error);
+            this.showError('Gagal memproses pesanan. Silakan coba lagi.');
+        }
+    }
+
+    // ==================== REPORTS & ANALYTICS ====================
+    async updateSalesChart(days = 7) {
+        try {
+            const chartData = await this.supabaseService.getSalesChartData(days);
+            
+            const canvas = document.getElementById('salesChartCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Destroy existing chart
+            if (this.chart) {
+                this.chart.destroy();
+            }
+            
+            // Create new chart
+            this.chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.dates.map(date => new Date(date).toLocaleDateString('id-ID', { 
+                        month: 'short', 
+                        day: 'numeric' 
+                    })),
+                    datasets: [{
+                        label: 'Penjualan (Rp)',
+                        data: chartData.amounts,
+                        borderColor: '#0080ff',
+                        backgroundColor: 'rgba(0, 128, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.3)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(51, 65, 85, 0.3)'
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                callback: function(value) {
+                                    return 'Rp ' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+        } catch (error) {
+            console.error('Error updating sales chart:', error);
+            const chartContainer = document.getElementById('salesChart');
+            if (chartContainer) {
+                chartContainer.innerHTML = `
+                    <div class="chart-placeholder">
+                        <div class="text-center">
+                            <i class="fas fa-chart-line text-4xl mb-4 text-gray-500"></i>
+                            <p class="text-gray-400">Gagal memuat data chart</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+    }
+
+    async updateTopProducts() {
+        try {
+            const topProducts = await this.supabaseService.getTopProducts(5);
+            const container = document.getElementById('topProducts');
+            
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (!topProducts || topProducts.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-star text-4xl mb-4"></i>
+                        <p>Belum ada data produk terlaris</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            topProducts.forEach((product, index) => {
+                const rankColors = ['bg-yellow-500', 'bg-gray-400', 'bg-orange-500'];
+                const rankColor = rankColors[index] || 'bg-dark-600';
+                
+                const item = document.createElement('div');
+                item.className = 'flex items-center space-x-4 p-3 bg-dark-800 rounded-lg';
+                item.innerHTML = `
+                    <div class="w-10 h-10 rounded-full ${rankColor} flex items-center justify-center text-white font-bold">
+                        ${index + 1}
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-medium text-white">${product.name}</h4>
+                        <p class="text-sm text-gray-400">Terjual: ${product.total_quantity || 0}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-primary-400 font-bold">Rp ${product.price.toLocaleString()}</p>
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+            
+        } catch (error) {
+            console.error('Error updating top products:', error);
+        }
+    }
+
+    async updateReportDetails(period) {
+        try {
+            const filters = {};
+            const now = new Date();
+            
+            switch (period) {
+                case 'today':
+                    filters.start_date = now.toISOString().split('T')[0];
+                    filters.end_date = now.toISOString().split('T')[0];
+                    break;
+                case 'week':
+                    const weekAgo = new Date(now);
+                    weekAgo.setDate(now.getDate() - 7);
+                    filters.start_date = weekAgo.toISOString().split('T')[0];
+                    filters.end_date = now.toISOString().split('T')[0];
+                    break;
+                case 'month':
+                    const monthAgo = new Date(now);
+                    monthAgo.setMonth(now.getMonth() - 1);
+                    filters.start_date = monthAgo.toISOString().split('T')[0];
+                    filters.end_date = now.toISOString().split('T')[0];
+                    break;
+                case 'quarter':
+                    const quarterAgo = new Date(now);
+                    quarterAgo.setMonth(now.getMonth() - 3);
+                    filters.start_date = quarterAgo.toISOString().split('T')[0];
+                    filters.end_date = now.toISOString().split('T')[0];
+                    break;
+            }
+            
+            const result = await this.supabaseService.getOrders(filters, 1, 50);
+            this.updateReportTable(result.data);
+            
+        } catch (error) {
+            console.error('Error updating report details:', error);
+        }
+    }
+
+    updateReportTable(orders) {
+        const reportDetails = document.getElementById('reportDetails');
+        if (!reportDetails) return;
+        
+        reportDetails.innerHTML = '';
+        
+        if (!orders || orders.length === 0) {
+            reportDetails.innerHTML = `
+                <tr>
+                    <td colspan="7" class="text-center py-8 text-gray-400">
+                        <i class="fas fa-file-alt text-4xl mb-4"></i>
+                        <p>Tidak ada data laporan untuk periode ini</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        orders.forEach(order => {
+            const statusClass = {
+                'pending': 'bg-yellow-900/30 text-yellow-400',
+                'processing': 'bg-blue-900/30 text-blue-400',
+                'completed': 'bg-green-900/30 text-green-400',
+                'cancelled': 'bg-red-900/30 text-red-400'
+            }[order.status] || 'bg-gray-900/30 text-gray-400';
+            
+            const row = document.createElement('tr');
+            row.className = 'border-b border-dark-700';
+            row.innerHTML = `
+                <td class="py-3 text-gray-300">
+                    ${new Date(order.created_at).toLocaleDateString('id-ID')}
+                </td>
+                <td class="py-3">
+                    <span class="text-sm text-primary-400 font-medium">${order.id}</span>
+                </td>
+                <td class="py-3 text-gray-300">${order.customer_name}</td>
+                <td class="py-3 text-gray-300">${order.order_items?.length || 1} item</td>
+                <td class="py-3 text-gray-300">Rp ${(order.total_amount || 0).toLocaleString()}</td>
+                <td class="py-3">
+                    <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
+                        ${order.status}
+                    </span>
+                </td>
+            `;
+            reportDetails.appendChild(row);
+        });
+    }
+
     // ==================== CONTACT FORM ====================
     async handleContactSubmit(e) {
         e.preventDefault();
@@ -1789,18 +2916,7 @@ class NestSian {
         }
         
         try {
-            // Save contact message
-            if (this.supabaseService.initialized) {
-                await this.supabaseService.supabase
-                    .from('contact_messages')
-                    .insert([{
-                        name: data.name,
-                        email: data.email,
-                        subject: data.subject,
-                        message: data.message,
-                        created_at: new Date().toISOString()
-                    }]);
-            }
+            await this.supabaseService.saveContactMessage(data);
             
             this.showSuccess('Pesan Anda telah terkirim! Kami akan menghubungi Anda segera.');
             form.reset();
@@ -1849,6 +2965,9 @@ class NestSian {
                     this.loadProducts();
                     this.loadCategories();
                     break;
+                case 'categories':
+                    this.loadCategories();
+                    break;
                 case 'orders':
                     this.loadOrders();
                     break;
@@ -1858,8 +2977,14 @@ class NestSian {
                 case 'qris':
                     this.loadQrisSettings();
                     break;
+                case 'reports':
+                    this.updateSalesChart(7);
+                    this.updateTopProducts();
+                    this.updateReportDetails('week');
+                    break;
                 case 'frontend':
                     this.loadSettings();
+                    this.refreshWebsitePreview();
                     break;
             }
         }
@@ -1895,11 +3020,6 @@ class NestSian {
         if (targetTab) {
             targetTab.classList.remove('hidden');
         }
-    }
-
-    cancelProductEdit() {
-        this.resetProductForm();
-        this.showSuccess('Edit produk dibatalkan');
     }
 
     startClock() {
@@ -1966,6 +3086,8 @@ class NestSian {
                 document.body.removeChild(modalContainer);
             }
         });
+        
+        return modalContainer;
     }
 
     showSuccess(message) {
@@ -1974,6 +3096,10 @@ class NestSian {
 
     showError(message) {
         this.showToast(message, 'error');
+    }
+
+    showInfo(message) {
+        this.showToast(message, 'info');
     }
 
     showToast(message, type = 'info') {
@@ -2017,79 +3143,6 @@ class NestSian {
                 }
             }, 300);
         }, 3000);
-    }
-
-    // ==================== PLACEHOLDER METHODS ====================
-    startRealtimeUpdates() {
-        console.log('Realtime updates started');
-        // Implement WebSocket or polling for realtime updates
-    }
-
-    updateSalesChart(period) {
-        console.log('Updating sales chart for period:', period);
-        // Implement chart update
-        const chartContainer = document.getElementById('salesChart');
-        if (chartContainer) {
-            chartContainer.innerHTML = `
-                <div class="chart-placeholder">
-                    <div class="text-center">
-                        <i class="fas fa-chart-line text-4xl mb-4 text-gray-500"></i>
-                        <p class="text-gray-400">Chart penjualan akan ditampilkan di sini</p>
-                        <p class="text-sm text-gray-500 mt-2">Periode: ${period} hari</p>
-                    </div>
-                </div>
-            `;
-        }
-    }
-
-    updateReportDetails(period) {
-        console.log('Updating report details for period:', period);
-        // Implement report update
-        const reportDetails = document.getElementById('reportDetails');
-        if (reportDetails) {
-            reportDetails.innerHTML = `
-                <tr>
-                    <td colspan="7" class="text-center py-8 text-gray-400">
-                        <i class="fas fa-file-alt text-4xl mb-4"></i>
-                        <p>Laporan akan ditampilkan di sini</p>
-                        <p class="text-sm text-gray-500 mt-2">Periode: ${period}</p>
-                    </td>
-                </tr>
-            `;
-        }
-    }
-
-    viewCustomerDetails(customerId) {
-        console.log('Viewing customer details:', customerId);
-        this.showModal('Detail Pelanggan', `<p>Detail pelanggan ID: ${customerId}</p>`);
-    }
-
-    editCustomer(customerId) {
-        console.log('Editing customer:', customerId);
-        this.showModal('Edit Pelanggan', `<p>Edit pelanggan ID: ${customerId}</p>`);
-    }
-
-    async checkMaintenanceMode() {
-        try {
-            const settings = await this.supabaseService.getSettings();
-            const maintenance = settings.maintenance;
-            
-            if (maintenance?.enabled) {
-                const maintenanceMode = document.getElementById('maintenanceMode');
-                if (maintenanceMode) {
-                    maintenanceMode.classList.remove('hidden');
-                }
-                
-                if (maintenance.eta) {
-                    const maintenanceEta = document.getElementById('maintenanceEta');
-                    if (maintenanceEta) {
-                        maintenanceEta.textContent = new Date(maintenance.eta).toLocaleString('id-ID');
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Error checking maintenance mode:', error);
-        }
     }
 }
 

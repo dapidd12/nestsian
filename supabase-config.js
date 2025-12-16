@@ -16,7 +16,7 @@ class SupabaseService {
         try {
             console.log('Initializing Supabase service...');
             
-            // Cek apakah supabase library sudah dimuat
+            // Check if supabase library is loaded
             if (typeof supabase === 'undefined') {
                 console.warn('Supabase JS library not loaded, using fallback mode');
                 this.setupFallbackMode();
@@ -26,18 +26,18 @@ class SupabaseService {
             // Create client
             this.supabase = supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.KEY);
             
-            // Test connection dengan timeout
+            // Test connection with timeout
             const timeout = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Connection timeout')), 3000)
+                setTimeout(() => reject(new Error('Connection timeout')), 5000)
             );
             
-            const connectionTest = this.supabase.from('products').select('id', { count: 'exact', head: true });
-            
             try {
-                await Promise.race([connectionTest, timeout]);
-                const { error } = await connectionTest;
+                const { error } = await Promise.race([
+                    this.supabase.from('products').select('id', { count: 'exact', head: true }),
+                    timeout
+                ]);
                 
-                if (error && !error.message.includes('does not exist')) {
+                if (error) {
                     console.warn('Supabase connection error:', error.message);
                     this.setupFallbackMode();
                     return;
@@ -67,21 +67,8 @@ class SupabaseService {
     setupFallbackMode() {
         console.log('Setting up fallback mode...');
         
-        // Create mock Supabase functions
         this.supabase = {
-            from: (table) => ({
-                select: (columns, options) => this.mockSelect(table, columns, options),
-                insert: (data, options) => this.mockInsert(table, data, options),
-                update: (data) => this.mockUpdate(table, data),
-                delete: () => this.mockDelete(table),
-                upsert: (data) => this.mockUpsert(table, data),
-                eq: (column, value) => ({ select: () => this.mockSelect(table, '*', { where: { [column]: value } }) }),
-                gte: (column, value) => ({ select: () => this.mockSelect(table, '*', { where: { [column]: { gte: value } } }) }),
-                lte: (column, value) => ({ select: () => this.mockSelect(table, '*', { where: { [column]: { lte: value } } }) }),
-                ilike: (column, pattern) => ({ select: () => this.mockSelect(table, '*', { where: { [column]: { ilike: pattern } } }) }),
-                or: (conditions) => ({ select: () => this.mockSelect(table, '*', { where: conditions }) }),
-                order: (column, options) => ({ select: () => this.mockSelect(table, '*', { order: { column, options } }) })
-            }),
+            from: (table) => this.createMockQueryBuilder(table),
             auth: {
                 signInWithPassword: (credentials) => this.mockSignIn(credentials),
                 signOut: () => this.mockSignOut(),
@@ -96,7 +83,34 @@ class SupabaseService {
         console.log('Fallback mode activated');
     }
 
-    // Authentication Methods
+    createMockQueryBuilder(table) {
+        return {
+            select: (columns = '*', options = {}) => this.mockSelect(table, columns, options),
+            insert: (data, options) => this.mockInsert(table, data, options),
+            update: (data) => this.mockUpdate(table, data),
+            delete: () => this.mockDelete(table),
+            upsert: (data) => this.mockUpsert(table, data),
+            eq: (column, value) => ({ 
+                select: (columns = '*') => this.mockSelect(table, columns, { where: { [column]: value } }),
+                update: (data) => this.mockUpdate(table, data, { [column]: value }),
+                delete: () => this.mockDelete(table, { [column]: value })
+            }),
+            gt: (column, value) => ({ select: (columns = '*') => this.mockSelect(table, columns, { where: { [column]: { gt: value } } }) }),
+            gte: (column, value) => ({ select: (columns = '*') => this.mockSelect(table, columns, { where: { [column]: { gte: value } } }) }),
+            lt: (column, value) => ({ select: (columns = '*') => this.mockSelect(table, columns, { where: { [column]: { lt: value } } }) }),
+            lte: (column, value) => ({ select: (columns = '*') => this.mockSelect(table, columns, { where: { [column]: { lte: value } } }) }),
+            ilike: (column, pattern) => ({ select: (columns = '*') => this.mockSelect(table, columns, { where: { [column]: { ilike: pattern } } }) }),
+            or: (conditions) => ({ select: (columns = '*') => this.mockSelect(table, columns, { where: conditions }) }),
+            order: (column, { ascending = true } = {}) => ({ 
+                select: (columns = '*') => this.mockSelect(table, columns, { order: { column, ascending } })
+            }),
+            limit: (count) => ({ 
+                select: (columns = '*') => this.mockSelect(table, columns, { limit: count })
+            })
+        };
+    }
+
+    // ==================== AUTHENTICATION METHODS ====================
     async signIn(email, password) {
         console.log('Sign in attempt:', email);
         
@@ -121,7 +135,6 @@ class SupabaseService {
                 return { success: false, error: 'Authentication error' };
             }
         } else {
-            // Mock authentication for fallback
             return await this.mockSignIn({ email, password });
         }
     }
@@ -156,13 +169,13 @@ class SupabaseService {
         return this.currentUser;
     }
 
-    // Products Methods
-    async getProducts(filters = {}) {
+    // ==================== PRODUCT METHODS ====================
+    async getProducts(filters = {}, page = 1, limit = 10) {
         try {
             if (this.initialized) {
                 let query = this.supabase
                     .from('products')
-                    .select('*, categories(name, icon)');
+                    .select('*, categories(name, icon)', { count: 'exact' });
                 
                 // Apply filters
                 if (filters.category_id) {
@@ -174,37 +187,100 @@ class SupabaseService {
                 }
                 
                 if (filters.search) {
-                    query = query.ilike('name', `%${filters.search}%`);
+                    query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
                 }
                 
-                const { data, error } = await query.order('created_at', { ascending: false });
+                if (filters.stock_low) {
+                    query = query.lte('stock', 5);
+                }
+                
+                if (filters.stock_out) {
+                    query = query.eq('stock', 0);
+                }
+                
+                // Apply pagination
+                const start = (page - 1) * limit;
+                query = query.range(start, start + limit - 1);
+                
+                // Apply ordering
+                query = query.order('created_at', { ascending: false });
+                
+                const { data, error, count } = await query;
                 
                 if (error) {
                     console.error('Supabase getProducts error:', error);
                     throw error;
                 }
-                return data || [];
+                
+                return {
+                    data: data || [],
+                    total: count || 0,
+                    page,
+                    limit,
+                    totalPages: Math.ceil((count || 0) / limit)
+                };
                 
             } else {
-                return this.getLocalProducts();
+                return this.getLocalProducts(filters, page, limit);
             }
         } catch (error) {
             console.error('Error getting products:', error);
-            return this.getLocalProducts();
+            return this.getLocalProducts(filters, page, limit);
+        }
+    }
+
+    async getProductById(id) {
+        try {
+            if (this.initialized) {
+                const { data, error } = await this.supabase
+                    .from('products')
+                    .select('*, categories(*)')
+                    .eq('id', id)
+                    .single();
+                
+                if (error) throw error;
+                return data;
+                
+            } else {
+                return this.getLocalProductById(id);
+            }
+        } catch (error) {
+            console.error('Error getting product by ID:', error);
+            return this.getLocalProductById(id);
         }
     }
 
     async saveProduct(product) {
         try {
             if (this.initialized) {
-                const { data, error } = await this.supabase
-                    .from('products')
-                    .upsert(product)
-                    .select()
-                    .single();
+                const productData = {
+                    ...product,
+                    updated_at: new Date().toISOString()
+                };
                 
-                if (error) throw error;
-                return data;
+                if (product.id) {
+                    const { data, error } = await this.supabase
+                        .from('products')
+                        .update(productData)
+                        .eq('id', product.id)
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    return data;
+                } else {
+                    const { data, error } = await this.supabase
+                        .from('products')
+                        .insert([{
+                            ...productData,
+                            created_at: new Date().toISOString()
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    return data;
+                }
                 
             } else {
                 return this.saveLocalProduct(product);
@@ -237,7 +313,35 @@ class SupabaseService {
         }
     }
 
-    // Categories Methods
+    async updateProductStock(id, quantity) {
+        try {
+            const product = await this.getProductById(id);
+            if (!product) throw new Error('Product not found');
+            
+            const newStock = Math.max(0, product.stock + quantity);
+            
+            if (this.initialized) {
+                const { error } = await this.supabase
+                    .from('products')
+                    .update({ 
+                        stock: newStock,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', id);
+                
+                if (error) throw error;
+            } else {
+                this.updateLocalProductStock(id, newStock);
+            }
+            
+            return { success: true, newStock };
+        } catch (error) {
+            console.error('Error updating product stock:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ==================== CATEGORY METHODS ====================
     async getCategories() {
         try {
             if (this.initialized) {
@@ -261,14 +365,34 @@ class SupabaseService {
     async saveCategory(category) {
         try {
             if (this.initialized) {
-                const { data, error } = await this.supabase
-                    .from('categories')
-                    .upsert(category)
-                    .select()
-                    .single();
+                const categoryData = {
+                    ...category,
+                    updated_at: new Date().toISOString()
+                };
                 
-                if (error) throw error;
-                return data;
+                if (category.id) {
+                    const { data, error } = await this.supabase
+                        .from('categories')
+                        .update(categoryData)
+                        .eq('id', category.id)
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    return data;
+                } else {
+                    const { data, error } = await this.supabase
+                        .from('categories')
+                        .insert([{
+                            ...categoryData,
+                            created_at: new Date().toISOString()
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    return data;
+                }
                 
             } else {
                 return this.saveLocalCategory(category);
@@ -279,13 +403,51 @@ class SupabaseService {
         }
     }
 
-    // Orders Methods
-    async getOrders(filters = {}) {
+    async deleteCategory(id) {
+        try {
+            if (this.initialized) {
+                // Check if category has products
+                const { data: products, error: productsError } = await this.supabase
+                    .from('products')
+                    .select('id')
+                    .eq('category_id', id)
+                    .limit(1);
+                
+                if (productsError) throw productsError;
+                
+                if (products && products.length > 0) {
+                    return { 
+                        success: false, 
+                        error: 'Kategori memiliki produk. Pindahkan produk terlebih dahulu.' 
+                    };
+                }
+                
+                const { error } = await this.supabase
+                    .from('categories')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                return { success: true };
+                
+            } else {
+                this.deleteLocalCategory(id);
+                return { success: true };
+            }
+        } catch (error) {
+            console.error('Error deleting category:', error);
+            this.deleteLocalCategory(id);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ==================== ORDER METHODS ====================
+    async getOrders(filters = {}, page = 1, limit = 10) {
         try {
             if (this.initialized) {
                 let query = this.supabase
                     .from('orders')
-                    .select('*');
+                    .select('*, order_items(*, products(name, price))', { count: 'exact' });
                 
                 if (filters.status) {
                     query = query.eq('status', filters.status);
@@ -296,76 +458,251 @@ class SupabaseService {
                                .lte('created_at', filters.end_date);
                 }
                 
-                const { data, error } = await query.order('created_at', { ascending: false });
+                if (filters.search) {
+                    query = query.or(`id.ilike.%${filters.search}%,customer_name.ilike.%${filters.search}%,customer_email.ilike.%${filters.search}%`);
+                }
+                
+                // Apply pagination
+                const start = (page - 1) * limit;
+                query = query.range(start, start + limit - 1);
+                
+                query = query.order('created_at', { ascending: false });
+                
+                const { data, error, count } = await query;
                 
                 if (error) throw error;
-                return data || [];
+                
+                return {
+                    data: data || [],
+                    total: count || 0,
+                    page,
+                    limit,
+                    totalPages: Math.ceil((count || 0) / limit)
+                };
                 
             } else {
-                return this.getLocalOrders();
+                return this.getLocalOrders(filters, page, limit);
             }
         } catch (error) {
             console.error('Error getting orders:', error);
-            return this.getLocalOrders();
+            return this.getLocalOrders(filters, page, limit);
+        }
+    }
+
+    async getOrderById(id) {
+        try {
+            if (this.initialized) {
+                const { data, error } = await this.supabase
+                    .from('orders')
+                    .select('*, order_items(*, products(name, price, image_url))')
+                    .eq('id', id)
+                    .single();
+                
+                if (error) throw error;
+                return data;
+                
+            } else {
+                return this.getLocalOrderById(id);
+            }
+        } catch (error) {
+            console.error('Error getting order by ID:', error);
+            return this.getLocalOrderById(id);
         }
     }
 
     async saveOrder(order) {
         try {
+            const orderData = {
+                ...order,
+                updated_at: new Date().toISOString()
+            };
+            
             if (this.initialized) {
-                const { data, error } = await this.supabase
-                    .from('orders')
-                    .upsert(order)
-                    .select()
-                    .single();
-                
-                if (error) throw error;
-                
-                // Send Telegram notification
-                await this.sendTelegramNotification(data);
-                
-                return data;
+                if (order.id) {
+                    const { data, error } = await this.supabase
+                        .from('orders')
+                        .update(orderData)
+                        .eq('id', order.id)
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    return data;
+                } else {
+                    const { data, error } = await this.supabase
+                        .from('orders')
+                        .insert([{
+                            ...orderData,
+                            created_at: new Date().toISOString()
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    // Save order items
+                    if (order.order_items && order.order_items.length > 0) {
+                        for (const item of order.order_items) {
+                            await this.supabase
+                                .from('order_items')
+                                .insert([{
+                                    order_id: data.id,
+                                    product_id: item.product_id,
+                                    quantity: item.quantity,
+                                    price: item.price,
+                                    created_at: new Date().toISOString()
+                                }]);
+                            
+                            // Update product stock
+                            await this.updateProductStock(item.product_id, -item.quantity);
+                        }
+                    }
+                    
+                    return data;
+                }
                 
             } else {
-                const savedOrder = this.saveLocalOrder(order);
-                this.simulateTelegramNotification(savedOrder);
-                return savedOrder;
+                return this.saveLocalOrder(order);
             }
         } catch (error) {
             console.error('Error saving order:', error);
-            const savedOrder = this.saveLocalOrder(order);
-            this.simulateTelegramNotification(savedOrder);
-            return savedOrder;
+            return this.saveLocalOrder(order);
         }
     }
 
-    // Customers Methods
-    async getCustomers(search = '') {
+    async updateOrderStatus(id, status) {
+        try {
+            if (this.initialized) {
+                const { error } = await this.supabase
+                    .from('orders')
+                    .update({ 
+                        status,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                return { success: true };
+                
+            } else {
+                this.updateLocalOrderStatus(id, status);
+                return { success: true };
+            }
+        } catch (error) {
+            console.error('Error updating order status:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async deleteOrder(id) {
+        try {
+            if (this.initialized) {
+                // Delete order items first
+                await this.supabase
+                    .from('order_items')
+                    .delete()
+                    .eq('order_id', id);
+                
+                // Delete order
+                const { error } = await this.supabase
+                    .from('orders')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                return { success: true };
+                
+            } else {
+                this.deleteLocalOrder(id);
+                return { success: true };
+            }
+        } catch (error) {
+            console.error('Error deleting order:', error);
+            this.deleteLocalOrder(id);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ==================== CUSTOMER METHODS ====================
+    async getCustomers(filters = {}, page = 1, limit = 10) {
         try {
             if (this.initialized) {
                 let query = this.supabase
                     .from('customers')
-                    .select('*');
+                    .select('*', { count: 'exact' });
                 
-                if (search) {
-                    query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+                if (filters.search) {
+                    query = query.or(`name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,phone.ilike.%${filters.search}%`);
                 }
                 
-                const { data, error } = await query.order('created_at', { ascending: false });
+                if (filters.is_active !== undefined) {
+                    query = query.eq('is_active', filters.is_active);
+                }
+                
+                // Apply pagination
+                const start = (page - 1) * limit;
+                query = query.range(start, start + limit - 1);
+                
+                query = query.order('created_at', { ascending: false });
+                
+                const { data, error, count } = await query;
                 
                 if (error) throw error;
-                return data || [];
+                
+                return {
+                    data: data || [],
+                    total: count || 0,
+                    page,
+                    limit,
+                    totalPages: Math.ceil((count || 0) / limit)
+                };
                 
             } else {
-                return this.getLocalCustomers();
+                return this.getLocalCustomers(filters, page, limit);
             }
         } catch (error) {
             console.error('Error getting customers:', error);
-            return this.getLocalCustomers();
+            return this.getLocalCustomers(filters, page, limit);
         }
     }
 
-    // Settings Methods
+    async saveCustomer(customer) {
+        try {
+            if (this.initialized) {
+                if (customer.id) {
+                    const { data, error } = await this.supabase
+                        .from('customers')
+                        .update(customer)
+                        .eq('id', customer.id)
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    return data;
+                } else {
+                    const { data, error } = await this.supabase
+                        .from('customers')
+                        .insert([{
+                            ...customer,
+                            created_at: new Date().toISOString()
+                        }])
+                        .select()
+                        .single();
+                    
+                    if (error) throw error;
+                    return data;
+                }
+                
+            } else {
+                return this.saveLocalCustomer(customer);
+            }
+        } catch (error) {
+            console.error('Error saving customer:', error);
+            return this.saveLocalCustomer(customer);
+        }
+    }
+
+    // ==================== SETTINGS METHODS ====================
     async getSettings() {
         try {
             if (this.initialized) {
@@ -405,7 +742,8 @@ class SupabaseService {
                     .from('settings')
                     .upsert({
                         key,
-                        value: JSON.stringify(value)
+                        value: JSON.stringify(value),
+                        updated_at: new Date().toISOString()
                     });
                 
                 if (error) throw error;
@@ -422,7 +760,7 @@ class SupabaseService {
         }
     }
 
-    // Statistics Methods
+    // ==================== STATISTICS METHODS ====================
     async getDashboardStats() {
         try {
             if (this.initialized) {
@@ -443,7 +781,7 @@ class SupabaseService {
                 
                 if (ordersError) throw ordersError;
                 
-                // Get monthly revenue (sederhana)
+                // Get monthly revenue
                 const startOfMonth = new Date();
                 startOfMonth.setDate(1);
                 startOfMonth.setHours(0, 0, 0, 0);
@@ -462,13 +800,13 @@ class SupabaseService {
                     return sum;
                 }, 0) || 0;
                 
-                // Get active customers
+                // Get active customers (customers with orders in last 30 days)
                 const thirtyDaysAgo = new Date();
                 thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
                 
                 const { data: recentOrders, error: customersError } = await this.supabase
                     .from('orders')
-                    .select('customer_email, status')
+                    .select('customer_email')
                     .gte('created_at', thirtyDaysAgo.toISOString())
                     .eq('status', 'completed');
                 
@@ -492,7 +830,205 @@ class SupabaseService {
         }
     }
 
-    // Telegram Notification
+    async getSalesChartData(days = 7) {
+        try {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - days);
+            
+            if (this.initialized) {
+                const { data, error } = await this.supabase
+                    .from('orders')
+                    .select('created_at, total_amount, status')
+                    .gte('created_at', startDate.toISOString())
+                    .lte('created_at', endDate.toISOString())
+                    .eq('status', 'completed')
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                
+                // Group by date
+                const salesByDate = {};
+                data?.forEach(order => {
+                    const date = order.created_at.split('T')[0];
+                    if (!salesByDate[date]) {
+                        salesByDate[date] = 0;
+                    }
+                    salesByDate[date] += order.total_amount || 0;
+                });
+                
+                // Create array of dates
+                const dates = [];
+                const amounts = [];
+                const currentDate = new Date(startDate);
+                
+                while (currentDate <= endDate) {
+                    const dateStr = currentDate.toISOString().split('T')[0];
+                    dates.push(dateStr);
+                    amounts.push(salesByDate[dateStr] || 0);
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
+                
+                return { dates, amounts };
+                
+            } else {
+                return this.getLocalSalesChartData(days);
+            }
+        } catch (error) {
+            console.error('Error getting sales chart data:', error);
+            return this.getLocalSalesChartData(days);
+        }
+    }
+
+    async getTopProducts(limit = 5) {
+        try {
+            if (this.initialized) {
+                const { data, error } = await this.supabase
+                    .from('order_items')
+                    .select('product_id, quantity, products(name, image_url)')
+                    .limit(limit)
+                    .order('quantity', { ascending: false });
+                
+                if (error) throw error;
+                
+                // Group by product and sum quantities
+                const productMap = {};
+                data?.forEach(item => {
+                    const productId = item.product_id;
+                    if (!productMap[productId]) {
+                        productMap[productId] = {
+                            ...item.products,
+                            total_quantity: 0
+                        };
+                    }
+                    productMap[productId].total_quantity += item.quantity || 0;
+                });
+                
+                const topProducts = Object.values(productMap)
+                    .sort((a, b) => b.total_quantity - a.total_quantity)
+                    .slice(0, limit);
+                
+                return topProducts;
+                
+            } else {
+                return this.getLocalTopProducts(limit);
+            }
+        } catch (error) {
+            console.error('Error getting top products:', error);
+            return this.getLocalTopProducts(limit);
+        }
+    }
+
+    // ==================== CONTACT MESSAGES ====================
+    async getContactMessages(filters = {}, page = 1, limit = 10) {
+        try {
+            if (this.initialized) {
+                let query = this.supabase
+                    .from('contact_messages')
+                    .select('*', { count: 'exact' });
+                
+                if (filters.is_read !== undefined) {
+                    query = query.eq('is_read', filters.is_read);
+                }
+                
+                if (filters.search) {
+                    query = query.or(`name.ilike.%${filters.search}%,email.ilike.%${filters.search}%,subject.ilike.%${filters.search}%`);
+                }
+                
+                // Apply pagination
+                const start = (page - 1) * limit;
+                query = query.range(start, start + limit - 1);
+                
+                query = query.order('created_at', { ascending: false });
+                
+                const { data, error, count } = await query;
+                
+                if (error) throw error;
+                
+                return {
+                    data: data || [],
+                    total: count || 0,
+                    page,
+                    limit,
+                    totalPages: Math.ceil((count || 0) / limit)
+                };
+                
+            } else {
+                return this.getLocalContactMessages(filters, page, limit);
+            }
+        } catch (error) {
+            console.error('Error getting contact messages:', error);
+            return this.getLocalContactMessages(filters, page, limit);
+        }
+    }
+
+    async saveContactMessage(message) {
+        try {
+            if (this.initialized) {
+                const { data, error } = await this.supabase
+                    .from('contact_messages')
+                    .insert([{
+                        ...message,
+                        created_at: new Date().toISOString()
+                    }])
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                return data;
+                
+            } else {
+                return this.saveLocalContactMessage(message);
+            }
+        } catch (error) {
+            console.error('Error saving contact message:', error);
+            return this.saveLocalContactMessage(message);
+        }
+    }
+
+    async markContactMessageAsRead(id) {
+        try {
+            if (this.initialized) {
+                const { error } = await this.supabase
+                    .from('contact_messages')
+                    .update({ is_read: true })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                return { success: true };
+                
+            } else {
+                this.markLocalContactMessageAsRead(id);
+                return { success: true };
+            }
+        } catch (error) {
+            console.error('Error marking contact message as read:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    async deleteContactMessage(id) {
+        try {
+            if (this.initialized) {
+                const { error } = await this.supabase
+                    .from('contact_messages')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                return { success: true };
+                
+            } else {
+                this.deleteLocalContactMessage(id);
+                return { success: true };
+            }
+        } catch (error) {
+            console.error('Error deleting contact message:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ==================== TELEGRAM NOTIFICATION ====================
     async sendTelegramNotification(order) {
         const telegramConfig = window.CONFIG?.TELEGRAM || {};
         
@@ -540,41 +1076,73 @@ class SupabaseService {
         }
     }
 
-    // Mock Methods for Fallback Mode
+    // ==================== MOCK METHODS FOR FALLBACK MODE ====================
     async mockSelect(table, columns = '*', options = {}) {
         return new Promise((resolve) => {
             setTimeout(() => {
                 let data = this.getMockData(table);
                 
-                // Apply simple filtering (basic mock)
-                if (options && options.where) {
-                    const where = options.where;
-                    Object.keys(where).forEach(key => {
-                        if (where[key] && typeof where[key] === 'object') {
-                            if (where[key].gte) {
-                                data = data.filter(item => item[key] >= where[key].gte);
+                // Apply filters
+                if (options.where) {
+                    Object.keys(options.where).forEach(key => {
+                        const condition = options.where[key];
+                        
+                        if (typeof condition === 'object') {
+                            if (condition.gt !== undefined) {
+                                data = data.filter(item => item[key] > condition.gt);
                             }
-                            if (where[key].lte) {
-                                data = data.filter(item => item[key] <= where[key].lte);
+                            if (condition.gte !== undefined) {
+                                data = data.filter(item => item[key] >= condition.gte);
                             }
-                            if (where[key].ilike) {
-                                const pattern = where[key].ilike.replace(/%/g, '.*');
+                            if (condition.lt !== undefined) {
+                                data = data.filter(item => item[key] < condition.lt);
+                            }
+                            if (condition.lte !== undefined) {
+                                data = data.filter(item => item[key] <= condition.lte);
+                            }
+                            if (condition.ilike !== undefined) {
+                                const pattern = condition.ilike.replace(/%/g, '.*');
                                 const regex = new RegExp(pattern, 'i');
                                 data = data.filter(item => regex.test(item[key]));
                             }
                         } else {
-                            data = data.filter(item => item[key] === where[key]);
+                            data = data.filter(item => item[key] === condition);
                         }
                     });
                 }
                 
+                // Apply ordering
+                if (options.order) {
+                    const { column, ascending = true } = options.order;
+                    data.sort((a, b) => {
+                        if (a[column] < b[column]) return ascending ? -1 : 1;
+                        if (a[column] > b[column]) return ascending ? 1 : -1;
+                        return 0;
+                    });
+                }
+                
+                // Apply limit
+                if (options.limit) {
+                    data = data.slice(0, options.limit);
+                }
+                
                 // Apply count option
-                if (options && options.count === 'exact' && options.head === true) {
+                if (options.count === 'exact' && options.head === true) {
                     resolve({ count: data.length, error: null });
                     return;
                 }
                 
-                resolve({ data, error: null });
+                // Apply range
+                if (options.range) {
+                    const [start, end] = options.range;
+                    data = data.slice(start, end + 1);
+                }
+                
+                resolve({ 
+                    data, 
+                    error: null,
+                    count: data.length
+                });
             }, 300);
         });
     }
@@ -589,11 +1157,27 @@ class SupabaseService {
                     updated_at: new Date().toISOString()
                 };
                 
+                this.saveToLocalStorage(table, mockResponse);
+                
                 if (options && options.select && options.select === 'single') {
                     resolve({ data: mockResponse, error: null });
                 } else {
                     resolve({ data: [mockResponse], error: null });
                 }
+            }, 300);
+        });
+    }
+
+    async mockUpdate(table, data, where = null) {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const mockResponse = { 
+                    ...data, 
+                    updated_at: new Date().toISOString()
+                };
+                
+                this.updateInLocalStorage(table, mockResponse, where);
+                resolve({ data: [mockResponse], error: null });
             }, 300);
         });
     }
@@ -606,22 +1190,17 @@ class SupabaseService {
                     ...data,
                     updated_at: new Date().toISOString()
                 };
+                
+                this.saveToLocalStorage(table, mockResponse);
                 resolve({ data: mockResponse, error: null });
             }, 300);
         });
     }
 
-    async mockUpdate(table, data) {
+    async mockDelete(table, where = null) {
         return new Promise((resolve) => {
             setTimeout(() => {
-                resolve({ data: [data], error: null });
-            }, 300);
-        });
-    }
-
-    async mockDelete(table) {
-        return new Promise((resolve) => {
-            setTimeout(() => {
+                this.deleteFromLocalStorage(table, where);
                 resolve({ data: null, error: null });
             }, 300);
         });
@@ -688,7 +1267,6 @@ class SupabaseService {
     }
 
     mockAuthStateChange(callback) {
-        // Simple mock for auth state changes
         setTimeout(() => {
             const storedUser = localStorage.getItem('nestsian_user');
             if (storedUser) {
@@ -699,88 +1277,160 @@ class SupabaseService {
             }
         }, 1000);
         
-        // Return unsubscribe function
         return () => {};
+    }
+
+    // ==================== LOCAL STORAGE HELPERS ====================
+    saveToLocalStorage(table, data) {
+        const key = `nestsian_${table}`;
+        const items = JSON.parse(localStorage.getItem(key) || '[]');
+        
+        if (data.id) {
+            const index = items.findIndex(item => item.id === data.id);
+            if (index !== -1) {
+                items[index] = { ...items[index], ...data };
+            } else {
+                items.push(data);
+            }
+        } else {
+            items.push({ ...data, id: Date.now() });
+        }
+        
+        localStorage.setItem(key, JSON.stringify(items));
+    }
+
+    updateInLocalStorage(table, data, where = null) {
+        const key = `nestsian_${table}`;
+        const items = JSON.parse(localStorage.getItem(key) || '[]');
+        
+        if (where) {
+            const key = Object.keys(where)[0];
+            const value = where[key];
+            const index = items.findIndex(item => item[key] === value);
+            
+            if (index !== -1) {
+                items[index] = { ...items[index], ...data };
+            }
+        } else if (data.id) {
+            const index = items.findIndex(item => item.id === data.id);
+            if (index !== -1) {
+                items[index] = { ...items[index], ...data };
+            }
+        }
+        
+        localStorage.setItem(key, JSON.stringify(items));
+    }
+
+    deleteFromLocalStorage(table, where = null) {
+        const key = `nestsian_${table}`;
+        let items = JSON.parse(localStorage.getItem(key) || '[]');
+        
+        if (where) {
+            const key = Object.keys(where)[0];
+            const value = where[key];
+            items = items.filter(item => item[key] !== value);
+        } else {
+            items = [];
+        }
+        
+        localStorage.setItem(key, JSON.stringify(items));
     }
 
     getMockData(table) {
         const mockData = {
-            products: this.getLocalProducts(),
+            products: this.getLocalProducts().data,
             categories: this.getLocalCategories(),
-            orders: this.getLocalOrders(),
-            customers: this.getLocalCustomers(),
+            orders: this.getLocalOrders().data,
+            customers: this.getLocalCustomers().data,
             settings: Object.entries(this.getLocalSettings()).map(([key, value]) => ({
                 key,
                 value: JSON.stringify(value)
-            }))
+            })),
+            contact_messages: this.getLocalContactMessages().data,
+            order_items: this.getLocalOrderItems()
         };
 
         return mockData[table] || [];
     }
 
-    // Local Storage Methods (Fallback)
-    getLocalProducts() {
+    // ==================== LOCAL STORAGE METHODS ====================
+    getLocalProducts(filters = {}, page = 1, limit = 10) {
         try {
             const products = JSON.parse(localStorage.getItem('nestsian_products') || '[]');
-            if (!products.length) {
-                // Initialize with sample data
-                const sampleProducts = [
-                    {
-                        id: 1,
-                        name: 'Security Panel Basic',
-                        description: 'Basic security panel for small businesses with real-time monitoring',
-                        price: 149000,
-                        stock: 15,
-                        category_id: 1,
-                        image_url: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                        weight: 500,
-                        featured: true,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                        categories: { name: 'Security', icon: 'fas fa-shield-alt' }
-                    },
-                    {
-                        id: 2,
-                        name: 'Enterprise Firewall',
-                        description: 'Advanced firewall solution for enterprise networks with threat protection',
-                        price: 499000,
-                        stock: 8,
-                        category_id: 2,
-                        image_url: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                        weight: 1500,
-                        featured: true,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                        categories: { name: 'Networking', icon: 'fas fa-network-wired' }
-                    },
-                    {
-                        id: 3,
-                        name: 'VPN Premium',
-                        description: 'Secure VPN connection for remote workers with unlimited bandwidth',
-                        price: 89000,
-                        stock: 45,
-                        category_id: 1,
-                        image_url: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-                        weight: 0,
-                        featured: true,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                        categories: { name: 'Security', icon: 'fas fa-shield-alt' }
-                    }
-                ];
-                localStorage.setItem('nestsian_products', JSON.stringify(sampleProducts));
-                return sampleProducts;
+            let filteredProducts = [...products];
+            
+            // Apply filters
+            if (filters.category_id) {
+                filteredProducts = filteredProducts.filter(p => p.category_id == filters.category_id);
             }
-            return products;
+            
+            if (filters.featured !== undefined) {
+                filteredProducts = filteredProducts.filter(p => p.featured == filters.featured);
+            }
+            
+            if (filters.search) {
+                const searchTerm = filters.search.toLowerCase();
+                filteredProducts = filteredProducts.filter(p => 
+                    p.name.toLowerCase().includes(searchTerm) || 
+                    p.description.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (filters.stock_low) {
+                filteredProducts = filteredProducts.filter(p => p.stock <= 5 && p.stock > 0);
+            }
+            
+            if (filters.stock_out) {
+                filteredProducts = filteredProducts.filter(p => p.stock === 0);
+            }
+            
+            // Apply pagination
+            const start = (page - 1) * limit;
+            const end = start + limit;
+            const paginatedProducts = filteredProducts.slice(start, end);
+            
+            // Get categories for each product
+            const categories = this.getLocalCategories();
+            paginatedProducts.forEach(product => {
+                const category = categories.find(c => c.id == product.category_id);
+                product.categories = category || { name: 'Uncategorized', icon: 'fas fa-tag' };
+            });
+            
+            return {
+                data: paginatedProducts,
+                total: filteredProducts.length,
+                page,
+                limit,
+                totalPages: Math.ceil(filteredProducts.length / limit)
+            };
+            
         } catch (error) {
             console.error('Error getting local products:', error);
-            return [];
+            return { data: [], total: 0, page: 1, limit: 10, totalPages: 0 };
+        }
+    }
+
+    getLocalProductById(id) {
+        try {
+            const products = JSON.parse(localStorage.getItem('nestsian_products') || '[]');
+            const product = products.find(p => p.id == id);
+            
+            if (product) {
+                const categories = this.getLocalCategories();
+                const category = categories.find(c => c.id == product.category_id);
+                product.categories = category || { name: 'Uncategorized', icon: 'fas fa-tag' };
+            }
+            
+            return product;
+        } catch (error) {
+            console.error('Error getting local product by ID:', error);
+            return null;
         }
     }
 
     saveLocalProduct(product) {
         try {
-            const products = this.getLocalProducts();
+            const products = JSON.parse(localStorage.getItem('nestsian_products') || '[]');
             let updatedProduct;
             
             if (product.id) {
@@ -821,11 +1471,26 @@ class SupabaseService {
 
     deleteLocalProduct(id) {
         try {
-            const products = this.getLocalProducts();
+            const products = JSON.parse(localStorage.getItem('nestsian_products') || '[]');
             const updatedProducts = products.filter(p => p.id !== id);
             localStorage.setItem('nestsian_products', JSON.stringify(updatedProducts));
         } catch (error) {
             console.error('Error deleting local product:', error);
+        }
+    }
+
+    updateLocalProductStock(id, newStock) {
+        try {
+            const products = JSON.parse(localStorage.getItem('nestsian_products') || '[]');
+            const index = products.findIndex(p => p.id == id);
+            
+            if (index !== -1) {
+                products[index].stock = newStock;
+                products[index].updated_at = new Date().toISOString();
+                localStorage.setItem('nestsian_products', JSON.stringify(products));
+            }
+        } catch (error) {
+            console.error('Error updating local product stock:', error);
         }
     }
 
@@ -858,7 +1523,7 @@ class SupabaseService {
             if (category.id) {
                 const index = categories.findIndex(c => c.id === category.id);
                 if (index !== -1) {
-                    categories[index] = category;
+                    categories[index] = { ...categories[index], ...category };
                     updatedCategory = categories[index];
                 } else {
                     updatedCategory = { ...category, id: Date.now() };
@@ -877,95 +1542,113 @@ class SupabaseService {
         }
     }
 
-    getLocalOrders() {
+    deleteLocalCategory(id) {
+        try {
+            const categories = this.getLocalCategories();
+            const updatedCategories = categories.filter(c => c.id !== id);
+            localStorage.setItem('nestsian_categories', JSON.stringify(updatedCategories));
+        } catch (error) {
+            console.error('Error deleting local category:', error);
+        }
+    }
+
+    getLocalOrders(filters = {}, page = 1, limit = 10) {
         try {
             const orders = JSON.parse(localStorage.getItem('nestsian_orders') || '[]');
-            if (!orders.length) {
-                const sampleOrders = [
-                    {
-                        id: 'NS-20240115-0001',
-                        customer_name: 'John Doe',
-                        customer_email: 'john.doe@example.com',
-                        customer_phone: '+628123456789',
-                        total_amount: 164000,
-                        status: 'completed',
-                        payment_method: 'qris',
-                        shipping_address: 'Jl. Sudirman No. 123, Jakarta',
-                        created_at: new Date('2024-01-15').toISOString(),
-                        updated_at: new Date('2024-01-15').toISOString(),
-                        order_items: [
-                            { product_name: 'Security Panel Basic', quantity: 1, price: 149000 }
-                        ]
-                    },
-                    {
-                        id: 'NS-20240116-0001',
-                        customer_name: 'Jane Smith',
-                        customer_email: 'jane.smith@example.com',
-                        customer_phone: '+628987654321',
-                        total_amount: 499000,
-                        status: 'processing',
-                        payment_method: 'bank_transfer',
-                        shipping_address: 'Jl. Thamrin No. 456, Jakarta',
-                        created_at: new Date('2024-01-16').toISOString(),
-                        updated_at: new Date('2024-01-16').toISOString(),
-                        order_items: [
-                            { product_name: 'Enterprise Firewall', quantity: 1, price: 499000 }
-                        ]
-                    },
-                    {
-                        id: 'NS-20240117-0001',
-                        customer_name: 'Bob Johnson',
-                        customer_email: 'bob.johnson@example.com',
-                        customer_phone: '+628111223344',
-                        total_amount: 104000,
-                        status: 'pending',
-                        payment_method: 'qris',
-                        shipping_address: 'Jl. Gatot Subroto No. 789, Bandung',
-                        created_at: new Date('2024-01-17').toISOString(),
-                        updated_at: new Date('2024-01-17').toISOString(),
-                        order_items: [
-                            { product_name: 'VPN Premium', quantity: 1, price: 89000 }
-                        ]
-                    }
-                ];
-                localStorage.setItem('nestsian_orders', JSON.stringify(sampleOrders));
-                return sampleOrders;
+            let filteredOrders = [...orders];
+            
+            // Apply filters
+            if (filters.status) {
+                filteredOrders = filteredOrders.filter(o => o.status === filters.status);
             }
-            return orders;
+            
+            if (filters.search) {
+                const searchTerm = filters.search.toLowerCase();
+                filteredOrders = filteredOrders.filter(o => 
+                    o.id.toLowerCase().includes(searchTerm) ||
+                    o.customer_name.toLowerCase().includes(searchTerm) ||
+                    o.customer_email.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (filters.start_date && filters.end_date) {
+                filteredOrders = filteredOrders.filter(o => {
+                    const orderDate = new Date(o.created_at);
+                    const startDate = new Date(filters.start_date);
+                    const endDate = new Date(filters.end_date);
+                    return orderDate >= startDate && orderDate <= endDate;
+                });
+            }
+            
+            // Apply pagination
+            const start = (page - 1) * limit;
+            const end = start + limit;
+            const paginatedOrders = filteredOrders.slice(start, end);
+            
+            return {
+                data: paginatedOrders,
+                total: filteredOrders.length,
+                page,
+                limit,
+                totalPages: Math.ceil(filteredOrders.length / limit)
+            };
         } catch (error) {
             console.error('Error getting local orders:', error);
-            return [];
+            return { data: [], total: 0, page: 1, limit: 10, totalPages: 0 };
+        }
+    }
+
+    getLocalOrderById(id) {
+        try {
+            const orders = JSON.parse(localStorage.getItem('nestsian_orders') || '[]');
+            return orders.find(o => o.id === id);
+        } catch (error) {
+            console.error('Error getting local order by ID:', error);
+            return null;
         }
     }
 
     saveLocalOrder(order) {
         try {
-            const orders = this.getLocalOrders();
+            const orders = JSON.parse(localStorage.getItem('nestsian_orders') || '[]');
             let updatedOrder;
             
             if (order.id) {
                 const index = orders.findIndex(o => o.id === order.id);
                 if (index !== -1) {
-                    orders[index] = order;
+                    orders[index] = { ...orders[index], ...order };
                     updatedOrder = orders[index];
                 } else {
                     updatedOrder = { 
                         ...order, 
-                        id: `NS-${new Date().toISOString().slice(0,10).replace(/-/g, '')}-${orders.length + 1}`,
-                        created_at: new Date().toISOString()
+                        id: order.id,
+                        created_at: order.created_at || new Date().toISOString()
                     };
                     orders.push(updatedOrder);
                 }
             } else {
                 updatedOrder = { 
                     ...order, 
-                    id: `NS-${new Date().toISOString().slice(0,10).replace(/-/g, '')}-${orders.length + 1}`,
+                    id: `NS-${Date.now()}`,
                     created_at: new Date().toISOString()
                 };
                 orders.push(updatedOrder);
             }
             
-            localStorage.setItem('nestsian_orders', JSON.stringify(updatedOrder));
+            localStorage.setItem('nestsian_orders', JSON.stringify(orders));
+            
+            // Update customer data
+            if (order.customer_email) {
+                const customers = this.getLocalCustomers().data;
+                const existingCustomer = customers.find(c => c.email === order.customer_email);
+                
+                if (existingCustomer) {
+                    existingCustomer.total_orders = (existingCustomer.total_orders || 0) + 1;
+                    existingCustomer.total_spent = (existingCustomer.total_spent || 0) + (order.total_amount || 0);
+                    localStorage.setItem('nestsian_customers', JSON.stringify(customers));
+                }
+            }
+            
             return updatedOrder;
         } catch (error) {
             console.error('Error saving local order:', error);
@@ -973,55 +1656,101 @@ class SupabaseService {
         }
     }
 
-    getLocalCustomers() {
+    updateLocalOrderStatus(id, status) {
+        try {
+            const orders = JSON.parse(localStorage.getItem('nestsian_orders') || '[]');
+            const index = orders.findIndex(o => o.id === id);
+            
+            if (index !== -1) {
+                orders[index].status = status;
+                orders[index].updated_at = new Date().toISOString();
+                localStorage.setItem('nestsian_orders', JSON.stringify(orders));
+            }
+        } catch (error) {
+            console.error('Error updating local order status:', error);
+        }
+    }
+
+    deleteLocalOrder(id) {
+        try {
+            const orders = JSON.parse(localStorage.getItem('nestsian_orders') || '[]');
+            const updatedOrders = orders.filter(o => o.id !== id);
+            localStorage.setItem('nestsian_orders', JSON.stringify(updatedOrders));
+        } catch (error) {
+            console.error('Error deleting local order:', error);
+        }
+    }
+
+    getLocalOrderItems() {
+        try {
+            return JSON.parse(localStorage.getItem('nestsian_order_items') || '[]');
+        } catch (error) {
+            console.error('Error getting local order items:', error);
+            return [];
+        }
+    }
+
+    getLocalCustomers(filters = {}, page = 1, limit = 10) {
         try {
             const customers = JSON.parse(localStorage.getItem('nestsian_customers') || '[]');
-            if (!customers.length) {
-                const sampleCustomers = [
-                    {
-                        id: 1,
-                        name: 'John Doe',
-                        email: 'john.doe@example.com',
-                        phone: '+628123456789',
-                        address: 'Jl. Sudirman No. 123, Jakarta',
-                        total_orders: 2,
-                        total_spent: 263000,
-                        is_active: true,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    },
-                    {
-                        id: 2,
-                        name: 'Jane Smith',
-                        email: 'jane.smith@example.com',
-                        phone: '+628987654321',
-                        address: 'Jl. Thamrin No. 456, Jakarta',
-                        total_orders: 1,
-                        total_spent: 499000,
-                        is_active: true,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    },
-                    {
-                        id: 3,
-                        name: 'Bob Johnson',
-                        email: 'bob.johnson@example.com',
-                        phone: '+628111223344',
-                        address: 'Jl. Gatot Subroto No. 789, Bandung',
-                        total_orders: 1,
-                        total_spent: 104000,
-                        is_active: true,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }
-                ];
-                localStorage.setItem('nestsian_customers', JSON.stringify(sampleCustomers));
-                return sampleCustomers;
+            let filteredCustomers = [...customers];
+            
+            // Apply filters
+            if (filters.search) {
+                const searchTerm = filters.search.toLowerCase();
+                filteredCustomers = filteredCustomers.filter(c => 
+                    c.name.toLowerCase().includes(searchTerm) ||
+                    c.email.toLowerCase().includes(searchTerm) ||
+                    c.phone.toLowerCase().includes(searchTerm)
+                );
             }
-            return customers;
+            
+            if (filters.is_active !== undefined) {
+                filteredCustomers = filteredCustomers.filter(c => c.is_active == filters.is_active);
+            }
+            
+            // Apply pagination
+            const start = (page - 1) * limit;
+            const end = start + limit;
+            const paginatedCustomers = filteredCustomers.slice(start, end);
+            
+            return {
+                data: paginatedCustomers,
+                total: filteredCustomers.length,
+                page,
+                limit,
+                totalPages: Math.ceil(filteredCustomers.length / limit)
+            };
         } catch (error) {
             console.error('Error getting local customers:', error);
-            return [];
+            return { data: [], total: 0, page: 1, limit: 10, totalPages: 0 };
+        }
+    }
+
+    saveLocalCustomer(customer) {
+        try {
+            const customers = JSON.parse(localStorage.getItem('nestsian_customers') || '[]');
+            let updatedCustomer;
+            
+            if (customer.id) {
+                const index = customers.findIndex(c => c.id === customer.id);
+                if (index !== -1) {
+                    customers[index] = { ...customers[index], ...customer };
+                    updatedCustomer = customers[index];
+                } else {
+                    updatedCustomer = { ...customer, id: Date.now() };
+                    customers.push(updatedCustomer);
+                }
+            } else {
+                updatedCustomer = { ...customer, id: Date.now() };
+                customers.push(updatedCustomer);
+            }
+            
+            localStorage.setItem('nestsian_customers', JSON.stringify(customers));
+            return updatedCustomer;
+        } catch (error) {
+            console.error('Error saving local customer:', error);
+            return customer;
         }
     }
 
@@ -1056,6 +1785,18 @@ class SupabaseService {
                     logo: 'logo.jpg',
                     timezone: 'Asia/Jakarta',
                     currency: 'IDR'
+                },
+                hero: {
+                    title: 'Keamanan Digital Terdepan untuk Bisnis Anda',
+                    subtitle: 'NestSian menyediakan solusi keamanan dan teknologi modern untuk melindungi aset digital bisnis Anda.',
+                    button1: 'Lihat Produk',
+                    button2: 'Hubungi Kami',
+                    features: [
+                        { name: 'Keamanan Tingkat Tinggi', icon: 'fas fa-shield-alt' },
+                        { name: 'Perform Optimal', icon: 'fas fa-bolt' },
+                        { name: 'Support 24/7', icon: 'fas fa-headset' },
+                        { name: 'Monitoring Real-time', icon: 'fas fa-chart-line' }
+                    ]
                 }
             };
             
@@ -1078,8 +1819,8 @@ class SupabaseService {
 
     getLocalDashboardStats() {
         try {
-            const products = this.getLocalProducts();
-            const orders = this.getLocalOrders();
+            const products = this.getLocalProducts().data;
+            const orders = this.getLocalOrders().data;
             const today = new Date().toISOString().split('T')[0];
             
             const todayOrders = orders.filter(order => 
@@ -1112,6 +1853,152 @@ class SupabaseService {
                 monthlyRevenue: 0,
                 activeCustomers: 0
             };
+        }
+    }
+
+    getLocalSalesChartData(days = 7) {
+        try {
+            const orders = this.getLocalOrders().data;
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - days);
+            
+            const salesByDate = {};
+            orders.forEach(order => {
+                if (order.status === 'completed') {
+                    const orderDate = new Date(order.created_at);
+                    if (orderDate >= startDate && orderDate <= endDate) {
+                        const dateStr = orderDate.toISOString().split('T')[0];
+                        if (!salesByDate[dateStr]) {
+                            salesByDate[dateStr] = 0;
+                        }
+                        salesByDate[dateStr] += order.total_amount || 0;
+                    }
+                }
+            });
+            
+            const dates = [];
+            const amounts = [];
+            const currentDate = new Date(startDate);
+            
+            while (currentDate <= endDate) {
+                const dateStr = currentDate.toISOString().split('T')[0];
+                dates.push(dateStr);
+                amounts.push(salesByDate[dateStr] || 0);
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            return { dates, amounts };
+        } catch (error) {
+            console.error('Error getting local sales chart data:', error);
+            return { dates: [], amounts: [] };
+        }
+    }
+
+    getLocalTopProducts(limit = 5) {
+        try {
+            const orderItems = this.getLocalOrderItems();
+            const products = this.getLocalProducts().data;
+            
+            const productSales = {};
+            orderItems.forEach(item => {
+                if (!productSales[item.product_id]) {
+                    productSales[item.product_id] = 0;
+                }
+                productSales[item.product_id] += item.quantity || 0;
+            });
+            
+            const topProducts = Object.keys(productSales)
+                .map(productId => {
+                    const product = products.find(p => p.id == productId);
+                    return {
+                        ...product,
+                        total_quantity: productSales[productId]
+                    };
+                })
+                .sort((a, b) => b.total_quantity - a.total_quantity)
+                .slice(0, limit);
+            
+            return topProducts;
+        } catch (error) {
+            console.error('Error getting local top products:', error);
+            return [];
+        }
+    }
+
+    getLocalContactMessages(filters = {}, page = 1, limit = 10) {
+        try {
+            const messages = JSON.parse(localStorage.getItem('nestsian_contact_messages') || '[]');
+            let filteredMessages = [...messages];
+            
+            if (filters.is_read !== undefined) {
+                filteredMessages = filteredMessages.filter(m => m.is_read == filters.is_read);
+            }
+            
+            if (filters.search) {
+                const searchTerm = filters.search.toLowerCase();
+                filteredMessages = filteredMessages.filter(m => 
+                    m.name.toLowerCase().includes(searchTerm) ||
+                    m.email.toLowerCase().includes(searchTerm) ||
+                    m.subject.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            const start = (page - 1) * limit;
+            const end = start + limit;
+            const paginatedMessages = filteredMessages.slice(start, end);
+            
+            return {
+                data: paginatedMessages,
+                total: filteredMessages.length,
+                page,
+                limit,
+                totalPages: Math.ceil(filteredMessages.length / limit)
+            };
+        } catch (error) {
+            console.error('Error getting local contact messages:', error);
+            return { data: [], total: 0, page: 1, limit: 10, totalPages: 0 };
+        }
+    }
+
+    saveLocalContactMessage(message) {
+        try {
+            const messages = JSON.parse(localStorage.getItem('nestsian_contact_messages') || '[]');
+            const newMessage = {
+                ...message,
+                id: Date.now(),
+                created_at: new Date().toISOString(),
+                is_read: false
+            };
+            messages.push(newMessage);
+            localStorage.setItem('nestsian_contact_messages', JSON.stringify(messages));
+            return newMessage;
+        } catch (error) {
+            console.error('Error saving local contact message:', error);
+            return message;
+        }
+    }
+
+    markLocalContactMessageAsRead(id) {
+        try {
+            const messages = JSON.parse(localStorage.getItem('nestsian_contact_messages') || '[]');
+            const index = messages.findIndex(m => m.id == id);
+            if (index !== -1) {
+                messages[index].is_read = true;
+                localStorage.setItem('nestsian_contact_messages', JSON.stringify(messages));
+            }
+        } catch (error) {
+            console.error('Error marking local contact message as read:', error);
+        }
+    }
+
+    deleteLocalContactMessage(id) {
+        try {
+            const messages = JSON.parse(localStorage.getItem('nestsian_contact_messages') || '[]');
+            const updatedMessages = messages.filter(m => m.id !== id);
+            localStorage.setItem('nestsian_contact_messages', JSON.stringify(updatedMessages));
+        } catch (error) {
+            console.error('Error deleting local contact message:', error);
         }
     }
 
