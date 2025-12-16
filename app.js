@@ -1,4 +1,4 @@
-// NestSian - Main Application Logic
+// NestSian - Main Application Logic (COMPLETE VERSION)
 class NestSian {
     constructor() {
         this.currentEditingProductId = null;
@@ -276,7 +276,7 @@ class NestSian {
         
         const filterCompleted = document.getElementById('filterCompleted');
         if (filterCompleted) {
-            filterCompleted.addEventListener('click', () => this.filterOrders('completed'));
+            filterCompleted.addEventListener('click', () => this.filterOrders('delivered'));
         }
         
         const filterCancelled = document.getElementById('filterCancelled');
@@ -319,6 +319,17 @@ class NestSian {
             systemSettingsForm.addEventListener('submit', (e) => this.saveSystemSettings(e));
         }
         
+        // Telegram Settings
+        const telegramSettingsForm = document.getElementById('telegramSettingsForm');
+        if (telegramSettingsForm) {
+            telegramSettingsForm.addEventListener('submit', (e) => this.saveTelegramSettings(e));
+        }
+        
+        const testTelegramBtn = document.getElementById('testTelegramBtn');
+        if (testTelegramBtn) {
+            testTelegramBtn.addEventListener('click', () => this.testTelegramConnection());
+        }
+        
         // Maintenance Toggle
         const maintenanceToggle = document.getElementById('maintenanceToggle');
         if (maintenanceToggle) {
@@ -352,6 +363,11 @@ class NestSian {
         if (refreshPreview) {
             refreshPreview.addEventListener('click', () => this.refreshWebsitePreview());
         }
+        
+        // Payment Method Selection
+        document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+            radio.addEventListener('change', (e) => this.togglePaymentMethod(e.target.value));
+        });
         
         // Close modals on outside click
         document.addEventListener('click', (e) => {
@@ -494,6 +510,9 @@ class NestSian {
             // Load recent orders
             await this.loadRecentOrders();
             
+            // Load top products
+            await this.updateTopProducts();
+            
         } catch (error) {
             console.error('Error loading dashboard stats:', error);
             this.showError('Gagal memuat statistik dashboard');
@@ -527,12 +546,23 @@ class NestSian {
         }
         
         orders.forEach(order => {
+            // Map database status to UI status
+            const statusMap = {
+                'pending': 'pending',
+                'processing': 'processing',
+                'delivered': 'completed',
+                'cancelled': 'cancelled',
+                'shipped': 'processing'
+            };
+            
+            const uiStatus = statusMap[order.order_status] || order.order_status;
+            
             const statusClass = {
                 'pending': 'bg-yellow-900/30 text-yellow-400',
                 'processing': 'bg-blue-900/30 text-blue-400',
                 'completed': 'bg-green-900/30 text-green-400',
                 'cancelled': 'bg-red-900/30 text-red-400'
-            }[order.status] || 'bg-gray-900/30 text-gray-400';
+            }[uiStatus] || 'bg-gray-900/30 text-gray-400';
             
             const row = document.createElement('tr');
             row.className = 'border-b border-dark-700';
@@ -546,7 +576,7 @@ class NestSian {
                 </td>
                 <td class="py-3">
                     <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
-                        ${order.status}
+                        ${uiStatus}
                     </span>
                 </td>
                 <td class="py-3 text-gray-300 text-sm">
@@ -568,6 +598,9 @@ class NestSian {
                 filters.search = searchTerm;
             }
             
+            // Only show active products by default
+            filters.is_active = true;
+            
             const result = await this.supabaseService.getProducts(filters, page, this.productsPerPage);
             this.currentProducts = result;
             this.updateProductList(result.data);
@@ -587,7 +620,7 @@ class NestSian {
 
     async loadFrontendProducts() {
         try {
-            const result = await this.supabaseService.getProducts({ featured: true }, 1, 12);
+            const result = await this.supabaseService.getProducts({ featured: true, is_active: true }, 1, 12);
             this.updateFrontendProducts(result.data);
         } catch (error) {
             console.error('Error loading frontend products:', error);
@@ -597,7 +630,7 @@ class NestSian {
     async loadMoreFrontendProducts() {
         try {
             const currentCount = document.querySelectorAll('#frontendProducts .product-card').length;
-            const result = await this.supabaseService.getProducts({}, Math.floor(currentCount / 6) + 1, 6);
+            const result = await this.supabaseService.getProducts({ is_active: true }, Math.floor(currentCount / 6) + 1, 6);
             
             if (result.data.length > 0) {
                 this.appendFrontendProducts(result.data);
@@ -732,7 +765,7 @@ class NestSian {
         if (!products || products.length === 0) {
             productList.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center py-8 text-gray-400">
+                    <td colspan="6" class="text-center py-8 text-gray-400">
                         <i class="fas fa-box-open text-4xl mb-4"></i>
                         <p>Tidak ada produk tersedia</p>
                     </td>
@@ -766,6 +799,11 @@ class NestSian {
                 <td class="py-4">
                     <span class="product-stock ${product.stock > 10 ? 'in-stock' : product.stock > 0 ? 'low-stock' : 'out-of-stock'}">
                         ${product.stock}
+                    </span>
+                </td>
+                <td class="py-4">
+                    <span class="status-badge ${product.is_active ? 'status-completed' : 'status-cancelled'}">
+                        ${product.is_active ? 'Aktif' : 'Nonaktif'}
                     </span>
                 </td>
                 <td class="py-4">
@@ -876,6 +914,7 @@ class NestSian {
         const image = document.getElementById('productImage').value.trim();
         const weight = parseInt(document.getElementById('productWeight').value) || 0;
         const featured = document.getElementById('productFeatured').checked;
+        const isActive = document.getElementById('productActive')?.checked ?? true;
         
         // Validation
         if (!name) {
@@ -912,7 +951,8 @@ class NestSian {
                 description,
                 image_url: image,
                 weight,
-                featured
+                featured,
+                is_active: isActive
             };
             
             if (productId) {
@@ -934,7 +974,7 @@ class NestSian {
             
         } catch (error) {
             console.error('Error saving product:', error);
-            this.showError('Gagal menyimpan produk');
+            this.showError('Gagal menyimpan produk: ' + error.message);
         }
     }
 
@@ -958,6 +998,12 @@ class NestSian {
             document.getElementById('productWeight').value = product.weight || 0;
             document.getElementById('productFeatured').checked = product.featured || false;
             
+            // Set active status if checkbox exists
+            const activeCheckbox = document.getElementById('productActive');
+            if (activeCheckbox) {
+                activeCheckbox.checked = product.is_active !== false;
+            }
+            
             // Change button text
             const saveButton = document.getElementById('saveProduct');
             if (saveButton) {
@@ -980,6 +1026,12 @@ class NestSian {
         if (form) {
             form.reset();
             document.getElementById('productId').value = '';
+            
+            // Reset active checkbox to checked
+            const activeCheckbox = document.getElementById('productActive');
+            if (activeCheckbox) {
+                activeCheckbox.checked = true;
+            }
         }
         
         const saveButton = document.getElementById('saveProduct');
@@ -1015,7 +1067,7 @@ class NestSian {
             
         } catch (error) {
             console.error('Error deleting product:', error);
-            this.showError('Gagal menghapus produk');
+            this.showError('Gagal menghapus produk: ' + error.message);
         }
     }
 
@@ -1121,7 +1173,7 @@ class NestSian {
         // Update category list in admin panel
         if (categoryList) {
             categories.forEach(async (category) => {
-                const products = await this.supabaseService.getProducts({ category_id: category.id }, 1, 1);
+                const products = await this.supabaseService.getProducts({ category_id: category.id, is_active: true }, 1, 1);
                 const productCount = products.total || 0;
                 
                 const item = document.createElement('div');
@@ -1136,6 +1188,10 @@ class NestSian {
                                 <h4 class="font-medium text-white">${category.name}</h4>
                                 <p class="text-sm text-gray-400">${productCount} produk</p>
                                 ${category.description ? `<p class="text-xs text-gray-500 mt-1">${category.description}</p>` : ''}
+                                <p class="text-xs ${category.is_active ? 'text-green-400' : 'text-red-400'}">
+                                    <i class="fas fa-circle text-xs mr-1"></i>
+                                    ${category.is_active ? 'Aktif' : 'Nonaktif'}
+                                </p>
                             </div>
                         </div>
                         <div class="flex space-x-2">
@@ -1224,6 +1280,8 @@ class NestSian {
         const name = document.getElementById('categoryName').value.trim();
         const icon = document.getElementById('categoryIcon').value.trim() || 'fas fa-tag';
         const description = document.getElementById('categoryDescription').value.trim();
+        const sortOrder = parseInt(document.getElementById('categorySortOrder').value) || 0;
+        const isActive = document.getElementById('categoryActive')?.checked ?? true;
         
         if (!name) {
             this.showError('Nama kategori wajib diisi');
@@ -1234,7 +1292,9 @@ class NestSian {
             const categoryData = {
                 name,
                 icon,
-                description
+                description,
+                sort_order: sortOrder,
+                is_active: isActive
             };
             
             if (categoryId) {
@@ -1275,6 +1335,13 @@ class NestSian {
             document.getElementById('categoryName').value = category.name;
             document.getElementById('categoryIcon').value = category.icon || 'fas fa-tag';
             document.getElementById('categoryDescription').value = category.description || '';
+            document.getElementById('categorySortOrder').value = category.sort_order || 0;
+            
+            // Set active status
+            const activeCheckbox = document.getElementById('categoryActive');
+            if (activeCheckbox) {
+                activeCheckbox.checked = category.is_active !== false;
+            }
             
             this.showSuccess('Mode edit kategori diaktifkan');
             
@@ -1289,6 +1356,13 @@ class NestSian {
         if (form) {
             form.reset();
             document.getElementById('categoryId').value = '';
+            document.getElementById('categorySortOrder').value = 0;
+            
+            // Reset active checkbox to checked
+            const activeCheckbox = document.getElementById('categoryActive');
+            if (activeCheckbox) {
+                activeCheckbox.checked = true;
+            }
         }
     }
 
@@ -1320,7 +1394,7 @@ class NestSian {
             
             const filters = {};
             if (status !== 'all') {
-                filters.status = status;
+                filters.order_status = status;
             }
             
             const result = await this.supabaseService.getOrders(filters, page, this.ordersPerPage);
@@ -1350,7 +1424,7 @@ class NestSian {
         if (!orders || orders.length === 0) {
             orderList.innerHTML = `
                 <tr>
-                    <td colspan="7" class="text-center py-8 text-gray-400">
+                    <td colspan="8" class="text-center py-8 text-gray-400">
                         <i class="fas fa-shopping-cart text-4xl mb-4"></i>
                         <p>Tidak ada pesanan</p>
                     </td>
@@ -1360,12 +1434,30 @@ class NestSian {
         }
         
         orders.forEach(order => {
+            // Map database status to UI status
+            const statusMap = {
+                'pending': 'pending',
+                'processing': 'processing',
+                'delivered': 'completed',
+                'cancelled': 'cancelled',
+                'shipped': 'processing'
+            };
+            
+            const uiStatus = statusMap[order.order_status] || order.order_status;
+            
             const statusClass = {
                 'pending': 'status-pending',
                 'processing': 'status-processing',
                 'completed': 'status-completed',
                 'cancelled': 'status-cancelled'
-            }[order.status] || 'status-pending';
+            }[uiStatus] || 'status-pending';
+            
+            const paymentStatusClass = {
+                'pending': 'bg-yellow-900/30 text-yellow-400',
+                'paid': 'bg-green-900/30 text-green-400',
+                'failed': 'bg-red-900/30 text-red-400',
+                'refunded': 'bg-purple-900/30 text-purple-400'
+            }[order.payment_status] || 'bg-gray-900/30 text-gray-400';
             
             const itemCount = order.order_items?.length || 0;
             const firstItem = order.order_items?.[0]?.products?.name || 'Produk';
@@ -1394,7 +1486,12 @@ class NestSian {
                 </td>
                 <td class="py-4">
                     <span class="status-badge ${statusClass}">
-                        ${order.status}
+                        ${uiStatus}
+                    </span>
+                </td>
+                <td class="py-4">
+                    <span class="px-2 py-1 rounded-full text-xs ${paymentStatusClass}">
+                        ${order.payment_status || 'pending'}
                     </span>
                 </td>
                 <td class="py-4">
@@ -1470,7 +1567,7 @@ class NestSian {
             const filterId = activeFilter.id;
             if (filterId === 'filterPending') return 'pending';
             if (filterId === 'filterProcessing') return 'processing';
-            if (filterId === 'filterCompleted') return 'completed';
+            if (filterId === 'filterCompleted') return 'delivered';
             if (filterId === 'filterCancelled') return 'cancelled';
         }
         return 'all';
@@ -1480,7 +1577,7 @@ class NestSian {
         const orderBadge = document.getElementById('orderBadge');
         if (!orderBadge) return;
         
-        const pendingOrders = orders.filter(o => o.status === 'pending').length;
+        const pendingOrders = orders.filter(o => o.order_status === 'pending').length;
         orderBadge.textContent = pendingOrders;
         
         if (pendingOrders > 0) {
@@ -1525,8 +1622,20 @@ class NestSian {
             }
         });
         
+        // Map UI status to database status
+        const statusMap = {
+            'pending': 'pending',
+            'processing': 'processing',
+            'delivered': 'delivered',
+            'completed': 'delivered',
+            'cancelled': 'cancelled',
+            'all': 'all'
+        };
+        
+        const dbStatus = statusMap[status] || status;
+        
         // Load orders with filter
-        this.loadOrders(1, status);
+        this.loadOrders(1, dbStatus);
     }
 
     async viewOrderDetails(orderId) {
@@ -1538,30 +1647,45 @@ class NestSian {
                 return;
             }
             
+            // Map database status to UI status
+            const statusMap = {
+                'pending': 'pending',
+                'processing': 'processing',
+                'delivered': 'completed',
+                'cancelled': 'cancelled'
+            };
+            
+            const uiStatus = statusMap[order.order_status] || order.order_status;
+            
             const orderDetailsContent = document.getElementById('orderDetailsContent');
             if (!orderDetailsContent) return;
             
             // Format order items
             let orderItemsHtml = '';
+            let itemsTotal = 0;
             if (order.order_items && order.order_items.length > 0) {
                 orderItemsHtml = `
                     <h4 class="font-medium text-white mb-3">Item Pesanan</h4>
                     <div class="space-y-2">
-                        ${order.order_items.map(item => `
-                            <div class="flex justify-between items-center p-3 bg-dark-800 rounded-lg">
-                                <div class="flex items-center space-x-3">
-                                    ${item.products?.image_url ? `
-                                        <img src="${item.products.image_url}" alt="${item.products.name}" 
-                                             class="w-12 h-12 rounded-lg object-cover">
-                                    ` : ''}
-                                    <div>
-                                        <p class="font-medium text-white">${item.products?.name || 'Produk'}</p>
-                                        <p class="text-sm text-gray-400">${item.quantity} x Rp ${item.price.toLocaleString()}</p>
+                        ${order.order_items.map(item => {
+                            const itemTotal = item.quantity * item.unit_price;
+                            itemsTotal += itemTotal;
+                            return `
+                                <div class="flex justify-between items-center p-3 bg-dark-800 rounded-lg">
+                                    <div class="flex items-center space-x-3">
+                                        ${item.products?.image_url ? `
+                                            <img src="${item.products.image_url}" alt="${item.products.name}" 
+                                                 class="w-12 h-12 rounded-lg object-cover">
+                                        ` : ''}
+                                        <div>
+                                            <p class="font-medium text-white">${item.product_name || 'Produk'}</p>
+                                            <p class="text-sm text-gray-400">${item.quantity} x Rp ${item.unit_price.toLocaleString()}</p>
+                                        </div>
                                     </div>
+                                    <p class="font-bold text-white">Rp ${itemTotal.toLocaleString()}</p>
                                 </div>
-                                <p class="font-bold text-white">Rp ${(item.quantity * item.price).toLocaleString()}</p>
-                            </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                 `;
             }
@@ -1582,8 +1706,9 @@ class NestSian {
                             <div class="space-y-2">
                                 <p><span class="text-gray-400">ID Pesanan:</span> <span class="text-primary-400">${order.id}</span></p>
                                 <p><span class="text-gray-400">Tanggal:</span> <span class="text-white">${new Date(order.created_at).toLocaleString('id-ID')}</span></p>
-                                <p><span class="text-gray-400">Status:</span> <span class="status-badge status-${order.status}">${order.status}</span></p>
-                                <p><span class="text-gray-400">Metode Pembayaran:</span> <span class="text-white">${order.payment_method || '-'}</span></p>
+                                <p><span class="text-gray-400">Status Pesanan:</span> <span class="status-badge status-${uiStatus}">${uiStatus}</span></p>
+                                <p><span class="text-gray-400">Status Pembayaran:</span> <span class="status-badge ${order.payment_status === 'paid' ? 'status-completed' : 'status-pending'}">${order.payment_status || 'pending'}</span></p>
+                                <p><span class="text-gray-400">Metode Pembayaran:</span> <span class="text-white">${order.payment_method || 'QRIS'}</span></p>
                             </div>
                         </div>
                     </div>
@@ -1605,9 +1730,21 @@ class NestSian {
                     ${orderItemsHtml}
                     
                     <div class="pt-4 border-t border-dark-700">
-                        <div class="flex justify-between items-center">
-                            <span class="text-xl font-bold text-white">Total:</span>
-                            <span class="text-2xl font-bold text-primary-400">Rp ${(order.total_amount || 0).toLocaleString()}</span>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400">Subtotal:</span>
+                                <span class="text-white">Rp ${itemsTotal.toLocaleString()}</span>
+                            </div>
+                            ${order.shipping_cost > 0 ? `
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-400">Biaya Pengiriman:</span>
+                                <span class="text-white">Rp ${order.shipping_cost.toLocaleString()}</span>
+                            </div>
+                            ` : ''}
+                            <div class="flex justify-between items-center pt-2 border-t border-dark-700">
+                                <span class="text-xl font-bold text-white">Total:</span>
+                                <span class="text-2xl font-bold text-primary-400">Rp ${(order.total_amount || 0).toLocaleString()}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1634,18 +1771,102 @@ class NestSian {
                 return;
             }
             
-            const newStatus = prompt(`Ubah status pesanan ${order.id}:\n(pending, processing, completed, cancelled)`, order.status);
+            // Create modal for status update
+            const modalContent = `
+                <div class="space-y-4">
+                    <div class="form-group">
+                        <label class="form-label">Status Pesanan</label>
+                        <select id="updateOrderStatusSelect" class="form-control">
+                            <option value="pending" ${order.order_status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="processing" ${order.order_status === 'processing' ? 'selected' : ''}>Processing</option>
+                            <option value="shipped" ${order.order_status === 'shipped' ? 'selected' : ''}>Shipped</option>
+                            <option value="delivered" ${order.order_status === 'delivered' ? 'selected' : ''}>Delivered (Completed)</option>
+                            <option value="cancelled" ${order.order_status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status Pembayaran</label>
+                        <select id="updatePaymentStatusSelect" class="form-control">
+                            <option value="pending" ${order.payment_status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="paid" ${order.payment_status === 'paid' ? 'selected' : ''}>Paid</option>
+                            <option value="failed" ${order.payment_status === 'failed' ? 'selected' : ''}>Failed</option>
+                            <option value="refunded" ${order.payment_status === 'refunded' ? 'selected' : ''}>Refunded</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Catatan (Opsional)</label>
+                        <textarea id="updateOrderNotes" class="form-control" rows="3" placeholder="Tambahkan catatan...">${order.admin_notes || ''}</textarea>
+                    </div>
+                    <button id="confirmUpdateOrder" class="btn btn-primary w-full">
+                        <i class="fas fa-save mr-2"></i>Update Status
+                    </button>
+                </div>
+            `;
             
-            if (newStatus && ['pending', 'processing', 'completed', 'cancelled'].includes(newStatus.toLowerCase())) {
-                const result = await this.supabaseService.updateOrderStatus(orderId, newStatus.toLowerCase());
-                
-                if (result.success) {
-                    this.showSuccess(`Status pesanan berhasil diubah menjadi ${newStatus}`);
-                    await this.loadOrders(this.currentOrderPage, this.getCurrentOrderFilter());
-                } else {
-                    this.showError(result.error || 'Gagal mengubah status pesanan');
+            const modal = this.showModal(`Update Order ${order.id}`, modalContent);
+            
+            // Add event listener for update button
+            setTimeout(() => {
+                const confirmBtn = document.getElementById('confirmUpdateOrder');
+                if (confirmBtn) {
+                    confirmBtn.addEventListener('click', async () => {
+                        const newStatus = document.getElementById('updateOrderStatusSelect').value;
+                        const newPaymentStatus = document.getElementById('updatePaymentStatusSelect').value;
+                        const notes = document.getElementById('updateOrderNotes').value;
+                        
+                        try {
+                            // Prepare update data
+                            const updateData = {
+                                order_status: newStatus,
+                                payment_status: newPaymentStatus,
+                                admin_notes: notes,
+                                updated_at: new Date().toISOString()
+                            };
+                            
+                            // If payment is paid, update paid_at
+                            if (newPaymentStatus === 'paid' && order.payment_status !== 'paid') {
+                                updateData.paid_at = new Date().toISOString();
+                            }
+                            
+                            // If order is cancelled, restore product stock
+                            if (newStatus === 'cancelled' && order.order_status !== 'cancelled') {
+                                if (order.order_items && order.order_items.length > 0) {
+                                    for (const item of order.order_items) {
+                                        await this.supabaseService.updateProductStock(
+                                            item.product_id,
+                                            item.quantity,
+                                            'return',
+                                            `Order ${orderId} cancelled`
+                                        );
+                                    }
+                                }
+                            }
+                            
+                            // Update order in database
+                            const result = await this.supabaseService.updateOrderStatus(
+                                orderId, 
+                                newStatus, 
+                                newPaymentStatus
+                            );
+                            
+                            if (result.success) {
+                                this.showSuccess(`Status pesanan berhasil diperbarui`);
+                                
+                                // Reload orders
+                                await this.loadOrders(this.currentOrderPage, this.getCurrentOrderFilter());
+                                
+                                // Close modal
+                                modal.remove();
+                            } else {
+                                this.showError(result.error || 'Gagal mengubah status pesanan');
+                            }
+                        } catch (error) {
+                            console.error('Error updating order:', error);
+                            this.showError('Gagal mengubah status pesanan: ' + error.message);
+                        }
+                    });
                 }
-            }
+            }, 100);
             
         } catch (error) {
             console.error('Error updating order status:', error);
@@ -1821,18 +2042,28 @@ class NestSian {
                 ordersHtml = `
                     <h4 class="font-medium text-white mb-3">Riwayat Pesanan</h4>
                     <div class="space-y-2">
-                        ${orders.data.slice(0, 5).map(order => `
-                            <div class="flex justify-between items-center p-3 bg-dark-800 rounded-lg">
-                                <div>
-                                    <p class="font-medium text-white">${order.id}</p>
-                                    <p class="text-sm text-gray-400">${new Date(order.created_at).toLocaleDateString('id-ID')}</p>
+                        ${orders.data.slice(0, 5).map(order => {
+                            // Map database status to UI status
+                            const statusMap = {
+                                'pending': 'pending',
+                                'processing': 'processing',
+                                'delivered': 'completed',
+                                'cancelled': 'cancelled'
+                            };
+                            const uiStatus = statusMap[order.order_status] || order.order_status;
+                            return `
+                                <div class="flex justify-between items-center p-3 bg-dark-800 rounded-lg">
+                                    <div>
+                                        <p class="font-medium text-white">${order.id}</p>
+                                        <p class="text-sm text-gray-400">${new Date(order.created_at).toLocaleDateString('id-ID')}</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="font-bold text-white">Rp ${(order.total_amount || 0).toLocaleString()}</p>
+                                        <span class="status-badge status-${uiStatus}">${uiStatus}</span>
+                                    </div>
                                 </div>
-                                <div class="text-right">
-                                    <p class="font-bold text-white">Rp ${(order.total_amount || 0).toLocaleString()}</p>
-                                    <span class="status-badge status-${order.status}">${order.status}</span>
-                                </div>
-                            </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </div>
                 `;
             }
@@ -1847,6 +2078,8 @@ class NestSian {
                                 <p><span class="text-gray-400">Email:</span> <span class="text-white">${customer.email || '-'}</span></p>
                                 <p><span class="text-gray-400">Telepon:</span> <span class="text-white">${customer.phone || '-'}</span></p>
                                 <p><span class="text-gray-400">Alamat:</span> <span class="text-white">${customer.address || '-'}</span></p>
+                                <p><span class="text-gray-400">Kota:</span> <span class="text-white">${customer.city || '-'}</span></p>
+                                <p><span class="text-gray-400">Perusahaan:</span> <span class="text-white">${customer.company || '-'}</span></p>
                             </div>
                         </div>
                         <div>
@@ -1855,6 +2088,7 @@ class NestSian {
                                 <p><span class="text-gray-400">Total Pesanan:</span> <span class="text-white">${customer.total_orders || 0}</span></p>
                                 <p><span class="text-gray-400">Total Belanja:</span> <span class="text-white">Rp ${(customer.total_spent || 0).toLocaleString()}</span></p>
                                 <p><span class="text-gray-400">Status:</span> <span class="badge ${customer.is_active ? 'badge-success' : 'badge-danger'}">${customer.is_active ? 'Aktif' : 'Nonaktif'}</span></p>
+                                <p><span class="text-gray-400">Tipe:</span> <span class="text-white">${customer.customer_type === 'business' ? 'Bisnis' : 'Individu'}</span></p>
                                 <p><span class="text-gray-400">Bergabung:</span> <span class="text-white">${new Date(customer.created_at).toLocaleDateString('id-ID')}</span></p>
                             </div>
                         </div>
@@ -1885,7 +2119,7 @@ class NestSian {
                 <form id="editCustomerForm" class="space-y-4">
                     <input type="hidden" name="id" value="${customer.id}">
                     <div class="form-group">
-                        <label class="form-label">Nama Lengkap</label>
+                        <label class="form-label">Nama Lengkap *</label>
                         <input type="text" name="name" value="${customer.name}" class="form-control" required>
                     </div>
                     <div class="form-group">
@@ -1899,6 +2133,14 @@ class NestSian {
                     <div class="form-group">
                         <label class="form-label">Alamat</label>
                         <textarea name="address" rows="3" class="form-control">${customer.address || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Kota</label>
+                        <input type="text" name="city" value="${customer.city || ''}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Perusahaan</label>
+                        <input type="text" name="company" value="${customer.company || ''}" class="form-control">
                     </div>
                     <div class="form-group">
                         <label class="custom-checkbox">
@@ -1928,6 +2170,8 @@ class NestSian {
                             email: formData.get('email'),
                             phone: formData.get('phone'),
                             address: formData.get('address'),
+                            city: formData.get('city'),
+                            company: formData.get('company'),
                             is_active: formData.get('is_active') === 'on'
                         };
                         
@@ -2005,25 +2249,21 @@ class NestSian {
             return;
         }
         
-        const amount = amountInput.value;
+        const amount = parseInt(amountInput.value);
         const description = descriptionInput.value;
         
-        if (!amount || parseInt(amount) < 1000) {
+        if (!amount || amount < 1000) {
             this.showError('Silakan masukkan jumlah pembayaran minimal Rp 1.000');
             return;
         }
         
         try {
-            // Get QRIS settings
-            const settings = await this.supabaseService.getSettings();
-            const qrisSettings = settings.qris || {
-                merchant_name: 'NestSian Store',
-                merchant_id: 'ID.NESTSIAN.WWW',
-                base_string: '00020101021126570011ID.DANA.WWW011893600915376904960002097690496000303UMI51440014ID.CO.QRIS.WWW0215ID10243512603270303UMI5204481453033605802ID5912NESTSIAN STORE6014JAKARTA SELATAN6105123456304'
-            };
-            
-            // Generate QRIS string
-            const qrisString = this.generateQrisString(amount, description, qrisSettings.base_string);
+            // Generate dynamic QRIS
+            const qrisData = await this.supabaseService.createQrisTransaction(
+                `TEMP-${Date.now()}`,
+                amount,
+                description
+            );
             
             // Clear previous QR code
             const qrcodePreview = document.getElementById('qrcodePreview');
@@ -2031,15 +2271,14 @@ class NestSian {
                 qrcodePreview.innerHTML = '';
             }
             
-            // Check if QRCode library is available
+            // Generate QR code with dynamic data
             if (typeof QRCode === 'undefined') {
                 this.showError('QR Code library tidak tersedia');
                 return;
             }
             
-            // Generate new QR code
             new QRCode(qrcodePreview, {
-                text: qrisString,
+                text: qrisData.qris_string,
                 width: 250,
                 height: 250,
                 colorDark: "#000000",
@@ -2052,8 +2291,8 @@ class NestSian {
             const previewMerchant = document.getElementById('previewMerchant');
             const previewStatus = document.getElementById('previewStatus');
             
-            if (previewAmount) previewAmount.textContent = `Rp ${parseInt(amount).toLocaleString()}`;
-            if (previewMerchant) previewMerchant.textContent = qrisSettings.merchant_name;
+            if (previewAmount) previewAmount.textContent = `Rp ${amount.toLocaleString()}`;
+            if (previewMerchant) previewMerchant.textContent = qrisData.merchant_name || 'NestSian Store';
             if (previewStatus) {
                 previewStatus.textContent = 'Aktif';
                 previewStatus.className = 'text-green-400 font-medium';
@@ -2073,9 +2312,10 @@ class NestSian {
             
             // Store QR data
             localStorage.setItem('last_qr_data', JSON.stringify({
-                string: qrisString,
+                string: qrisData.qris_string,
                 amount: amount,
-                merchant: qrisSettings.merchant_name,
+                merchant: qrisData.merchant_name,
+                transaction_id: qrisData.transaction_id,
                 timestamp: Date.now()
             }));
             
@@ -2086,36 +2326,8 @@ class NestSian {
             
         } catch (error) {
             console.error('Error generating QRIS:', error);
-            this.showError('Gagal generate QR Code');
+            this.showError('Gagal generate QR Code: ' + error.message);
         }
-    }
-
-    generateQrisString(amount, description, baseString) {
-        // Simplified QRIS generation
-        // In production, use proper QRIS library
-        
-        if (!baseString) {
-            baseString = '00020101021126570011ID.DANA.WWW011893600915376904960002097690496000303UMI51440014ID.CO.QRIS.WWW0215ID10243512603270303UMI5204481453033605802ID5912NESTSIAN STORE6014JAKARTA SELATAN6105123456304';
-        }
-        
-        const amountFormatted = amount.toString().padStart(13, '0');
-        const rawString = `${baseString}54${amountFormatted.length.toString().padStart(2, '0')}${amountFormatted}6304`;
-        
-        // Calculate CRC16 (simplified)
-        const crc = this.calculateCRC16(rawString);
-        return rawString + crc;
-    }
-
-    calculateCRC16(str) {
-        // Simplified CRC16 calculation
-        let crc = 0xFFFF;
-        for (let i = 0; i < str.length; i++) {
-            crc ^= str.charCodeAt(i) << 8;
-            for (let j = 0; j < 8; j++) {
-                crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
-            }
-        }
-        return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
     }
 
     startQRCountdown() {
@@ -2242,6 +2454,17 @@ class NestSian {
                 if (systemCurrency) systemCurrency.value = settings.system.currency || '';
             }
             
+            // Telegram settings
+            if (settings.telegram) {
+                const telegramEnabled = document.getElementById('telegramEnabled');
+                const telegramBotToken = document.getElementById('telegramBotToken');
+                const telegramChatId = document.getElementById('telegramChatId');
+                
+                if (telegramEnabled) telegramEnabled.checked = settings.telegram.enabled || false;
+                if (telegramBotToken) telegramBotToken.value = settings.telegram.bot_token || '';
+                if (telegramChatId) telegramChatId.value = settings.telegram.admin_chat_id || '';
+            }
+            
             // Hero settings
             if (settings.hero) {
                 const heroTitle = document.getElementById('heroTitle');
@@ -2259,7 +2482,7 @@ class NestSian {
                     heroFeatures.innerHTML = '';
                     settings.hero.features.forEach((feature, index) => {
                         const featureHtml = `
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-2 gap-3 mb-3">
                                 <input type="text" name="feature_name_${index}" value="${feature.name}" 
                                        class="form-control text-sm" placeholder="Nama Fitur">
                                 <input type="text" name="feature_icon_${index}" value="${feature.icon}" 
@@ -2337,24 +2560,98 @@ class NestSian {
         }
     }
 
+    async saveTelegramSettings(e) {
+        e.preventDefault();
+        
+        try {
+            const telegramEnabled = document.getElementById('telegramEnabled')?.checked || false;
+            const telegramBotToken = document.getElementById('telegramBotToken')?.value || '';
+            const telegramChatId = document.getElementById('telegramChatId')?.value || '';
+            
+            const telegramSettings = {
+                enabled: telegramEnabled,
+                bot_token: telegramBotToken,
+                admin_chat_id: telegramChatId
+            };
+            
+            await this.supabaseService.saveSetting('telegram', telegramSettings);
+            
+            this.showSuccess('Pengaturan Telegram berhasil disimpan!');
+            
+            // Test Telegram connection if enabled
+            if (telegramEnabled && telegramBotToken && telegramChatId) {
+                await this.testTelegramConnection();
+            }
+            
+        } catch (error) {
+            console.error('Error saving Telegram settings:', error);
+            this.showError('Gagal menyimpan pengaturan Telegram');
+        }
+    }
+
+    async testTelegramConnection() {
+        try {
+            const settings = await this.supabaseService.getSettings();
+            const telegramConfig = settings.telegram || {};
+            
+            if (!telegramConfig.enabled || !telegramConfig.bot_token || !telegramConfig.admin_chat_id) {
+                this.showError('Silakan aktifkan dan isi semua pengaturan Telegram terlebih dahulu');
+                return;
+            }
+            
+            const testBtn = document.getElementById('testTelegramBtn');
+            const originalText = testBtn.innerHTML;
+            testBtn.disabled = true;
+            testBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Menguji...';
+            
+            const url = `https://api.telegram.org/bot${telegramConfig.bot_token}/sendMessage`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    chat_id: telegramConfig.admin_chat_id,
+                    text: '✅ *Tes Notifikasi NestSian* \n\nBot Telegram berhasil terhubung! Notifikasi pesanan baru akan dikirim ke chat ini.',
+                    parse_mode: 'Markdown'
+                })
+            });
+            
+            if (response.ok) {
+                this.showSuccess('Koneksi Telegram berhasil diuji! Periksa chat Telegram Anda.');
+            } else {
+                const errorData = await response.json();
+                this.showError(`Gagal menguji koneksi Telegram: ${errorData.description || 'Unknown error'}`);
+            }
+        } catch (error) {
+            console.error('Error testing Telegram connection:', error);
+            this.showError('Gagal menguji koneksi Telegram: ' + error.message);
+        } finally {
+            const testBtn = document.getElementById('testTelegramBtn');
+            if (testBtn) {
+                testBtn.disabled = false;
+                testBtn.innerHTML = '<i class="fab fa-telegram mr-2"></i>Test Koneksi';
+            }
+        }
+    }
+
     async saveHeroSettings(e) {
         e.preventDefault();
         
         try {
             const heroFeatures = [];
-            const featureInputs = document.querySelectorAll('#heroFeatures input');
+            const featureInputs = document.querySelectorAll('#heroFeatures input[name^="feature_name_"]');
             
-            for (let i = 0; i < featureInputs.length; i += 2) {
-                const nameInput = featureInputs[i];
-                const iconInput = featureInputs[i + 1];
-                
+            featureInputs.forEach((nameInput, index) => {
+                const iconInput = document.querySelector(`input[name="feature_icon_${index}"]`);
                 if (nameInput && iconInput && nameInput.value && iconInput.value) {
                     heroFeatures.push({
                         name: nameInput.value,
                         icon: iconInput.value
                     });
                 }
-            }
+            });
             
             const heroSettings = {
                 title: document.getElementById('heroTitle').value,
@@ -2440,6 +2737,11 @@ class NestSian {
                 return;
             }
             
+            if (!product.is_active) {
+                this.showError('Produk tidak tersedia');
+                return;
+            }
+            
             if (product.stock < 1) {
                 this.showError('Stok produk habis');
                 return;
@@ -2500,6 +2802,7 @@ class NestSian {
         if (cartCount) {
             const totalItems = this.currentCart.reduce((sum, item) => sum + item.quantity, 0);
             cartCount.textContent = totalItems;
+            cartCount.style.display = totalItems > 0 ? 'flex' : 'none';
         }
     }
 
@@ -2516,27 +2819,27 @@ class NestSian {
         const cartItems = document.getElementById('cartItems');
         const cartTotal = document.getElementById('cartTotal');
         const checkoutBtn = document.getElementById('checkoutBtn');
+        const cartEmpty = document.getElementById('cartEmpty');
+        const cartNotEmpty = document.getElementById('cartNotEmpty');
         
-        if (!cartItems || !cartTotal || !checkoutBtn) return;
+        if (!cartItems || !cartTotal || !checkoutBtn || !cartEmpty || !cartNotEmpty) return;
         
         if (this.currentCart.length === 0) {
-            cartItems.innerHTML = `
-                <div class="text-center py-8 text-gray-400">
-                    <i class="fas fa-shopping-cart text-4xl mb-4"></i>
-                    <p>Keranjang belanja kosong</p>
-                </div>
-            `;
-            cartTotal.textContent = 'Rp 0';
+            cartEmpty.classList.remove('hidden');
+            cartNotEmpty.classList.add('hidden');
             checkoutBtn.disabled = true;
             return;
         }
         
-        let total = 0;
+        cartEmpty.classList.add('hidden');
+        cartNotEmpty.classList.remove('hidden');
+        
+        let subtotal = 0;
         cartItems.innerHTML = '';
         
         this.currentCart.forEach(item => {
             const itemTotal = item.price * item.quantity;
-            total += itemTotal;
+            subtotal += itemTotal;
             
             const cartItem = document.createElement('div');
             cartItem.className = 'flex items-center space-x-4 p-4 bg-dark-800 rounded-lg';
@@ -2562,7 +2865,27 @@ class NestSian {
             cartItems.appendChild(cartItem);
         });
         
-        cartTotal.textContent = `Rp ${total.toLocaleString()}`;
+        // Calculate shipping (free over 500k)
+        const shippingCost = subtotal > 500000 ? 0 : 15000;
+        const total = subtotal + shippingCost;
+        
+        cartTotal.innerHTML = `
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Subtotal:</span>
+                    <span class="text-white">Rp ${subtotal.toLocaleString()}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-400">Pengiriman:</span>
+                    <span class="text-white">${shippingCost === 0 ? 'Gratis' : `Rp ${shippingCost.toLocaleString()}`}</span>
+                </div>
+                <div class="flex justify-between pt-2 border-t border-dark-700">
+                    <span class="text-lg font-bold text-white">Total:</span>
+                    <span class="text-xl font-bold text-primary-400">Rp ${total.toLocaleString()}</span>
+                </div>
+            </div>
+        `;
+        
         checkoutBtn.disabled = false;
         
         // Add event listeners
@@ -2594,10 +2917,65 @@ class NestSian {
         });
     }
 
+    togglePaymentMethod(method) {
+        const qrisInstructions = document.getElementById('qrisInstructions');
+        const bankInstructions = document.getElementById('bankInstructions');
+        const codInstructions = document.getElementById('codInstructions');
+        
+        if (method === 'qris') {
+            if (qrisInstructions) qrisInstructions.classList.remove('hidden');
+            if (bankInstructions) bankInstructions.classList.add('hidden');
+            if (codInstructions) codInstructions.classList.add('hidden');
+        } else if (method === 'bank_transfer') {
+            if (qrisInstructions) qrisInstructions.classList.add('hidden');
+            if (bankInstructions) bankInstructions.classList.remove('hidden');
+            if (codInstructions) codInstructions.classList.add('hidden');
+        } else if (method === 'cod') {
+            if (qrisInstructions) qrisInstructions.classList.add('hidden');
+            if (bankInstructions) bankInstructions.classList.add('hidden');
+            if (codInstructions) codInstructions.classList.remove('hidden');
+        }
+    }
+
     showCheckoutModal() {
         if (this.currentCart.length === 0) {
             this.showError('Keranjang belanja kosong');
             return;
+        }
+        
+        // Calculate totals
+        const subtotal = this.currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const shippingCost = subtotal > 500000 ? 0 : 15000;
+        const total = subtotal + shippingCost;
+        
+        // Update checkout summary
+        const checkoutSubtotal = document.getElementById('checkoutSubtotal');
+        const checkoutShipping = document.getElementById('checkoutShipping');
+        const checkoutTotal = document.getElementById('checkoutTotal');
+        
+        if (checkoutSubtotal) checkoutSubtotal.textContent = `Rp ${subtotal.toLocaleString()}`;
+        if (checkoutShipping) checkoutShipping.textContent = shippingCost === 0 ? 'Gratis' : `Rp ${shippingCost.toLocaleString()}`;
+        if (checkoutTotal) checkoutTotal.textContent = `Rp ${total.toLocaleString()}`;
+        
+        // Show checkout items
+        const checkoutItems = document.getElementById('checkoutItems');
+        if (checkoutItems) {
+            checkoutItems.innerHTML = '';
+            this.currentCart.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex justify-between items-center py-2';
+                itemDiv.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <img src="${item.image_url}" alt="${item.name}" class="w-10 h-10 rounded-lg object-cover">
+                        <div>
+                            <p class="text-sm text-white">${item.name}</p>
+                            <p class="text-xs text-gray-400">${item.quantity} x Rp ${item.price.toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <p class="text-sm font-medium text-white">Rp ${(item.price * item.quantity).toLocaleString()}</p>
+                `;
+                checkoutItems.appendChild(itemDiv);
+            });
         }
         
         document.getElementById('checkoutModal').classList.remove('hidden');
@@ -2627,22 +3005,44 @@ class NestSian {
             return;
         }
         
+        // Phone validation
+        const phoneRegex = /^[0-9+\-\s()]{10,15}$/;
+        if (!phoneRegex.test(data.phone)) {
+            this.showError('Format telepon tidak valid');
+            return;
+        }
+        
         try {
             // Calculate total
-            const total = this.currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const subtotal = this.currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const shippingCost = subtotal > 500000 ? 0 : 15000;
+            const total = subtotal + shippingCost;
             
-            // Create order
+            // Check stock availability
+            for (const item of this.currentCart) {
+                const product = await this.supabaseService.getProductById(item.id);
+                if (!product) {
+                    throw new Error(`Produk ${item.name} tidak ditemukan`);
+                }
+                if (product.stock < item.quantity) {
+                    throw new Error(`Stok ${item.name} tidak mencukupi. Tersedia: ${product.stock}, Dibutuhkan: ${item.quantity}`);
+                }
+            }
+            
+            // Create order with new structure
             const order = {
                 customer_name: data.name,
                 customer_email: data.email,
                 customer_phone: data.phone,
-                total_amount: total,
-                status: 'pending',
-                payment_method: data.payment_method,
                 shipping_address: data.address,
+                subtotal: subtotal,
+                shipping_cost: shippingCost,
+                total_amount: total,
+                payment_method: data.payment_method || 'qris',
                 notes: data.notes || '',
                 order_items: this.currentCart.map(item => ({
                     product_id: item.id,
+                    product_name: item.name,
                     quantity: item.quantity,
                     price: item.price
                 }))
@@ -2663,8 +3063,26 @@ class NestSian {
                 // Reset form
                 form.reset();
                 
-                // Show success message
-                this.showSuccess('Pesanan berhasil dibuat! ID Pesanan: ' + savedOrder.id);
+                // Show success message with payment instructions
+                let successMessage = `
+                    ✅ Pesanan berhasil dibuat!
+                    
+                    ID Pesanan: <strong>${savedOrder.id}</strong>
+                    Total: <strong>Rp ${total.toLocaleString()}</strong>
+                    
+                `;
+                
+                if (data.payment_method === 'qris') {
+                    successMessage += '\nSilakan lakukan pembayaran menggunakan QRIS yang telah dikirimkan.';
+                } else if (data.payment_method === 'bank_transfer') {
+                    successMessage += '\nSilakan lakukan transfer ke rekening yang telah kami kirimkan via email.';
+                } else if (data.payment_method === 'cod') {
+                    successMessage += '\nPesanan Anda akan diproses untuk pengiriman COD.';
+                }
+                
+                successMessage += '\n\nPesanan akan diproses setelah pembayaran dikonfirmasi.';
+                
+                this.showSuccess(successMessage);
                 
                 // If logged in, reload orders
                 if (this.currentUser) {
@@ -2676,7 +3094,7 @@ class NestSian {
             
         } catch (error) {
             console.error('Error processing checkout:', error);
-            this.showError('Gagal memproses pesanan. Silakan coba lagi.');
+            this.showError('Gagal memproses pesanan: ' + error.message);
         }
     }
 
@@ -2865,12 +3283,21 @@ class NestSian {
         }
         
         orders.forEach(order => {
+            // Map database status to UI status
+            const statusMap = {
+                'pending': 'pending',
+                'processing': 'processing',
+                'delivered': 'completed',
+                'cancelled': 'cancelled'
+            };
+            const uiStatus = statusMap[order.order_status] || order.order_status;
+            
             const statusClass = {
                 'pending': 'bg-yellow-900/30 text-yellow-400',
                 'processing': 'bg-blue-900/30 text-blue-400',
                 'completed': 'bg-green-900/30 text-green-400',
                 'cancelled': 'bg-red-900/30 text-red-400'
-            }[order.status] || 'bg-gray-900/30 text-gray-400';
+            }[uiStatus] || 'bg-gray-900/30 text-gray-400';
             
             const row = document.createElement('tr');
             row.className = 'border-b border-dark-700';
@@ -2886,7 +3313,7 @@ class NestSian {
                 <td class="py-3 text-gray-300">Rp ${(order.total_amount || 0).toLocaleString()}</td>
                 <td class="py-3">
                     <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
-                        ${order.status}
+                        ${uiStatus}
                     </span>
                 </td>
             `;
@@ -2982,6 +3409,9 @@ class NestSian {
                     this.updateTopProducts();
                     this.updateReportDetails('week');
                     break;
+                case 'settings':
+                    this.loadSettings();
+                    break;
                 case 'frontend':
                     this.loadSettings();
                     this.refreshWebsitePreview();
@@ -3052,18 +3482,24 @@ class NestSian {
     }
 
     showModal(title, content) {
+        // Remove existing modal if any
+        const existingModal = document.querySelector('.custom-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
         // Create modal container
         const modalContainer = document.createElement('div');
-        modalContainer.className = 'modal';
+        modalContainer.className = 'custom-modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75';
         modalContainer.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">${title}</h3>
-                    <button class="modal-close">
-                        <i class="fas fa-times"></i>
+            <div class="bg-dark-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+                <div class="flex items-center justify-between p-4 border-b border-dark-700">
+                    <h3 class="text-lg font-semibold text-white">${title}</h3>
+                    <button class="text-gray-400 hover:text-white close-modal">
+                        <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
-                <div class="modal-body">
+                <div class="p-4 overflow-y-auto max-h-[calc(90vh-80px)]">
                     ${content}
                 </div>
             </div>
@@ -3073,19 +3509,28 @@ class NestSian {
         document.body.appendChild(modalContainer);
         
         // Add event listeners
-        const closeBtn = modalContainer.querySelector('.modal-close');
+        const closeBtn = modalContainer.querySelector('.close-modal');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
-                document.body.removeChild(modalContainer);
+                modalContainer.remove();
             });
         }
         
         // Close on outside click
         modalContainer.addEventListener('click', (e) => {
             if (e.target === modalContainer) {
-                document.body.removeChild(modalContainer);
+                modalContainer.remove();
             }
         });
+        
+        // Close on escape key
+        const closeOnEscape = (e) => {
+            if (e.key === 'Escape') {
+                modalContainer.remove();
+                document.removeEventListener('keydown', closeOnEscape);
+            }
+        };
+        document.addEventListener('keydown', closeOnEscape);
         
         return modalContainer;
     }
@@ -3112,37 +3557,46 @@ class NestSian {
         // Create toast
         const toast = document.createElement('div');
         toast.id = 'customToast';
-        toast.className = `toast toast-${type}`;
+        toast.className = `fixed top-4 right-4 z-50 flex items-center space-x-3 p-4 rounded-lg shadow-lg transform transition-all duration-300 ${
+            type === 'success' ? 'bg-green-900 border border-green-700 text-green-100' :
+            type === 'error' ? 'bg-red-900 border border-red-700 text-red-100' :
+            type === 'info' ? 'bg-blue-900 border border-blue-700 text-blue-100' :
+            'bg-dark-800 border border-dark-700 text-white'
+        }`;
         
         const icon = {
             'success': 'fa-check-circle',
             'error': 'fa-exclamation-circle',
-            'warning': 'fa-exclamation-triangle',
             'info': 'fa-info-circle'
         }[type] || 'fa-info-circle';
         
         toast.innerHTML = `
-            <i class="fas ${icon}"></i>
-            <span>${message}</span>
+            <i class="fas ${icon} text-xl"></i>
+            <div class="flex-1">
+                <p class="font-medium">${message.replace(/\n/g, '<br>')}</p>
+            </div>
+            <button class="text-current hover:opacity-75 close-toast">
+                <i class="fas fa-times"></i>
+            </button>
         `;
         
         // Add to document
         document.body.appendChild(toast);
         
-        // Show animation
-        setTimeout(() => {
-            toast.classList.add('animate-fade-in');
-        }, 10);
+        // Add close event
+        const closeBtn = toast.querySelector('.close-toast');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                toast.remove();
+            });
+        }
         
-        // Remove after 3 seconds
+        // Auto remove after 5 seconds
         setTimeout(() => {
-            toast.classList.add('hidden');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.remove();
-                }
-            }, 300);
-        }, 3000);
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 5000);
     }
 }
 
