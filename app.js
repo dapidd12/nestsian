@@ -1,4 +1,4 @@
-// NestSian - Main Application Logic (FULLY FIXED VERSION)
+// NestSian - Main Application Logic
 class NestSian {
     constructor() {
         this.currentEditingProductId = null;
@@ -17,7 +17,6 @@ class NestSian {
         this.ordersPerPage = 10;
         this.customersPerPage = 10;
         this.chart = null;
-        this.isOnline = true;
         this.init();
     }
 
@@ -60,10 +59,6 @@ class NestSian {
                 clearInterval(initInterval);
                 clearTimeout(loadingTimeout);
                 
-                // Check online status
-                this.isOnline = this.supabaseService.initialized;
-                console.log('Online status:', this.isOnline);
-                
                 // Load initial data
                 this.loadInitialData().then(() => {
                     this.hideLoading();
@@ -104,10 +99,8 @@ class NestSian {
                 // Check if session is not expired (24 hours)
                 if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
                     this.currentUser = user;
-                    console.log('User session restored from localStorage:', user.email);
                 } else {
                     localStorage.removeItem('nestsian_user');
-                    console.log('User session expired');
                 }
             }
             
@@ -116,7 +109,6 @@ class NestSian {
                 const user = await this.supabaseService.getCurrentUser();
                 if (user) {
                     this.currentUser = user;
-                    console.log('User session found in Supabase:', user.email);
                 }
             }
         } catch (error) {
@@ -182,26 +174,15 @@ class NestSian {
             loginSubmit.addEventListener('click', (e) => this.handleLogin(e));
         }
         
-        // Close Login Modal
-        const closeLoginModal = document.getElementById('closeLoginModal');
-        if (closeLoginModal) {
-            closeLoginModal.addEventListener('click', () => {
-                document.getElementById('loginModal').classList.add('hidden');
-            });
-        }
-        
         // Sidebar Toggle
         const sidebarToggle = document.getElementById('sidebarToggle');
         if (sidebarToggle) {
             sidebarToggle.addEventListener('click', () => this.toggleSidebar());
         }
         
-        // Sidebar Links - FIXED: Gunakan event delegation
-        document.getElementById('sidebar')?.addEventListener('click', (e) => {
-            const link = e.target.closest('.sidebar-link');
-            if (link) {
-                this.switchSection(e);
-            }
+        // Sidebar Links
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', (e) => this.switchSection(e));
         });
         
         // Admin Panel
@@ -259,7 +240,6 @@ class NestSian {
             generateQris.addEventListener('click', () => this.generateQRIS());
         }
         
-        // Quick Amount Buttons
         document.querySelectorAll('.quick-amount').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const amount = e.target.dataset.amount;
@@ -278,14 +258,31 @@ class NestSian {
             copyQr.addEventListener('click', () => this.copyQRString());
         }
         
-        // Orders Filter - FIXED: Gunakan event delegation
-        document.getElementById('ordersTab')?.addEventListener('click', (e) => {
-            const filterBtn = e.target.closest('[id^="filter"]');
-            if (filterBtn) {
-                const filterType = filterBtn.id.replace('filter', '').toLowerCase();
-                this.filterOrders(filterType);
-            }
-        });
+        // Orders Filter
+        const filterAll = document.getElementById('filterAll');
+        if (filterAll) {
+            filterAll.addEventListener('click', () => this.filterOrders('all'));
+        }
+        
+        const filterPending = document.getElementById('filterPending');
+        if (filterPending) {
+            filterPending.addEventListener('click', () => this.filterOrders('pending'));
+        }
+        
+        const filterProcessing = document.getElementById('filterProcessing');
+        if (filterProcessing) {
+            filterProcessing.addEventListener('click', () => this.filterOrders('processing'));
+        }
+        
+        const filterCompleted = document.getElementById('filterCompleted');
+        if (filterCompleted) {
+            filterCompleted.addEventListener('click', () => this.filterOrders('completed'));
+        }
+        
+        const filterCancelled = document.getElementById('filterCancelled');
+        if (filterCancelled) {
+            filterCancelled.addEventListener('click', () => this.filterOrders('cancelled'));
+        }
         
         // Search Customers
         const searchCustomer = document.getElementById('searchCustomer');
@@ -350,18 +347,6 @@ class NestSian {
             checkoutForm.addEventListener('submit', (e) => this.handleCheckout(e));
         }
         
-        // Close Checkout Modal
-        const closeCheckoutModal = document.getElementById('closeCheckoutModal');
-        if (closeCheckoutModal) {
-            closeCheckoutModal.addEventListener('click', () => this.hideCheckoutModal());
-        }
-        
-        // Close Cart Modal
-        const closeCartModal = document.getElementById('closeCartModal');
-        if (closeCartModal) {
-            closeCartModal.addEventListener('click', () => this.hideCartModal());
-        }
-        
         // Refresh Preview
         const refreshPreview = document.getElementById('refreshPreview');
         if (refreshPreview) {
@@ -370,26 +355,42 @@ class NestSian {
         
         // Close modals on outside click
         document.addEventListener('click', (e) => {
-            const modals = [
-                { id: 'loginModal', closeOnOutside: true },
-                { id: 'adminPanelModal', closeOnOutside: true },
-                { id: 'cartModal', closeOnOutside: true },
-                { id: 'checkoutModal', closeOnOutside: true },
-                { id: 'imagePreviewModal', closeOnOutside: true },
-                { id: 'orderDetailsModal', closeOnOutside: true }
-            ];
+            const loginModal = document.getElementById('loginModal');
+            const adminPanelModal = document.getElementById('adminPanelModal');
+            const cartModal = document.getElementById('cartModal');
+            const checkoutModal = document.getElementById('checkoutModal');
+            const imagePreviewModal = document.getElementById('imagePreviewModal');
+            const orderDetailsModal = document.getElementById('orderDetailsModal');
             
-            modals.forEach(modal => {
-                const modalElement = document.getElementById(modal.id);
-                if (modalElement && !modalElement.classList.contains('hidden')) {
-                    const isClickInside = modalElement.contains(e.target);
-                    const isTriggerButton = e.target.id === modal.id.replace('Modal', 'Btn');
-                    
-                    if (!isClickInside && !isTriggerButton && modal.closeOnOutside) {
-                        modalElement.classList.add('hidden');
-                    }
-                }
-            });
+            if (loginModal && !loginModal.classList.contains('hidden') && 
+                !loginModal.contains(e.target) && e.target.id !== 'loginBtn') {
+                loginModal.classList.add('hidden');
+            }
+            
+            if (adminPanelModal && !adminPanelModal.classList.contains('hidden') && 
+                !adminPanelModal.contains(e.target) && e.target.id !== 'adminPanelBtn') {
+                adminPanelModal.classList.add('hidden');
+            }
+            
+            if (cartModal && !cartModal.classList.contains('hidden') && 
+                !cartModal.contains(e.target) && e.target.id !== 'cartBtn') {
+                this.hideCartModal();
+            }
+            
+            if (checkoutModal && !checkoutModal.classList.contains('hidden') && 
+                !checkoutModal.contains(e.target)) {
+                this.hideCheckoutModal();
+            }
+            
+            if (imagePreviewModal && !imagePreviewModal.classList.contains('hidden') && 
+                !imagePreviewModal.contains(e.target)) {
+                this.hideImagePreview();
+            }
+            
+            if (orderDetailsModal && !orderDetailsModal.classList.contains('hidden') && 
+                !orderDetailsModal.contains(e.target)) {
+                this.hideOrderDetails();
+            }
         });
         
         console.log('Event listeners initialized');
@@ -430,16 +431,15 @@ class NestSian {
                     document.getElementById('frontend').classList.add('hidden');
                     document.getElementById('mainLayout').classList.remove('hidden');
                     
-                    // Clear login form
-                    document.getElementById('loginEmail').value = '';
-                    document.getElementById('loginPassword').value = '';
-                    
                     // Load dashboard data
                     this.loadDashboardStats();
                     this.loadProducts();
                     this.loadCategories();
                     this.loadOrders();
                     
+                    // Clear login form
+                    document.getElementById('loginEmail').value = '';
+                    document.getElementById('loginPassword').value = '';
                 }, 1000);
             } else {
                 this.showError(result.error || 'Email atau password salah');
@@ -486,10 +486,10 @@ class NestSian {
             const monthlyRevenueElement = document.getElementById('monthlyRevenue');
             const activeCustomersElement = document.getElementById('activeCustomers');
             
-            if (totalProductsElement) totalProductsElement.textContent = stats.totalProducts || 0;
-            if (todayOrdersElement) todayOrdersElement.textContent = stats.todayOrders || 0;
-            if (monthlyRevenueElement) monthlyRevenueElement.textContent = `Rp ${(stats.monthlyRevenue || 0).toLocaleString()}`;
-            if (activeCustomersElement) activeCustomersElement.textContent = stats.activeCustomers || 0;
+            if (totalProductsElement) totalProductsElement.textContent = stats.totalProducts;
+            if (todayOrdersElement) todayOrdersElement.textContent = stats.todayOrders;
+            if (monthlyRevenueElement) monthlyRevenueElement.textContent = `Rp ${stats.monthlyRevenue.toLocaleString()}`;
+            if (activeCustomersElement) activeCustomersElement.textContent = stats.activeCustomers;
             
             // Load recent orders
             await this.loadRecentOrders();
@@ -531,28 +531,26 @@ class NestSian {
                 'pending': 'bg-yellow-900/30 text-yellow-400',
                 'processing': 'bg-blue-900/30 text-blue-400',
                 'completed': 'bg-green-900/30 text-green-400',
-                'delivered': 'bg-green-900/30 text-green-400',
-                'cancelled': 'bg-red-900/30 text-red-400',
-                'confirmed': 'bg-blue-900/30 text-blue-400'
+                'cancelled': 'bg-red-900/30 text-red-400'
             }[order.status] || 'bg-gray-900/30 text-gray-400';
             
             const row = document.createElement('tr');
-            row.className = 'border-b border-dark-700 hover:bg-dark-800/50';
+            row.className = 'border-b border-dark-700';
             row.innerHTML = `
                 <td class="py-3">
-                    <span class="text-sm text-primary-400 font-medium">${order.id || 'N/A'}</span>
+                    <span class="text-sm text-primary-400 font-medium">${order.id}</span>
                 </td>
-                <td class="py-3 text-gray-300">${order.customer_name || 'Tidak ada nama'}</td>
+                <td class="py-3 text-gray-300">${order.customer_name}</td>
                 <td class="py-3 font-medium text-white">
                     Rp ${(order.total_amount || 0).toLocaleString()}
                 </td>
                 <td class="py-3">
-                    <span class="px-2 py-1 rounded-full text-xs ${statusClass} capitalize">
-                        ${order.status || 'pending'}
+                    <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
+                        ${order.status}
                     </span>
                 </td>
                 <td class="py-3 text-gray-300 text-sm">
-                    ${order.created_at ? new Date(order.created_at).toLocaleDateString('id-ID') : 'N/A'}
+                    ${new Date(order.created_at).toLocaleDateString('id-ID')}
                 </td>
             `;
             recentOrders.appendChild(row);
@@ -649,28 +647,23 @@ class NestSian {
     createProductCard(product, category, isAdmin = true) {
         const productCard = document.createElement('div');
         productCard.className = 'product-card';
-        productCard.dataset.id = product.id;
         
         if (isAdmin) {
             productCard.innerHTML = `
                 <div class="overflow-hidden h-48">
                     <img src="${product.image_url}" alt="${product.name}" 
-                         class="product-image w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+                         class="product-image w-full h-full object-cover">
                 </div>
                 <div class="product-content">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="product-category badge badge-primary">
-                            ${category.name || 'Uncategorized'}
-                        </span>
-                        <span class="product-price font-bold text-white">
-                            Rp ${(product.price || 0).toLocaleString()}
-                        </span>
+                        <span class="product-category">${category.name || 'Uncategorized'}</span>
+                        <span class="product-price">Rp ${product.price.toLocaleString()}</span>
                     </div>
                     <h3 class="product-title">${product.name}</h3>
-                    <p class="product-description truncate">${product.description || 'Tidak ada deskripsi'}</p>
-                    <div class="product-footer mt-3">
+                    <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
+                    <div class="product-footer">
                         <span class="product-stock ${product.stock > 5 ? 'in-stock' : product.stock > 0 ? 'low-stock' : 'out-of-stock'}">
-                            <i class="fas fa-box mr-1"></i> ${product.stock || 0} tersedia
+                            <i class="fas fa-box mr-1"></i> ${product.stock} tersedia
                         </span>
                         <div class="flex space-x-2">
                             <button class="btn btn-sm btn-outline edit-product" data-id="${product.id}" title="Edit">
@@ -687,22 +680,18 @@ class NestSian {
             productCard.innerHTML = `
                 <div class="overflow-hidden h-48">
                     <img src="${product.image_url}" alt="${product.name}" 
-                         class="product-image w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+                         class="product-image w-full h-full object-cover">
                 </div>
                 <div class="product-content">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="product-category badge badge-primary">
-                            ${category.name || 'Uncategorized'}
-                        </span>
-                        <span class="product-price font-bold text-white">
-                            Rp ${(product.price || 0).toLocaleString()}
-                        </span>
+                        <span class="product-category">${category.name || 'Uncategorized'}</span>
+                        <span class="product-price">Rp ${product.price.toLocaleString()}</span>
                     </div>
                     <h3 class="product-title">${product.name}</h3>
-                    <p class="product-description truncate">${product.description || 'Tidak ada deskripsi'}</p>
-                    <div class="product-footer mt-3">
+                    <p class="product-description">${product.description || 'Tidak ada deskripsi'}</p>
+                    <div class="product-footer">
                         <span class="product-stock ${product.stock > 5 ? 'in-stock' : product.stock > 0 ? 'low-stock' : 'out-of-stock'}">
-                            <i class="fas fa-box mr-1"></i> ${product.stock || 0} tersedia
+                            <i class="fas fa-box mr-1"></i> ${product.stock} tersedia
                         </span>
                         <button class="btn btn-primary btn-sm add-to-cart" data-id="${product.id}">
                             <i class="fas fa-cart-plus mr-2"></i>Tambah
@@ -710,6 +699,25 @@ class NestSian {
                     </div>
                 </div>
             `;
+        }
+        
+        // Add event listeners
+        if (isAdmin) {
+            const editBtn = productCard.querySelector('.edit-product');
+            const deleteBtn = productCard.querySelector('.delete-product');
+            
+            if (editBtn) {
+                editBtn.addEventListener('click', () => this.editProduct(product.id));
+            }
+            
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => this.deleteProduct(product.id));
+            }
+        } else {
+            const addToCartBtn = productCard.querySelector('.add-to-cart');
+            if (addToCartBtn) {
+                addToCartBtn.addEventListener('click', () => this.addToCart(product.id));
+            }
         }
         
         return productCard;
@@ -738,7 +746,6 @@ class NestSian {
             
             const row = document.createElement('tr');
             row.className = 'hover:bg-dark-800/50 transition-colors';
-            row.dataset.id = product.id;
             row.innerHTML = `
                 <td class="py-4">
                     <div class="flex items-center space-x-3">
@@ -746,9 +753,7 @@ class NestSian {
                              class="w-12 h-12 rounded-lg object-cover">
                         <div>
                             <span class="font-medium text-white block">${product.name}</span>
-                            <span class="text-xs text-gray-400 truncate max-w-[200px]">
-                                ${product.description || 'Tidak ada deskripsi'}
-                            </span>
+                            <span class="text-xs text-gray-400 truncate max-w-[200px]">${product.description || 'Tidak ada deskripsi'}</span>
                         </div>
                     </div>
                 </td>
@@ -757,25 +762,21 @@ class NestSian {
                         ${category.name || 'Uncategorized'}
                     </span>
                 </td>
-                <td class="py-4 text-white font-medium">
-                    Rp ${(product.price || 0).toLocaleString()}
-                </td>
+                <td class="py-4 text-white font-medium">Rp ${product.price.toLocaleString()}</td>
                 <td class="py-4">
                     <span class="product-stock ${product.stock > 10 ? 'in-stock' : product.stock > 0 ? 'low-stock' : 'out-of-stock'}">
-                        ${product.stock || 0}
+                        ${product.stock}
                     </span>
                 </td>
                 <td class="py-4">
                     <div class="flex space-x-2">
-                        <button class="btn btn-sm btn-outline edit-product-btn" data-id="${product.id}" title="Edit">
+                        <button class="btn btn-sm btn-outline edit-product" data-id="${product.id}" title="Edit">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-danger delete-product-btn" data-id="${product.id}" title="Hapus">
+                        <button class="btn btn-sm btn-danger delete-product" data-id="${product.id}" title="Hapus">
                             <i class="fas fa-trash"></i>
                         </button>
-                        <button class="btn btn-sm ${product.featured ? 'btn-warning' : 'btn-secondary'} feature-product-btn" 
-                                data-id="${product.id}" 
-                                title="${product.featured ? 'Unfeature' : 'Feature'}">
+                        <button class="btn btn-sm ${product.featured ? 'btn-warning' : 'btn-secondary'} feature-product" data-id="${product.id}" title="${product.featured ? 'Unfeature' : 'Feature'}">
                             <i class="fas ${product.featured ? 'fa-star' : 'fa-star'}"></i>
                         </button>
                     </div>
@@ -784,45 +785,34 @@ class NestSian {
             productList.appendChild(row);
         });
         
-        // Attach event listeners using event delegation
+        // Attach event listeners to new buttons
         this.attachProductEventListeners();
     }
 
     attachProductEventListeners() {
-        const productList = document.getElementById('productList');
-        if (!productList) return;
-        
-        // Use event delegation for better performance
-        productList.addEventListener('click', (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-            
-            const productId = target.dataset.id;
-            
-            if (target.classList.contains('edit-product-btn')) {
+        document.querySelectorAll('.edit-product').forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                const productId = e.target.closest('button').dataset.id;
                 this.editProduct(productId);
-            } else if (target.classList.contains('delete-product-btn')) {
-                e.preventDefault();
-                this.deleteProduct(productId);
-            } else if (target.classList.contains('feature-product-btn')) {
-                e.preventDefault();
-                this.toggleProductFeature(productId);
-            }
+            });
         });
         
-        // Also attach to frontend products
-        const frontendProducts = document.getElementById('frontendProducts');
-        if (frontendProducts) {
-            frontendProducts.addEventListener('click', (e) => {
-                const target = e.target.closest('.add-to-cart');
-                if (target) {
-                    e.preventDefault();
-                    const productId = target.dataset.id;
-                    this.addToCart(productId);
-                }
+        document.querySelectorAll('.delete-product').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const productId = e.target.closest('button').dataset.id;
+                this.deleteProduct(productId);
             });
-        }
+        });
+        
+        document.querySelectorAll('.feature-product').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const productId = e.target.closest('button').dataset.id;
+                this.toggleProductFeature(productId);
+            });
+        });
     }
 
     updateProductPagination(totalPages, currentPage) {
@@ -929,11 +919,6 @@ class NestSian {
                 productData.id = productId;
             }
             
-            const saveBtn = document.getElementById('saveProduct');
-            const originalText = saveBtn.innerHTML;
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Menyimpan...';
-            
             const savedProduct = await this.supabaseService.saveProduct(productData);
             
             this.showSuccess(`Produk "${name}" berhasil ${productId ? 'diperbarui' : 'disimpan'}!`);
@@ -949,13 +934,7 @@ class NestSian {
             
         } catch (error) {
             console.error('Error saving product:', error);
-            this.showError('Gagal menyimpan produk: ' + error.message);
-        } finally {
-            const saveBtn = document.getElementById('saveProduct');
-            if (saveBtn) {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = productId ? '<i class="fas fa-save mr-2"></i>Update Produk' : '<i class="fas fa-save mr-2"></i>Simpan Produk';
-            }
+            this.showError('Gagal menyimpan produk');
         }
     }
 
@@ -971,11 +950,11 @@ class NestSian {
             // Populate form
             document.getElementById('productId').value = product.id;
             document.getElementById('productName').value = product.name;
-            document.getElementById('productCategory').value = product.category_id || '';
-            document.getElementById('productPrice').value = product.price || 0;
-            document.getElementById('productStock').value = product.stock || 0;
+            document.getElementById('productCategory').value = product.category_id;
+            document.getElementById('productPrice').value = product.price;
+            document.getElementById('productStock').value = product.stock;
             document.getElementById('productDescription').value = product.description || '';
-            document.getElementById('productImage').value = product.image_url || '';
+            document.getElementById('productImage').value = product.image_url;
             document.getElementById('productWeight').value = product.weight || 0;
             document.getElementById('productFeatured').checked = product.featured || false;
             
@@ -1007,15 +986,10 @@ class NestSian {
         if (saveButton) {
             saveButton.innerHTML = '<i class="fas fa-save mr-2"></i>Simpan Produk';
         }
-        
-        const previewImageSrc = document.getElementById('previewImageSrc');
-        if (previewImageSrc) {
-            previewImageSrc.src = '';
-        }
     }
 
     async deleteProduct(productId) {
-        if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+        if (!confirm(`Apakah Anda yakin ingin menghapus produk ini?`)) {
             return;
         }
         
@@ -1027,25 +1001,21 @@ class NestSian {
                 return;
             }
             
-            const result = await this.supabaseService.deleteProduct(productId);
+            await this.supabaseService.deleteProduct(productId);
             
-            if (result.success) {
-                this.showSuccess(`Produk "${product.name}" berhasil dihapus!`);
-                
-                // Reload products
-                await this.loadProducts(this.currentProductPage);
-                
-                // Update frontend if featured
-                if (product.featured) {
-                    this.loadFrontendProducts();
-                }
-            } else {
-                this.showError(result.error || 'Gagal menghapus produk');
+            this.showSuccess(`Produk "${product.name}" berhasil dihapus!`);
+            
+            // Reload products
+            await this.loadProducts(this.currentProductPage);
+            
+            // Update frontend if featured
+            if (product.featured) {
+                this.loadFrontendProducts();
             }
             
         } catch (error) {
             console.error('Error deleting product:', error);
-            this.showError('Gagal menghapus produk: ' + error.message);
+            this.showError('Gagal menghapus produk');
         }
     }
 
@@ -1095,7 +1065,6 @@ class NestSian {
             previewImageSrc.src = imageUrl;
             previewImageSrc.onerror = () => {
                 this.showError('Gagal memuat gambar. Pastikan URL valid.');
-                previewImageSrc.src = '';
             };
         }
         
@@ -1152,6 +1121,9 @@ class NestSian {
         // Update category list in admin panel
         if (categoryList) {
             categories.forEach(async (category) => {
+                const products = await this.supabaseService.getProducts({ category_id: category.id }, 1, 1);
+                const productCount = products.total || 0;
+                
                 const item = document.createElement('div');
                 item.className = 'card mb-3';
                 item.innerHTML = `
@@ -1162,15 +1134,15 @@ class NestSian {
                             </div>
                             <div>
                                 <h4 class="font-medium text-white">${category.name}</h4>
-                                <p class="text-sm text-gray-400">${category.product_count || 0} produk</p>
+                                <p class="text-sm text-gray-400">${productCount} produk</p>
                                 ${category.description ? `<p class="text-xs text-gray-500 mt-1">${category.description}</p>` : ''}
                             </div>
                         </div>
                         <div class="flex space-x-2">
-                            <button class="btn btn-sm btn-outline edit-category-btn" data-id="${category.id}">
+                            <button class="btn btn-sm btn-outline edit-category" data-id="${category.id}">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-sm btn-danger delete-category-btn" data-id="${category.id}">
+                            <button class="btn btn-sm btn-danger delete-category" data-id="${category.id}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -1178,6 +1150,9 @@ class NestSian {
                 `;
                 categoryList.appendChild(item);
             });
+            
+            // Attach event listeners
+            this.attachCategoryEventListeners();
         }
         
         // Update categories grid in categories section
@@ -1192,17 +1167,23 @@ class NestSian {
                         </div>
                         <h3 class="text-lg font-semibold text-white mb-2">${category.name}</h3>
                         ${category.description ? `<p class="text-gray-400 text-sm mb-4">${category.description}</p>` : ''}
-                        <button class="btn btn-sm btn-outline edit-category-btn" data-id="${category.id}">
+                        <button class="btn btn-sm btn-outline edit-category" data-id="${category.id}">
                             <i class="fas fa-edit mr-2"></i>Edit
                         </button>
                     </div>
                 `;
                 categoriesGrid.appendChild(card);
             });
+            
+            // Attach event listeners to grid buttons
+            document.querySelectorAll('#categoriesGrid .edit-category').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const categoryId = e.target.closest('button').dataset.id;
+                    this.editCategory(categoryId);
+                });
+            });
         }
-        
-        // Attach event listeners using event delegation
-        this.attachCategoryEventListeners();
     }
 
     populateCategorySelect(categories) {
@@ -1219,20 +1200,20 @@ class NestSian {
     }
 
     attachCategoryEventListeners() {
-        // Event delegation for category buttons
-        document.addEventListener('click', (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-            
-            const categoryId = target.dataset.id;
-            
-            if (target.classList.contains('edit-category-btn')) {
+        document.querySelectorAll('.edit-category').forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                const categoryId = e.target.closest('button').dataset.id;
                 this.editCategory(categoryId);
-            } else if (target.classList.contains('delete-category-btn')) {
+            });
+        });
+        
+        document.querySelectorAll('.delete-category').forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                const categoryId = e.target.closest('button').dataset.id;
                 this.deleteCategory(categoryId);
-            }
+            });
         });
     }
 
@@ -1312,7 +1293,7 @@ class NestSian {
     }
 
     async deleteCategory(categoryId) {
-        if (!confirm('Apakah Anda yakin ingin menghapus kategori ini? Produk dalam kategori ini akan kehilangan kategori.')) {
+        if (!confirm(`Apakah Anda yakin ingin menghapus kategori ini? Produk dalam kategori ini akan kehilangan kategori.`)) {
             return;
         }
         
@@ -1328,7 +1309,7 @@ class NestSian {
             
         } catch (error) {
             console.error('Error deleting category:', error);
-            this.showError('Gagal menghapus kategori: ' + error.message);
+            this.showError('Gagal menghapus kategori');
         }
     }
 
@@ -1383,15 +1364,11 @@ class NestSian {
                 'pending': 'status-pending',
                 'processing': 'status-processing',
                 'completed': 'status-completed',
-                'delivered': 'status-delivered',
-                'cancelled': 'status-cancelled',
-                'confirmed': 'status-confirmed'
+                'cancelled': 'status-cancelled'
             }[order.status] || 'status-pending';
             
             const itemCount = order.order_items?.length || 0;
-            const firstItem = order.order_items?.[0]?.product_name || 
-                            order.order_items?.[0]?.products?.name || 
-                            'Produk';
+            const firstItem = order.order_items?.[0]?.products?.name || 'Produk';
             const productText = itemCount > 1 ? `${firstItem} +${itemCount - 1} lainnya` : firstItem;
             
             const row = document.createElement('tr');
@@ -1416,16 +1393,16 @@ class NestSian {
                     Rp ${(order.total_amount || 0).toLocaleString()}
                 </td>
                 <td class="py-4">
-                    <span class="status-badge ${statusClass} capitalize">
+                    <span class="status-badge ${statusClass}">
                         ${order.status}
                     </span>
                 </td>
                 <td class="py-4">
                     <div class="flex space-x-2">
-                        <button class="btn btn-sm btn-outline view-order-btn" data-id="${order.id}">
+                        <button class="btn btn-sm btn-outline view-order" data-id="${order.id}">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-primary update-order-btn" data-id="${order.id}">
+                        <button class="btn btn-sm btn-primary update-order" data-id="${order.id}">
                             <i class="fas fa-edit"></i>
                         </button>
                     </div>
@@ -1488,14 +1465,13 @@ class NestSian {
     }
 
     getCurrentOrderFilter() {
-        const activeFilter = document.querySelector('#ordersTab .btn-primary');
+        const activeFilter = document.querySelector('.card-header .btn-primary');
         if (activeFilter) {
             const filterId = activeFilter.id;
             if (filterId === 'filterPending') return 'pending';
             if (filterId === 'filterProcessing') return 'processing';
             if (filterId === 'filterCompleted') return 'completed';
             if (filterId === 'filterCancelled') return 'cancelled';
-            if (filterId === 'filterDelivered') return 'delivered';
         }
         return 'all';
     }
@@ -1515,28 +1491,26 @@ class NestSian {
     }
 
     attachOrderEventListeners() {
-        const orderList = document.getElementById('orderList');
-        if (!orderList) return;
-        
-        orderList.addEventListener('click', (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-            
-            const orderId = target.dataset.id;
-            
-            if (target.classList.contains('view-order-btn')) {
+        document.querySelectorAll('.view-order').forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                const orderId = e.target.closest('button').dataset.id;
                 this.viewOrderDetails(orderId);
-            } else if (target.classList.contains('update-order-btn')) {
+            });
+        });
+        
+        document.querySelectorAll('.update-order').forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                const orderId = e.target.closest('button').dataset.id;
                 this.updateOrderStatus(orderId);
-            }
+            });
         });
     }
 
     filterOrders(status) {
         // Update button styles
-        const buttons = ['filterAll', 'filterPending', 'filterProcessing', 'filterCompleted', 'filterCancelled', 'filterDelivered'];
+        const buttons = ['filterAll', 'filterPending', 'filterProcessing', 'filterCompleted', 'filterCancelled'];
         buttons.forEach(btnId => {
             const btn = document.getElementById(btnId);
             if (btn) {
@@ -1569,34 +1543,25 @@ class NestSian {
             
             // Format order items
             let orderItemsHtml = '';
-            let totalItems = 0;
-            let subtotal = 0;
-            
             if (order.order_items && order.order_items.length > 0) {
                 orderItemsHtml = `
                     <h4 class="font-medium text-white mb-3">Item Pesanan</h4>
                     <div class="space-y-2">
-                        ${order.order_items.map(item => {
-                            const itemTotal = (item.quantity || 0) * (item.price || 0);
-                            totalItems += item.quantity || 0;
-                            subtotal += itemTotal;
-                            
-                            return `
-                                <div class="flex justify-between items-center p-3 bg-dark-800 rounded-lg">
-                                    <div class="flex items-center space-x-3">
-                                        ${item.product?.image_url ? `
-                                            <img src="${item.product.image_url}" alt="${item.product.name}" 
-                                                 class="w-12 h-12 rounded-lg object-cover">
-                                        ` : ''}
-                                        <div>
-                                            <p class="font-medium text-white">${item.product?.name || item.product_name || 'Produk'}</p>
-                                            <p class="text-sm text-gray-400">${item.quantity || 0} x Rp ${(item.price || 0).toLocaleString()}</p>
-                                        </div>
+                        ${order.order_items.map(item => `
+                            <div class="flex justify-between items-center p-3 bg-dark-800 rounded-lg">
+                                <div class="flex items-center space-x-3">
+                                    ${item.products?.image_url ? `
+                                        <img src="${item.products.image_url}" alt="${item.products.name}" 
+                                             class="w-12 h-12 rounded-lg object-cover">
+                                    ` : ''}
+                                    <div>
+                                        <p class="font-medium text-white">${item.products?.name || 'Produk'}</p>
+                                        <p class="text-sm text-gray-400">${item.quantity} x Rp ${item.price.toLocaleString()}</p>
                                     </div>
-                                    <p class="font-bold text-white">Rp ${itemTotal.toLocaleString()}</p>
                                 </div>
-                            `;
-                        }).join('')}
+                                <p class="font-bold text-white">Rp ${(item.quantity * item.price).toLocaleString()}</p>
+                            </div>
+                        `).join('')}
                     </div>
                 `;
             }
@@ -1619,7 +1584,6 @@ class NestSian {
                                 <p><span class="text-gray-400">Tanggal:</span> <span class="text-white">${new Date(order.created_at).toLocaleString('id-ID')}</span></p>
                                 <p><span class="text-gray-400">Status:</span> <span class="status-badge status-${order.status}">${order.status}</span></p>
                                 <p><span class="text-gray-400">Metode Pembayaran:</span> <span class="text-white">${order.payment_method || '-'}</span></p>
-                                <p><span class="text-gray-400">Total Item:</span> <span class="text-white">${totalItems} item</span></p>
                             </div>
                         </div>
                     </div>
@@ -1641,23 +1605,7 @@ class NestSian {
                     ${orderItemsHtml}
                     
                     <div class="pt-4 border-t border-dark-700">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-gray-400">Subtotal (${totalItems} item):</span>
-                            <span class="text-white">Rp ${subtotal.toLocaleString()}</span>
-                        </div>
-                        ${order.shipping_cost ? `
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-gray-400">Biaya Pengiriman:</span>
-                            <span class="text-white">Rp ${order.shipping_cost.toLocaleString()}</span>
-                        </div>
-                        ` : ''}
-                        ${order.discount ? `
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-gray-400">Diskon:</span>
-                            <span class="text-green-400">- Rp ${order.discount.toLocaleString()}</span>
-                        </div>
-                        ` : ''}
-                        <div class="flex justify-between items-center pt-4 border-t border-dark-700">
+                        <div class="flex justify-between items-center">
                             <span class="text-xl font-bold text-white">Total:</span>
                             <span class="text-2xl font-bold text-primary-400">Rp ${(order.total_amount || 0).toLocaleString()}</span>
                         </div>
@@ -1686,15 +1634,13 @@ class NestSian {
                 return;
             }
             
-            const statuses = ['pending', 'confirmed', 'processing', 'completed', 'delivered', 'cancelled'];
-            const currentStatusIndex = statuses.indexOf(order.status);
-            const nextStatus = statuses[currentStatusIndex + 1] || statuses[0];
+            const newStatus = prompt(`Ubah status pesanan ${order.id}:\n(pending, processing, completed, cancelled)`, order.status);
             
-            if (confirm(`Ubah status pesanan ${order.id} dari "${order.status}" menjadi "${nextStatus}"?`)) {
-                const result = await this.supabaseService.updateOrderStatus(orderId, nextStatus);
+            if (newStatus && ['pending', 'processing', 'completed', 'cancelled'].includes(newStatus.toLowerCase())) {
+                const result = await this.supabaseService.updateOrderStatus(orderId, newStatus.toLowerCase());
                 
                 if (result.success) {
-                    this.showSuccess(`Status pesanan berhasil diubah menjadi ${nextStatus}`);
+                    this.showSuccess(`Status pesanan berhasil diubah menjadi ${newStatus}`);
                     await this.loadOrders(this.currentOrderPage, this.getCurrentOrderFilter());
                 } else {
                     this.showError(result.error || 'Gagal mengubah status pesanan');
@@ -1770,10 +1716,10 @@ class NestSian {
                 </td>
                 <td class="py-4">
                     <div class="flex space-x-2">
-                        <button class="btn btn-sm btn-outline view-customer-btn" data-id="${customer.id}">
+                        <button class="btn btn-sm btn-outline view-customer" data-id="${customer.id}">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-primary edit-customer-btn" data-id="${customer.id}">
+                        <button class="btn btn-sm btn-primary edit-customer" data-id="${customer.id}">
                             <i class="fas fa-edit"></i>
                         </button>
                     </div>
@@ -1840,29 +1786,27 @@ class NestSian {
     }
 
     attachCustomerEventListeners() {
-        const customerList = document.getElementById('customerList');
-        if (!customerList) return;
-        
-        customerList.addEventListener('click', (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-            
-            const customerId = target.dataset.id;
-            
-            if (target.classList.contains('view-customer-btn')) {
+        document.querySelectorAll('.view-customer').forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                const customerId = e.target.closest('button').dataset.id;
                 this.viewCustomerDetails(customerId);
-            } else if (target.classList.contains('edit-customer-btn')) {
+            });
+        });
+        
+        document.querySelectorAll('.edit-customer').forEach(btn => {
+            btn.addEventListener('click', (e) => {
                 e.preventDefault();
+                const customerId = e.target.closest('button').dataset.id;
                 this.editCustomer(customerId);
-            }
+            });
         });
     }
 
     async viewCustomerDetails(customerId) {
         try {
-            const result = await this.supabaseService.getCustomers({}, 1, 1000);
-            const customer = result.data.find(c => c.id == customerId);
+            const customers = await this.supabaseService.getCustomers();
+            const customer = customers.data.find(c => c.id == customerId);
             
             if (!customer) {
                 this.showError('Pelanggan tidak ditemukan');
@@ -1870,7 +1814,7 @@ class NestSian {
             }
             
             // Get customer orders
-            const orders = await this.supabaseService.getOrders({ search: customer.email || customer.name });
+            const orders = await this.supabaseService.getOrders({ search: customer.email });
             
             let ordersHtml = '';
             if (orders.data && orders.data.length > 0) {
@@ -1878,7 +1822,7 @@ class NestSian {
                     <h4 class="font-medium text-white mb-3">Riwayat Pesanan</h4>
                     <div class="space-y-2">
                         ${orders.data.slice(0, 5).map(order => `
-                            <div class="flex justify-between items-center p-3 bg-dark-800 rounded-lg hover:bg-dark-700 transition-colors cursor-pointer view-order-btn" data-id="${order.id}">
+                            <div class="flex justify-between items-center p-3 bg-dark-800 rounded-lg">
                                 <div>
                                     <p class="font-medium text-white">${order.id}</p>
                                     <p class="text-sm text-gray-400">${new Date(order.created_at).toLocaleDateString('id-ID')}</p>
@@ -1919,18 +1863,7 @@ class NestSian {
                 </div>
             `;
             
-            const modal = this.showModal('Detail Pelanggan', modalContent);
-            
-            // Add click event to order items
-            setTimeout(() => {
-                modal.querySelectorAll('.view-order-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const orderId = btn.dataset.id;
-                        modal.remove();
-                        this.viewOrderDetails(orderId);
-                    });
-                });
-            }, 100);
+            this.showModal('Detail Pelanggan', modalContent);
             
         } catch (error) {
             console.error('Error viewing customer details:', error);
@@ -1940,8 +1873,8 @@ class NestSian {
 
     async editCustomer(customerId) {
         try {
-            const result = await this.supabaseService.getCustomers({}, 1, 1000);
-            const customer = result.data.find(c => c.id == customerId);
+            const customers = await this.supabaseService.getCustomers();
+            const customer = customers.data.find(c => c.id == customerId);
             
             if (!customer) {
                 this.showError('Pelanggan tidak ditemukan');
@@ -1952,7 +1885,7 @@ class NestSian {
                 <form id="editCustomerForm" class="space-y-4">
                     <input type="hidden" name="id" value="${customer.id}">
                     <div class="form-group">
-                        <label class="form-label">Nama Lengkap *</label>
+                        <label class="form-label">Nama Lengkap</label>
                         <input type="text" name="name" value="${customer.name}" class="form-control" required>
                     </div>
                     <div class="form-group">
@@ -1974,42 +1907,42 @@ class NestSian {
                             <span>Pelanggan Aktif</span>
                         </label>
                     </div>
-                    <div class="flex space-x-3">
-                        <button type="submit" class="btn btn-primary flex-1">
-                            <i class="fas fa-save mr-2"></i>Simpan
-                        </button>
-                        <button type="button" class="btn btn-outline flex-1" onclick="this.closest('.modal').remove()">
-                            Batal
-                        </button>
-                    </div>
+                    <button type="submit" class="btn btn-primary w-full">
+                        <i class="fas fa-save mr-2"></i>Simpan Perubahan
+                    </button>
                 </form>
             `;
             
             const modal = this.showModal('Edit Pelanggan', modalContent);
             
             // Add form submit event
-            modal.querySelector('#editCustomerForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                const customerData = {
-                    id: formData.get('id'),
-                    name: formData.get('name'),
-                    email: formData.get('email'),
-                    phone: formData.get('phone'),
-                    address: formData.get('address'),
-                    is_active: formData.get('is_active') === 'on'
-                };
-                
-                try {
-                    await this.supabaseService.saveCustomer(customerData);
-                    this.showSuccess('Data pelanggan berhasil diperbarui');
-                    this.loadCustomers(this.currentCustomerPage);
-                    modal.remove();
-                } catch (error) {
-                    console.error('Error updating customer:', error);
-                    this.showError('Gagal memperbarui data pelanggan');
+            setTimeout(() => {
+                const form = document.getElementById('editCustomerForm');
+                if (form) {
+                    form.addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(form);
+                        const customerData = {
+                            id: formData.get('id'),
+                            name: formData.get('name'),
+                            email: formData.get('email'),
+                            phone: formData.get('phone'),
+                            address: formData.get('address'),
+                            is_active: formData.get('is_active') === 'on'
+                        };
+                        
+                        try {
+                            await this.supabaseService.saveCustomer(customerData);
+                            this.showSuccess('Data pelanggan berhasil diperbarui');
+                            this.loadCustomers(this.currentCustomerPage);
+                            modal.remove();
+                        } catch (error) {
+                            console.error('Error updating customer:', error);
+                            this.showError('Gagal memperbarui data pelanggan');
+                        }
+                    });
                 }
-            });
+            }, 100);
             
         } catch (error) {
             console.error('Error editing customer:', error);
@@ -2315,18 +2248,18 @@ class NestSian {
                 const heroSubtitle = document.getElementById('heroSubtitle');
                 const heroButton1 = document.getElementById('heroButton1');
                 const heroButton2 = document.getElementById('heroButton2');
+                const heroFeatures = document.getElementById('heroFeatures');
                 
                 if (heroTitle) heroTitle.value = settings.hero.title || '';
                 if (heroSubtitle) heroSubtitle.value = settings.hero.subtitle || '';
                 if (heroButton1) heroButton1.value = settings.hero.button1 || '';
                 if (heroButton2) heroButton2.value = settings.hero.button2 || '';
                 
-                const heroFeatures = document.getElementById('heroFeatures');
                 if (heroFeatures && settings.hero.features) {
                     heroFeatures.innerHTML = '';
                     settings.hero.features.forEach((feature, index) => {
                         const featureHtml = `
-                            <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div class="grid grid-cols-2 gap-3">
                                 <input type="text" name="feature_name_${index}" value="${feature.name}" 
                                        class="form-control text-sm" placeholder="Nama Fitur">
                                 <input type="text" name="feature_icon_${index}" value="${feature.icon}" 
@@ -2513,7 +2446,7 @@ class NestSian {
             }
             
             // Check if product already in cart
-            const existingItem = this.currentCart.find(item => item.id == product.id);
+            const existingItem = this.currentCart.find(item => item.id === product.id);
             
             if (existingItem) {
                 if (existingItem.quantity >= product.stock) {
@@ -2542,13 +2475,13 @@ class NestSian {
     }
 
     removeFromCart(productId) {
-        this.currentCart = this.currentCart.filter(item => item.id != productId);
+        this.currentCart = this.currentCart.filter(item => item.id !== productId);
         this.saveCart();
         this.updateCartModal();
     }
 
     updateCartQuantity(productId, quantity) {
-        const item = this.currentCart.find(item => item.id == productId);
+        const item = this.currentCart.find(item => item.id === productId);
         if (item) {
             if (quantity < 1) {
                 this.removeFromCart(productId);
@@ -2567,7 +2500,6 @@ class NestSian {
         if (cartCount) {
             const totalItems = this.currentCart.reduce((sum, item) => sum + item.quantity, 0);
             cartCount.textContent = totalItems;
-            cartCount.style.display = totalItems > 0 ? 'flex' : 'none';
         }
     }
 
@@ -2584,21 +2516,20 @@ class NestSian {
         const cartItems = document.getElementById('cartItems');
         const cartTotal = document.getElementById('cartTotal');
         const checkoutBtn = document.getElementById('checkoutBtn');
-        const emptyCart = document.getElementById('emptyCart');
-        const cartContent = document.getElementById('cartContent');
         
-        if (!cartItems || !cartTotal || !checkoutBtn || !emptyCart || !cartContent) return;
+        if (!cartItems || !cartTotal || !checkoutBtn) return;
         
         if (this.currentCart.length === 0) {
-            emptyCart.classList.remove('hidden');
-            cartContent.classList.add('hidden');
+            cartItems.innerHTML = `
+                <div class="text-center py-8 text-gray-400">
+                    <i class="fas fa-shopping-cart text-4xl mb-4"></i>
+                    <p>Keranjang belanja kosong</p>
+                </div>
+            `;
             cartTotal.textContent = 'Rp 0';
             checkoutBtn.disabled = true;
             return;
         }
-        
-        emptyCart.classList.add('hidden');
-        cartContent.classList.remove('hidden');
         
         let total = 0;
         cartItems.innerHTML = '';
@@ -2608,7 +2539,7 @@ class NestSian {
             total += itemTotal;
             
             const cartItem = document.createElement('div');
-            cartItem.className = 'flex items-center space-x-4 p-4 bg-dark-800 rounded-lg mb-3';
+            cartItem.className = 'flex items-center space-x-4 p-4 bg-dark-800 rounded-lg';
             cartItem.innerHTML = `
                 <img src="${item.image_url}" alt="${item.name}" class="w-16 h-16 rounded-lg object-cover">
                 <div class="flex-1">
@@ -2616,14 +2547,14 @@ class NestSian {
                     <p class="text-primary-400 font-bold">Rp ${item.price.toLocaleString()}</p>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <button class="btn btn-sm btn-outline decrease-quantity-btn" data-id="${item.id}">
+                    <button class="btn btn-sm btn-outline decrease-quantity" data-id="${item.id}">
                         <i class="fas fa-minus"></i>
                     </button>
                     <span class="text-white font-medium w-8 text-center">${item.quantity}</span>
-                    <button class="btn btn-sm btn-outline increase-quantity-btn" data-id="${item.id}">
+                    <button class="btn btn-sm btn-outline increase-quantity" data-id="${item.id}">
                         <i class="fas fa-plus"></i>
                     </button>
-                    <button class="btn btn-sm btn-danger remove-item-btn" data-id="${item.id}">
+                    <button class="btn btn-sm btn-danger remove-item" data-id="${item.id}">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
@@ -2634,21 +2565,32 @@ class NestSian {
         cartTotal.textContent = `Rp ${total.toLocaleString()}`;
         checkoutBtn.disabled = false;
         
-        // Add event listeners using event delegation
-        cartItems.addEventListener('click', (e) => {
-            const target = e.target.closest('button');
-            if (!target) return;
-            
-            const productId = target.dataset.id;
-            const item = this.currentCart.find(item => item.id == productId);
-            
-            if (target.classList.contains('decrease-quantity-btn') && item) {
-                this.updateCartQuantity(item.id, item.quantity - 1);
-            } else if (target.classList.contains('increase-quantity-btn') && item) {
-                this.updateCartQuantity(item.id, item.quantity + 1);
-            } else if (target.classList.contains('remove-item-btn') && item) {
-                this.removeFromCart(item.id);
-            }
+        // Add event listeners
+        document.querySelectorAll('.decrease-quantity').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.target.closest('button').dataset.id;
+                const item = this.currentCart.find(item => item.id == productId);
+                if (item) {
+                    this.updateCartQuantity(item.id, item.quantity - 1);
+                }
+            });
+        });
+        
+        document.querySelectorAll('.increase-quantity').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.target.closest('button').dataset.id;
+                const item = this.currentCart.find(item => item.id == productId);
+                if (item) {
+                    this.updateCartQuantity(item.id, item.quantity + 1);
+                }
+            });
+        });
+        
+        document.querySelectorAll('.remove-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.target.closest('button').dataset.id;
+                this.removeFromCart(productId);
+            });
         });
     }
 
@@ -2656,14 +2598,6 @@ class NestSian {
         if (this.currentCart.length === 0) {
             this.showError('Keranjang belanja kosong');
             return;
-        }
-        
-        // Pre-fill customer data if available
-        const storedUser = localStorage.getItem('nestsian_user');
-        if (storedUser) {
-            const { user } = JSON.parse(storedUser);
-            document.getElementById('checkoutName').value = user.name || '';
-            document.getElementById('checkoutEmail').value = user.email || '';
         }
         
         document.getElementById('checkoutModal').classList.remove('hidden');
@@ -2709,16 +2643,10 @@ class NestSian {
                 notes: data.notes || '',
                 order_items: this.currentCart.map(item => ({
                     product_id: item.id,
-                    product_name: item.name,
                     quantity: item.quantity,
                     price: item.price
                 }))
             };
-            
-            const saveBtn = form.querySelector('button[type="submit"]');
-            const originalText = saveBtn.innerHTML;
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Memproses...';
             
             const savedOrder = await this.supabaseService.saveOrder(order);
             
@@ -2749,12 +2677,6 @@ class NestSian {
         } catch (error) {
             console.error('Error processing checkout:', error);
             this.showError('Gagal memproses pesanan. Silakan coba lagi.');
-        } finally {
-            const saveBtn = form.querySelector('button[type="submit"]');
-            if (saveBtn) {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = 'Proses Pesanan';
-            }
         }
     }
 
@@ -2865,7 +2787,7 @@ class NestSian {
                 const rankColor = rankColors[index] || 'bg-dark-600';
                 
                 const item = document.createElement('div');
-                item.className = 'flex items-center space-x-4 p-3 bg-dark-800 rounded-lg mb-2';
+                item.className = 'flex items-center space-x-4 p-3 bg-dark-800 rounded-lg';
                 item.innerHTML = `
                     <div class="w-10 h-10 rounded-full ${rankColor} flex items-center justify-center text-white font-bold">
                         ${index + 1}
@@ -2947,12 +2869,11 @@ class NestSian {
                 'pending': 'bg-yellow-900/30 text-yellow-400',
                 'processing': 'bg-blue-900/30 text-blue-400',
                 'completed': 'bg-green-900/30 text-green-400',
-                'delivered': 'bg-green-900/30 text-green-400',
                 'cancelled': 'bg-red-900/30 text-red-400'
             }[order.status] || 'bg-gray-900/30 text-gray-400';
             
             const row = document.createElement('tr');
-            row.className = 'border-b border-dark-700 hover:bg-dark-800/50';
+            row.className = 'border-b border-dark-700';
             row.innerHTML = `
                 <td class="py-3 text-gray-300">
                     ${new Date(order.created_at).toLocaleDateString('id-ID')}
@@ -2964,7 +2885,7 @@ class NestSian {
                 <td class="py-3 text-gray-300">${order.order_items?.length || 1} item</td>
                 <td class="py-3 text-gray-300">Rp ${(order.total_amount || 0).toLocaleString()}</td>
                 <td class="py-3">
-                    <span class="px-2 py-1 rounded-full text-xs ${statusClass} capitalize">
+                    <span class="px-2 py-1 rounded-full text-xs ${statusClass}">
                         ${order.status}
                     </span>
                 </td>
@@ -3120,8 +3041,8 @@ class NestSian {
             const clockElement = document.getElementById('clock');
             if (clockElement) {
                 clockElement.innerHTML = `
-                    <div class="text-sm text-gray-400">${dateString}</div>
-                    <div class="font-mono font-bold text-white text-xl">${timeString}</div>
+                    <div class="text-sm">${dateString}</div>
+                    <div class="font-mono font-bold">${timeString}</div>
                 `;
             }
         };
@@ -3131,24 +3052,18 @@ class NestSian {
     }
 
     showModal(title, content) {
-        // Remove existing modal
-        const existingModal = document.querySelector('.custom-modal');
-        if (existingModal) {
-            existingModal.remove();
-        }
-        
         // Create modal container
         const modalContainer = document.createElement('div');
-        modalContainer.className = 'custom-modal fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4';
+        modalContainer.className = 'modal';
         modalContainer.innerHTML = `
-            <div class="bg-dark-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-                <div class="flex items-center justify-between p-4 border-b border-dark-700">
-                    <h3 class="text-xl font-semibold text-white">${title}</h3>
-                    <button class="text-gray-400 hover:text-white close-modal-btn">
-                        <i class="fas fa-times text-xl"></i>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">${title}</h3>
+                    <button class="modal-close">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
-                <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <div class="modal-body">
                     ${content}
                 </div>
             </div>
@@ -3158,14 +3073,17 @@ class NestSian {
         document.body.appendChild(modalContainer);
         
         // Add event listeners
-        modalContainer.querySelector('.close-modal-btn').addEventListener('click', () => {
-            modalContainer.remove();
-        });
+        const closeBtn = modalContainer.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                document.body.removeChild(modalContainer);
+            });
+        }
         
         // Close on outside click
         modalContainer.addEventListener('click', (e) => {
             if (e.target === modalContainer) {
-                modalContainer.remove();
+                document.body.removeChild(modalContainer);
             }
         });
         
@@ -3186,49 +3104,45 @@ class NestSian {
 
     showToast(message, type = 'info') {
         // Remove existing toast
-        const existingToast = document.querySelector('.custom-toast');
+        const existingToast = document.getElementById('customToast');
         if (existingToast) {
             existingToast.remove();
         }
         
         // Create toast
         const toast = document.createElement('div');
-        toast.className = `custom-toast fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${
-            type === 'success' ? 'bg-green-900/90 text-green-100 border border-green-700' :
-            type === 'error' ? 'bg-red-900/90 text-red-100 border border-red-700' :
-            'bg-blue-900/90 text-blue-100 border border-blue-700'
-        }`;
+        toast.id = 'customToast';
+        toast.className = `toast toast-${type}`;
         
         const icon = {
             'success': 'fa-check-circle',
             'error': 'fa-exclamation-circle',
+            'warning': 'fa-exclamation-triangle',
             'info': 'fa-info-circle'
-        }[type];
+        }[type] || 'fa-info-circle';
         
         toast.innerHTML = `
-            <i class="fas ${icon} text-xl"></i>
-            <div>
-                <p class="font-medium">${message}</p>
-            </div>
-            <button class="ml-4 text-gray-300 hover:text-white close-toast-btn">
-                <i class="fas fa-times"></i>
-            </button>
+            <i class="fas ${icon}"></i>
+            <span>${message}</span>
         `;
         
         // Add to document
         document.body.appendChild(toast);
         
-        // Add close button event
-        toast.querySelector('.close-toast-btn').addEventListener('click', () => {
-            toast.remove();
-        });
-        
-        // Auto remove after 5 seconds
+        // Show animation
         setTimeout(() => {
-            if (toast.parentNode) {
-                toast.remove();
-            }
-        }, 5000);
+            toast.classList.add('animate-fade-in');
+        }, 10);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            toast.classList.add('hidden');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 300);
+        }, 3000);
     }
 }
 
