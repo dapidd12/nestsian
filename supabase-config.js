@@ -1,4 +1,4 @@
-// Supabase Configuration for NestSian
+// Supabase Configuration for NestSian - COMPLETE VERSION
 const SUPABASE_CONFIG = {
     URL: 'https://fumkbpwwyolzthowbkus.supabase.co',
     KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ1bWticHd3eW9senRob3dia3VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MDM0ODIsImV4cCI6MjA4MTM3OTQ4Mn0.Lc-Jw_zDBbkXAgIw5NTOfX_dBPQpD42IpVxQ-2EvZ2I'
@@ -46,10 +46,15 @@ class SupabaseService {
                 this.initialized = true;
                 console.log('Supabase connected successfully');
                 
-                // Check for existing session
+                // Check for existing session (Supabase Auth)
                 const { data: { session } } = await this.supabase.auth.getSession();
                 if (session) {
-                    this.currentUser = session.user;
+                    this.currentUser = {
+                        id: session.user.id,
+                        email: session.user.email,
+                        role: this.getUserRole(session.user),
+                        name: session.user.user_metadata?.name || session.user.email
+                    };
                     console.log('User session found:', this.currentUser.email);
                 }
                 
@@ -64,6 +69,13 @@ class SupabaseService {
         }
     }
 
+    getUserRole(user) {
+        // Check user role from metadata or email
+        if (user.email === 'admin@nestsian.com') return 'superadmin';
+        if (user.email === 'staff@nestsian.com') return 'staff';
+        return user.user_metadata?.role || 'staff';
+    }
+
     setupFallbackMode() {
         console.log('Setting up fallback mode...');
         
@@ -73,7 +85,7 @@ class SupabaseService {
                 signInWithPassword: (credentials) => this.mockSignIn(credentials),
                 signOut: () => this.mockSignOut(),
                 getSession: () => this.mockGetSession(),
-                getUser: () => this.mockGetSession(),
+                getUser: () => this.mockGetUser(),
                 onAuthStateChange: (callback) => this.mockAuthStateChange(callback)
             },
             rpc: (fn, params) => this.mockRpc(fn, params)
@@ -106,6 +118,9 @@ class SupabaseService {
             }),
             limit: (count) => ({ 
                 select: (columns = '*') => this.mockSelect(table, columns, { limit: count })
+            }),
+            range: (start, end) => ({
+                select: (columns = '*') => this.mockSelect(table, columns, { range: [start, end] })
             })
         };
     }
@@ -126,9 +141,21 @@ class SupabaseService {
                     return { success: false, error: error.message };
                 }
                 
-                this.currentUser = data.user;
+                this.currentUser = {
+                    id: data.user.id,
+                    email: data.user.email,
+                    role: this.getUserRole(data.user),
+                    name: data.user.user_metadata?.name || data.user.email
+                };
+                
+                // Store in localStorage
+                localStorage.setItem('nestsian_user', JSON.stringify({
+                    user: this.currentUser,
+                    timestamp: Date.now()
+                }));
+                
                 console.log('Sign in successful via Supabase');
-                return { success: true, user: data.user };
+                return { success: true, user: this.currentUser };
                 
             } catch (error) {
                 console.error('Sign in exception:', error);
@@ -160,7 +187,15 @@ class SupabaseService {
         if (this.initialized && this.supabase.auth) {
             try {
                 const { data: { user } } = await this.supabase.auth.getUser();
-                return user;
+                if (user) {
+                    return {
+                        id: user.id,
+                        email: user.email,
+                        role: this.getUserRole(user),
+                        name: user.user_metadata?.name || user.email
+                    };
+                }
+                return null;
             } catch (error) {
                 console.error('Get user error:', error);
                 return null;
@@ -175,7 +210,7 @@ class SupabaseService {
             if (this.initialized) {
                 let query = this.supabase
                     .from('products')
-                    .select('*, categories(name, icon)', { count: 'exact' });
+                    .select('*, categories!inner(name, icon, description)', { count: 'exact' });
                 
                 // Apply filters
                 if (filters.category_id) {
@@ -191,11 +226,15 @@ class SupabaseService {
                 }
                 
                 if (filters.stock_low) {
-                    query = query.lte('stock', 5);
+                    query = query.lte('stock', 5).gt('stock', 0);
                 }
                 
                 if (filters.stock_out) {
                     query = query.eq('stock', 0);
+                }
+                
+                if (filters.is_active !== undefined) {
+                    query = query.eq('is_active', filters.is_active);
                 }
                 
                 // Apply pagination
@@ -212,8 +251,18 @@ class SupabaseService {
                     throw error;
                 }
                 
+                // Transform data to match expected format
+                const transformedData = (data || []).map(product => ({
+                    ...product,
+                    categories: product.categories ? {
+                        name: product.categories.name,
+                        icon: product.categories.icon,
+                        description: product.categories.description
+                    } : { name: 'Uncategorized', icon: 'fas fa-tag' }
+                }));
+                
                 return {
-                    data: data || [],
+                    data: transformedData,
                     total: count || 0,
                     page,
                     limit,
@@ -234,12 +283,23 @@ class SupabaseService {
             if (this.initialized) {
                 const { data, error } = await this.supabase
                     .from('products')
-                    .select('*, categories(*)')
+                    .select('*, categories(name, icon, description)')
                     .eq('id', id)
                     .single();
                 
                 if (error) throw error;
-                return data;
+                
+                // Transform data
+                const product = {
+                    ...data,
+                    categories: data.categories ? {
+                        name: data.categories.name,
+                        icon: data.categories.icon,
+                        description: data.categories.description
+                    } : { name: 'Uncategorized', icon: 'fas fa-tag' }
+                };
+                
+                return product;
                 
             } else {
                 return this.getLocalProductById(id);
@@ -254,11 +314,27 @@ class SupabaseService {
         try {
             if (this.initialized) {
                 const productData = {
-                    ...product,
+                    name: product.name,
+                    category_id: product.category_id,
+                    price: product.price,
+                    stock: product.stock,
+                    description: product.description,
+                    image_url: product.image_url,
+                    weight: product.weight || 0,
+                    featured: product.featured || false,
+                    is_active: product.is_active !== undefined ? product.is_active : true,
                     updated_at: new Date().toISOString()
                 };
                 
+                // Add slug if not provided
+                if (!product.slug && product.name) {
+                    productData.slug = product.name.toLowerCase()
+                        .replace(/[^\w\s]/gi, '')
+                        .replace(/\s+/g, '-');
+                }
+                
                 if (product.id) {
+                    // Update existing product
                     const { data, error } = await this.supabase
                         .from('products')
                         .update(productData)
@@ -267,14 +343,20 @@ class SupabaseService {
                         .single();
                     
                     if (error) throw error;
+                    
+                    // Log inventory change if stock changed
+                    if (product.stock !== undefined) {
+                        await this.logInventoryChange(product.id, 'adjustment', product.stock);
+                    }
+                    
                     return data;
                 } else {
+                    // Insert new product
+                    productData.created_at = new Date().toISOString();
+                    
                     const { data, error } = await this.supabase
                         .from('products')
-                        .insert([{
-                            ...productData,
-                            created_at: new Date().toISOString()
-                        }])
+                        .insert([productData])
                         .select()
                         .single();
                     
@@ -313,7 +395,7 @@ class SupabaseService {
         }
     }
 
-    async updateProductStock(id, quantity) {
+    async updateProductStock(id, quantity, type = 'adjustment', notes = '') {
         try {
             const product = await this.getProductById(id);
             if (!product) throw new Error('Product not found');
@@ -330,6 +412,10 @@ class SupabaseService {
                     .eq('id', id);
                 
                 if (error) throw error;
+                
+                // Log inventory change
+                await this.logInventoryChange(id, type, quantity, notes);
+                
             } else {
                 this.updateLocalProductStock(id, newStock);
             }
@@ -348,6 +434,7 @@ class SupabaseService {
                 const { data, error } = await this.supabase
                     .from('categories')
                     .select('*')
+                    .order('sort_order')
                     .order('name');
                 
                 if (error) throw error;
@@ -366,7 +453,11 @@ class SupabaseService {
         try {
             if (this.initialized) {
                 const categoryData = {
-                    ...category,
+                    name: category.name,
+                    icon: category.icon || 'fas fa-tag',
+                    description: category.description,
+                    sort_order: category.sort_order || 0,
+                    is_active: category.is_active !== undefined ? category.is_active : true,
                     updated_at: new Date().toISOString()
                 };
                 
@@ -381,12 +472,11 @@ class SupabaseService {
                     if (error) throw error;
                     return data;
                 } else {
+                    categoryData.created_at = new Date().toISOString();
+                    
                     const { data, error } = await this.supabase
                         .from('categories')
-                        .insert([{
-                            ...categoryData,
-                            created_at: new Date().toISOString()
-                        }])
+                        .insert([categoryData])
                         .select()
                         .single();
                     
@@ -447,10 +537,14 @@ class SupabaseService {
             if (this.initialized) {
                 let query = this.supabase
                     .from('orders')
-                    .select('*, order_items(*, products(name, price))', { count: 'exact' });
+                    .select('*, order_items(*, products(name, price, image_url))', { count: 'exact' });
                 
-                if (filters.status) {
-                    query = query.eq('status', filters.status);
+                if (filters.order_status) {
+                    query = query.eq('order_status', filters.order_status);
+                }
+                
+                if (filters.payment_status) {
+                    query = query.eq('payment_status', filters.payment_status);
                 }
                 
                 if (filters.start_date && filters.end_date) {
@@ -513,12 +607,23 @@ class SupabaseService {
     async saveOrder(order) {
         try {
             const orderData = {
-                ...order,
+                customer_name: order.customer_name,
+                customer_email: order.customer_email,
+                customer_phone: order.customer_phone,
+                shipping_address: order.shipping_address,
+                subtotal: order.subtotal || 0,
+                shipping_cost: order.shipping_cost || 0,
+                total_amount: order.total_amount,
+                payment_method: order.payment_method || 'qris',
+                payment_status: 'pending',
+                order_status: 'pending',
+                notes: order.notes || '',
                 updated_at: new Date().toISOString()
             };
             
             if (this.initialized) {
                 if (order.id) {
+                    // Update existing order
                     const { data, error } = await this.supabase
                         .from('orders')
                         .update(orderData)
@@ -528,35 +633,58 @@ class SupabaseService {
                     
                     if (error) throw error;
                     return data;
+                    
                 } else {
+                    // Create new order with auto-generated ID
+                    orderData.created_at = new Date().toISOString();
+                    
                     const { data, error } = await this.supabase
                         .from('orders')
-                        .insert([{
-                            ...orderData,
-                            created_at: new Date().toISOString()
-                        }])
+                        .insert([orderData])
                         .select()
                         .single();
                     
                     if (error) throw error;
                     
-                    // Save order items
+                    // Save order items if provided
                     if (order.order_items && order.order_items.length > 0) {
+                        const orderItems = order.order_items.map(item => ({
+                            order_id: data.id,
+                            product_id: item.product_id,
+                            product_name: item.product_name || `Product ${item.product_id}`,
+                            quantity: item.quantity,
+                            unit_price: item.price,
+                            total_price: item.quantity * item.price,
+                            created_at: new Date().toISOString()
+                        }));
+                        
+                        const { error: itemsError } = await this.supabase
+                            .from('order_items')
+                            .insert(orderItems);
+                        
+                        if (itemsError) throw itemsError;
+                        
+                        // Update product stock
                         for (const item of order.order_items) {
-                            await this.supabase
-                                .from('order_items')
-                                .insert([{
-                                    order_id: data.id,
-                                    product_id: item.product_id,
-                                    quantity: item.quantity,
-                                    price: item.price,
-                                    created_at: new Date().toISOString()
-                                }]);
-                            
-                            // Update product stock
-                            await this.updateProductStock(item.product_id, -item.quantity);
+                            await this.updateProductStock(
+                                item.product_id, 
+                                -item.quantity, 
+                                'out',
+                                `Order ${data.id}`
+                            );
                         }
                     }
+                    
+                    // Create QRIS transaction if payment method is QRIS
+                    if (order.payment_method === 'qris') {
+                        await this.createQrisTransaction(data.id, order.total_amount, orderData.customer_name);
+                    }
+                    
+                    // Send Telegram notification
+                    await this.sendTelegramNotification(data);
+                    
+                    // Update customer statistics
+                    await this.updateCustomerStatistics(order.customer_email, order.total_amount);
                     
                     return data;
                 }
@@ -570,15 +698,41 @@ class SupabaseService {
         }
     }
 
-    async updateOrderStatus(id, status) {
+    async updateOrderStatus(id, status, paymentStatus = null) {
         try {
             if (this.initialized) {
+                const updateData = { 
+                    order_status: status,
+                    updated_at: new Date().toISOString()
+                };
+                
+                if (paymentStatus) {
+                    updateData.payment_status = paymentStatus;
+                    
+                    // If payment is paid, update paid_at
+                    if (paymentStatus === 'paid') {
+                        updateData.paid_at = new Date().toISOString();
+                    }
+                }
+                
+                // If order is cancelled, restore product stock
+                if (status === 'cancelled') {
+                    const order = await this.getOrderById(id);
+                    if (order && order.order_items) {
+                        for (const item of order.order_items) {
+                            await this.updateProductStock(
+                                item.product_id,
+                                item.quantity,
+                                'return',
+                                `Order ${id} cancelled`
+                            );
+                        }
+                    }
+                }
+                
                 const { error } = await this.supabase
                     .from('orders')
-                    .update({ 
-                        status,
-                        updated_at: new Date().toISOString()
-                    })
+                    .update(updateData)
                     .eq('id', id);
                 
                 if (error) throw error;
@@ -600,6 +754,12 @@ class SupabaseService {
                 // Delete order items first
                 await this.supabase
                     .from('order_items')
+                    .delete()
+                    .eq('order_id', id);
+                
+                // Delete QRIS transaction if exists
+                await this.supabase
+                    .from('qris_transactions')
                     .delete()
                     .eq('order_id', id);
                 
@@ -669,10 +829,21 @@ class SupabaseService {
     async saveCustomer(customer) {
         try {
             if (this.initialized) {
+                const customerData = {
+                    name: customer.name,
+                    email: customer.email,
+                    phone: customer.phone,
+                    address: customer.address,
+                    city: customer.city,
+                    company: customer.company,
+                    is_active: customer.is_active !== undefined ? customer.is_active : true,
+                    updated_at: new Date().toISOString()
+                };
+                
                 if (customer.id) {
                     const { data, error } = await this.supabase
                         .from('customers')
-                        .update(customer)
+                        .update(customerData)
                         .eq('id', customer.id)
                         .select()
                         .single();
@@ -680,12 +851,11 @@ class SupabaseService {
                     if (error) throw error;
                     return data;
                 } else {
+                    customerData.created_at = new Date().toISOString();
+                    
                     const { data, error } = await this.supabase
                         .from('customers')
-                        .insert([{
-                            ...customer,
-                            created_at: new Date().toISOString()
-                        }])
+                        .insert([customerData])
                         .select()
                         .single();
                     
@@ -699,6 +869,245 @@ class SupabaseService {
         } catch (error) {
             console.error('Error saving customer:', error);
             return this.saveLocalCustomer(customer);
+        }
+    }
+
+    async updateCustomerStatistics(email, amount) {
+        try {
+            if (!email || !this.initialized) return;
+            
+            // Find customer by email
+            const { data: customers, error } = await this.supabase
+                .from('customers')
+                .select('*')
+                .eq('email', email)
+                .limit(1);
+            
+            if (error) throw error;
+            
+            if (customers && customers.length > 0) {
+                const customer = customers[0];
+                const updatedData = {
+                    total_orders: (customer.total_orders || 0) + 1,
+                    total_spent: (customer.total_spent || 0) + amount,
+                    last_order_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                
+                await this.supabase
+                    .from('customers')
+                    .update(updatedData)
+                    .eq('id', customer.id);
+            }
+        } catch (error) {
+            console.error('Error updating customer statistics:', error);
+        }
+    }
+
+    // ==================== QRIS METHODS ====================
+    async createQrisTransaction(orderId, amount, description = '') {
+        try {
+            if (this.initialized) {
+                const qrisString = this.generateDynamicQrisString(amount, description);
+                const transactionId = `QRIS-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                
+                const transactionData = {
+                    order_id: orderId,
+                    transaction_id: transactionId,
+                    qris_string: qrisString,
+                    amount: amount,
+                    merchant_name: 'NestSian Store',
+                    merchant_id: 'ID.NESTSIAN.WWW',
+                    description: description || `Payment for order ${orderId}`,
+                    status: 'pending',
+                    expiration_time: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 minutes
+                    created_at: new Date().toISOString()
+                };
+                
+                const { data, error } = await this.supabase
+                    .from('qris_transactions')
+                    .insert([transactionData])
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                return data;
+                
+            } else {
+                return { 
+                    transaction_id: `MOCK-QRIS-${Date.now()}`,
+                    qris_string: 'MOCK_QRIS_STRING',
+                    status: 'pending' 
+                };
+            }
+        } catch (error) {
+            console.error('Error creating QRIS transaction:', error);
+            throw error;
+        }
+    }
+
+    generateDynamicQrisString(amount, description = '') {
+        // Get QRIS settings
+        const settings = this.getLocalSettings();
+        const qrisSettings = settings.qris || {
+            merchant_name: 'NestSian Store',
+            merchant_id: 'ID.NESTSIAN.WWW',
+            base_string: '00020101021126570011ID.DANA.WWW011893600915376904960002097690496000303UMI51440014ID.CO.QRIS.WWW0215ID10243512603270303UMI5204481453033605802ID5912NESTSIAN STORE6014JAKARTA SELATAN6105123456304'
+        };
+        
+        // Format amount (13 digits)
+        const formattedAmount = amount.toString().padStart(13, '0');
+        
+        // Generate dynamic QRIS string based on EMVCO standard
+        const qrisData = [
+            { id: '00', value: '01' }, // Payload Format Indicator
+            { id: '01', value: '12' }, // Point of Initiation Method
+            { id: '26', value: [ // Merchant Account Information
+                { id: '00', value: 'id.co.bri' }, // GUID
+                { id: '01', value: qrisSettings.merchant_id || 'ID.NESTSIAN.WWW' }
+            ]},
+            { id: '52', value: '0000' }, // Merchant Category Code
+            { id: '53', value: '360' }, // Transaction Currency (IDR)
+            { id: '54', value: formattedAmount }, // Transaction Amount
+            { id: '58', value: 'ID' }, // Country Code
+            { id: '59', value: qrisSettings.merchant_name || 'NestSian Store' }, // Merchant Name
+            { id: '60', value: qrisSettings.city || 'Jakarta' }, // Merchant City
+            { id: '61', value: qrisSettings.postal_code || '12345' } // Postal Code
+        ];
+        
+        // Build QRIS string
+        let qrisString = '';
+        qrisData.forEach(field => {
+            if (Array.isArray(field.value)) {
+                let subValue = '';
+                field.value.forEach(subField => {
+                    subValue += subField.id.padStart(2, '0') + 
+                               subField.value.length.toString().padStart(2, '0') + 
+                               subField.value;
+                });
+                qrisString += field.id + subValue.length.toString().padStart(2, '0') + subValue;
+            } else {
+                qrisString += field.id + 
+                            field.value.length.toString().padStart(2, '0') + 
+                            field.value;
+            }
+        });
+        
+        // Add CRC
+        qrisString += '6304';
+        const crc = this.calculateCRC16(qrisString);
+        return qrisString + crc;
+    }
+
+    calculateCRC16(str) {
+        let crc = 0xFFFF;
+        for (let i = 0; i < str.length; i++) {
+            crc ^= str.charCodeAt(i) << 8;
+            for (let j = 0; j < 8; j++) {
+                crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
+            }
+        }
+        return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+    }
+
+    // ==================== TELEGRAM NOTIFICATION ====================
+    async sendTelegramNotification(order) {
+        try {
+            const settings = await this.getSettings();
+            const telegramConfig = settings.telegram || {};
+            
+            if (!telegramConfig.enabled || !telegramConfig.bot_token || !telegramConfig.admin_chat_id) {
+                console.log('Telegram notifications disabled');
+                return;
+            }
+            
+            const message = this.formatTelegramMessage(order);
+            const url = `https://api.telegram.org/bot${telegramConfig.bot_token}/sendMessage`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    chat_id: telegramConfig.admin_chat_id,
+                    text: message,
+                    parse_mode: 'HTML',
+                    disable_web_page_preview: true
+                })
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Failed to send Telegram notification:', errorText);
+            } else {
+                console.log('Telegram notification sent successfully');
+            }
+        } catch (error) {
+            console.error('Error sending Telegram notification:', error);
+        }
+    }
+
+    formatTelegramMessage(order) {
+        const statusEmoji = {
+            'pending': '⏳',
+            'processing': '🔄',
+            'delivered': '✅',
+            'cancelled': '❌',
+            'shipped': '🚚'
+        };
+        
+        const emoji = statusEmoji[order.order_status] || '📦';
+        
+        return `
+<b>${emoji} PESANAN BARU - NESTSIAN</b>
+
+📦 <b>ID Pesanan:</b> <code>${order.id}</code>
+👤 <b>Pelanggan:</b> ${order.customer_name}
+📞 <b>Telepon:</b> ${order.customer_phone || 'N/A'}
+📧 <b>Email:</b> ${order.customer_email || 'N/A'}
+
+📍 <b>Alamat:</b>
+${order.shipping_address || 'N/A'}
+
+💰 <b>Total:</b> Rp ${(order.total_amount || 0).toLocaleString()}
+💳 <b>Metode Bayar:</b> ${order.payment_method || 'QRIS'}
+📝 <b>Status:</b> ${order.order_status || 'Pending'}
+
+🕐 <b>Waktu:</b> ${new Date(order.created_at || Date.now()).toLocaleString('id-ID')}
+
+<i>Segera proses pesanan ini!</i>
+        `.trim();
+    }
+
+    // ==================== INVENTORY LOG METHODS ====================
+    async logInventoryChange(productId, type, quantity, notes = '') {
+        try {
+            if (this.initialized) {
+                const product = await this.getProductById(productId);
+                if (!product) return;
+                
+                const previousStock = product.stock - quantity;
+                const newStock = product.stock;
+                
+                const logData = {
+                    product_id: productId,
+                    type: type,
+                    quantity: Math.abs(quantity),
+                    previous_stock: previousStock,
+                    new_stock: newStock,
+                    notes: notes,
+                    created_at: new Date().toISOString()
+                };
+                
+                const { error } = await this.supabase
+                    .from('inventory_logs')
+                    .insert([logData]);
+                
+                if (error) console.error('Error logging inventory change:', error);
+            }
+        } catch (error) {
+            console.error('Error in logInventoryChange:', error);
         }
     }
 
@@ -744,6 +1153,8 @@ class SupabaseService {
                         key,
                         value: JSON.stringify(value),
                         updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'key'
                     });
                 
                 if (error) throw error;
@@ -767,7 +1178,8 @@ class SupabaseService {
                 // Get total products
                 const { count: totalProducts, error: productsError } = await this.supabase
                     .from('products')
-                    .select('*', { count: 'exact', head: true });
+                    .select('*', { count: 'exact', head: true })
+                    .eq('is_active', true);
                 
                 if (productsError) throw productsError;
                 
@@ -788,16 +1200,14 @@ class SupabaseService {
                 
                 const { data: monthlyOrders, error: revenueError } = await this.supabase
                     .from('orders')
-                    .select('total_amount, status')
-                    .gte('created_at', startOfMonth.toISOString());
+                    .select('total_amount, order_status')
+                    .gte('created_at', startOfMonth.toISOString())
+                    .eq('order_status', 'delivered');
                 
                 if (revenueError) throw revenueError;
                 
                 const monthlyRevenue = monthlyOrders?.reduce((sum, order) => {
-                    if (order.status === 'completed') {
-                        return sum + (order.total_amount || 0);
-                    }
-                    return sum;
+                    return sum + (order.total_amount || 0);
                 }, 0) || 0;
                 
                 // Get active customers (customers with orders in last 30 days)
@@ -808,7 +1218,7 @@ class SupabaseService {
                     .from('orders')
                     .select('customer_email')
                     .gte('created_at', thirtyDaysAgo.toISOString())
-                    .eq('status', 'completed');
+                    .eq('order_status', 'delivered');
                 
                 if (customersError) throw customersError;
                 
@@ -839,10 +1249,10 @@ class SupabaseService {
             if (this.initialized) {
                 const { data, error } = await this.supabase
                     .from('orders')
-                    .select('created_at, total_amount, status')
+                    .select('created_at, total_amount, order_status')
                     .gte('created_at', startDate.toISOString())
                     .lte('created_at', endDate.toISOString())
-                    .eq('status', 'completed')
+                    .eq('order_status', 'delivered')
                     .order('created_at', { ascending: true });
                 
                 if (error) throw error;
@@ -885,7 +1295,7 @@ class SupabaseService {
             if (this.initialized) {
                 const { data, error } = await this.supabase
                     .from('order_items')
-                    .select('product_id, quantity, products(name, image_url)')
+                    .select('product_id, quantity, products(name, price, image_url)')
                     .limit(limit)
                     .order('quantity', { ascending: false });
                 
@@ -927,8 +1337,8 @@ class SupabaseService {
                     .from('contact_messages')
                     .select('*', { count: 'exact' });
                 
-                if (filters.is_read !== undefined) {
-                    query = query.eq('is_read', filters.is_read);
+                if (filters.status) {
+                    query = query.eq('status', filters.status);
                 }
                 
                 if (filters.search) {
@@ -968,7 +1378,12 @@ class SupabaseService {
                 const { data, error } = await this.supabase
                     .from('contact_messages')
                     .insert([{
-                        ...message,
+                        name: message.name,
+                        email: message.email,
+                        phone: message.phone || '',
+                        subject: message.subject,
+                        message: message.message,
+                        status: 'unread',
                         created_at: new Date().toISOString()
                     }])
                     .select()
@@ -991,7 +1406,10 @@ class SupabaseService {
             if (this.initialized) {
                 const { error } = await this.supabase
                     .from('contact_messages')
-                    .update({ is_read: true })
+                    .update({ 
+                        status: 'read',
+                        updated_at: new Date().toISOString()
+                    })
                     .eq('id', id);
                 
                 if (error) throw error;
@@ -1025,54 +1443,6 @@ class SupabaseService {
         } catch (error) {
             console.error('Error deleting contact message:', error);
             return { success: false, error: error.message };
-        }
-    }
-
-    // ==================== TELEGRAM NOTIFICATION ====================
-    async sendTelegramNotification(order) {
-        const telegramConfig = window.CONFIG?.TELEGRAM || {};
-        
-        if (!telegramConfig.ENABLED || !telegramConfig.BOT_TOKEN || !telegramConfig.ADMIN_CHAT_ID) {
-            console.log('Telegram notifications disabled');
-            return;
-        }
-        
-        try {
-            const message = `
-🛒 *PESANAN BARU NESTSIAN*
-━━━━━━━━━━━━━━━━━━
-📦 *ID Pesanan:* ${order.id || 'N/A'}
-👤 *Pelanggan:* ${order.customer_name || 'N/A'}
-📞 *Telepon:* ${order.customer_phone || 'N/A'}
-📧 *Email:* ${order.customer_email || 'N/A'}
-━━━━━━━━━━━━━━━━━━
-💳 *Total:* Rp ${(order.total_amount || 0).toLocaleString()}
-🔧 *Status:* ${order.status || 'Pending'}
-━━━━━━━━━━━━━━━━━━
-📅 *Tanggal:* ${new Date(order.created_at || Date.now()).toLocaleString('id-ID')}
-            `;
-            
-            const url = `https://api.telegram.org/bot${telegramConfig.BOT_TOKEN}/sendMessage`;
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    chat_id: telegramConfig.ADMIN_CHAT_ID,
-                    text: message,
-                    parse_mode: 'Markdown'
-                })
-            });
-            
-            if (!response.ok) {
-                console.error('Failed to send Telegram notification:', await response.text());
-            } else {
-                console.log('Telegram notification sent');
-            }
-        } catch (error) {
-            console.error('Error sending Telegram notification:', error);
         }
     }
 
@@ -1266,6 +1636,16 @@ class SupabaseService {
         });
     }
 
+    async mockGetUser() {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const storedUser = localStorage.getItem('nestsian_user');
+                const user = storedUser ? JSON.parse(storedUser).user : null;
+                resolve({ data: { user }, error: null });
+            }, 100);
+        });
+    }
+
     mockAuthStateChange(callback) {
         setTimeout(() => {
             const storedUser = localStorage.getItem('nestsian_user');
@@ -1304,9 +1684,9 @@ class SupabaseService {
         const items = JSON.parse(localStorage.getItem(key) || '[]');
         
         if (where) {
-            const key = Object.keys(where)[0];
-            const value = where[key];
-            const index = items.findIndex(item => item[key] === value);
+            const keyName = Object.keys(where)[0];
+            const value = where[keyName];
+            const index = items.findIndex(item => item[keyName] === value);
             
             if (index !== -1) {
                 items[index] = { ...items[index], ...data };
@@ -1326,9 +1706,9 @@ class SupabaseService {
         let items = JSON.parse(localStorage.getItem(key) || '[]');
         
         if (where) {
-            const key = Object.keys(where)[0];
-            const value = where[key];
-            items = items.filter(item => item[key] !== value);
+            const keyName = Object.keys(where)[0];
+            const value = where[keyName];
+            items = items.filter(item => item[keyName] !== value);
         } else {
             items = [];
         }
@@ -1347,7 +1727,8 @@ class SupabaseService {
                 value: JSON.stringify(value)
             })),
             contact_messages: this.getLocalContactMessages().data,
-            order_items: this.getLocalOrderItems()
+            order_items: this.getLocalOrderItems(),
+            qris_transactions: this.getLocalQrisTransactions()
         };
 
         return mockData[table] || [];
@@ -1382,6 +1763,10 @@ class SupabaseService {
             
             if (filters.stock_out) {
                 filteredProducts = filteredProducts.filter(p => p.stock === 0);
+            }
+            
+            if (filters.is_active !== undefined) {
+                filteredProducts = filteredProducts.filter(p => p.is_active == filters.is_active);
             }
             
             // Apply pagination
@@ -1456,7 +1841,8 @@ class SupabaseService {
                     ...product, 
                     id: Date.now(), 
                     created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
+                    updated_at: new Date().toISOString(),
+                    is_active: true
                 };
                 products.push(updatedProduct);
             }
@@ -1499,11 +1885,11 @@ class SupabaseService {
             const categories = JSON.parse(localStorage.getItem('nestsian_categories') || '[]');
             if (!categories.length) {
                 const sampleCategories = [
-                    { id: 1, name: 'Security', icon: 'fas fa-shield-alt', description: 'Security products and solutions' },
-                    { id: 2, name: 'Networking', icon: 'fas fa-network-wired', description: 'Networking equipment and infrastructure' },
-                    { id: 3, name: 'Software', icon: 'fas fa-code', description: 'Software applications and tools' },
-                    { id: 4, name: 'Hardware', icon: 'fas fa-server', description: 'Hardware devices and equipment' },
-                    { id: 5, name: 'Service', icon: 'fas fa-concierge-bell', description: 'Professional services and support' }
+                    { id: 1, name: 'Security', icon: 'fas fa-shield-alt', description: 'Security products and solutions', sort_order: 1, is_active: true },
+                    { id: 2, name: 'Networking', icon: 'fas fa-network-wired', description: 'Networking equipment and infrastructure', sort_order: 2, is_active: true },
+                    { id: 3, name: 'Software', icon: 'fas fa-code', description: 'Software applications and tools', sort_order: 3, is_active: true },
+                    { id: 4, name: 'Hardware', icon: 'fas fa-server', description: 'Hardware devices and equipment', sort_order: 4, is_active: true },
+                    { id: 5, name: 'Service', icon: 'fas fa-concierge-bell', description: 'Professional services and support', sort_order: 5, is_active: true }
                 ];
                 localStorage.setItem('nestsian_categories', JSON.stringify(sampleCategories));
                 return sampleCategories;
@@ -1526,11 +1912,11 @@ class SupabaseService {
                     categories[index] = { ...categories[index], ...category };
                     updatedCategory = categories[index];
                 } else {
-                    updatedCategory = { ...category, id: Date.now() };
+                    updatedCategory = { ...category, id: Date.now(), is_active: true };
                     categories.push(updatedCategory);
                 }
             } else {
-                updatedCategory = { ...category, id: Date.now() };
+                updatedCategory = { ...category, id: Date.now(), is_active: true };
                 categories.push(updatedCategory);
             }
             
@@ -1558,8 +1944,12 @@ class SupabaseService {
             let filteredOrders = [...orders];
             
             // Apply filters
-            if (filters.status) {
-                filteredOrders = filteredOrders.filter(o => o.status === filters.status);
+            if (filters.order_status) {
+                filteredOrders = filteredOrders.filter(o => o.order_status === filters.order_status);
+            }
+            
+            if (filters.payment_status) {
+                filteredOrders = filteredOrders.filter(o => o.payment_status === filters.payment_status);
             }
             
             if (filters.search) {
@@ -1622,7 +2012,9 @@ class SupabaseService {
                     updatedOrder = { 
                         ...order, 
                         id: order.id,
-                        created_at: order.created_at || new Date().toISOString()
+                        created_at: order.created_at || new Date().toISOString(),
+                        order_status: 'pending',
+                        payment_status: 'pending'
                     };
                     orders.push(updatedOrder);
                 }
@@ -1630,24 +2022,14 @@ class SupabaseService {
                 updatedOrder = { 
                     ...order, 
                     id: `NS-${Date.now()}`,
-                    created_at: new Date().toISOString()
+                    created_at: new Date().toISOString(),
+                    order_status: 'pending',
+                    payment_status: 'pending'
                 };
                 orders.push(updatedOrder);
             }
             
             localStorage.setItem('nestsian_orders', JSON.stringify(orders));
-            
-            // Update customer data
-            if (order.customer_email) {
-                const customers = this.getLocalCustomers().data;
-                const existingCustomer = customers.find(c => c.email === order.customer_email);
-                
-                if (existingCustomer) {
-                    existingCustomer.total_orders = (existingCustomer.total_orders || 0) + 1;
-                    existingCustomer.total_spent = (existingCustomer.total_spent || 0) + (order.total_amount || 0);
-                    localStorage.setItem('nestsian_customers', JSON.stringify(customers));
-                }
-            }
             
             return updatedOrder;
         } catch (error) {
@@ -1662,7 +2044,7 @@ class SupabaseService {
             const index = orders.findIndex(o => o.id === id);
             
             if (index !== -1) {
-                orders[index].status = status;
+                orders[index].order_status = status;
                 orders[index].updated_at = new Date().toISOString();
                 localStorage.setItem('nestsian_orders', JSON.stringify(orders));
             }
@@ -1738,11 +2120,11 @@ class SupabaseService {
                     customers[index] = { ...customers[index], ...customer };
                     updatedCustomer = customers[index];
                 } else {
-                    updatedCustomer = { ...customer, id: Date.now() };
+                    updatedCustomer = { ...customer, id: Date.now(), is_active: true };
                     customers.push(updatedCustomer);
                 }
             } else {
-                updatedCustomer = { ...customer, id: Date.now() };
+                updatedCustomer = { ...customer, id: Date.now(), is_active: true };
                 customers.push(updatedCustomer);
             }
             
@@ -1774,6 +2156,11 @@ class SupabaseService {
                     city: 'Jakarta',
                     postal_code: '12345',
                     base_string: '00020101021126570011ID.DANA.WWW011893600915376904960002097690496000303UMI51440014ID.CO.QRIS.WWW0215ID10243512603270303UMI5204481453033605802ID5912NESTSIAN STORE6014JAKARTA SELATAN6105123456304'
+                },
+                telegram: {
+                    enabled: false,
+                    bot_token: '7810718543:AAH1GgEVfJ2Un4mqjZXDk1H1fLFKXPqorP8',
+                    admin_chat_id: '5448509135'
                 },
                 maintenance: {
                     enabled: false,
@@ -1833,7 +2220,7 @@ class SupabaseService {
                     const now = new Date();
                     return orderDate.getMonth() === now.getMonth() && 
                            orderDate.getFullYear() === now.getFullYear() &&
-                           order.status === 'completed';
+                           order.order_status === 'delivered';
                 })
                 .reduce((sum, order) => sum + (order.total_amount || 0), 0);
             
@@ -1865,7 +2252,7 @@ class SupabaseService {
             
             const salesByDate = {};
             orders.forEach(order => {
-                if (order.status === 'completed') {
+                if (order.order_status === 'delivered') {
                     const orderDate = new Date(order.created_at);
                     if (orderDate >= startDate && orderDate <= endDate) {
                         const dateStr = orderDate.toISOString().split('T')[0];
@@ -1931,8 +2318,8 @@ class SupabaseService {
             const messages = JSON.parse(localStorage.getItem('nestsian_contact_messages') || '[]');
             let filteredMessages = [...messages];
             
-            if (filters.is_read !== undefined) {
-                filteredMessages = filteredMessages.filter(m => m.is_read == filters.is_read);
+            if (filters.status) {
+                filteredMessages = filteredMessages.filter(m => m.status == filters.status);
             }
             
             if (filters.search) {
@@ -1968,7 +2355,7 @@ class SupabaseService {
                 ...message,
                 id: Date.now(),
                 created_at: new Date().toISOString(),
-                is_read: false
+                status: 'unread'
             };
             messages.push(newMessage);
             localStorage.setItem('nestsian_contact_messages', JSON.stringify(messages));
@@ -1984,7 +2371,7 @@ class SupabaseService {
             const messages = JSON.parse(localStorage.getItem('nestsian_contact_messages') || '[]');
             const index = messages.findIndex(m => m.id == id);
             if (index !== -1) {
-                messages[index].is_read = true;
+                messages[index].status = 'read';
                 localStorage.setItem('nestsian_contact_messages', JSON.stringify(messages));
             }
         } catch (error) {
@@ -1999,6 +2386,15 @@ class SupabaseService {
             localStorage.setItem('nestsian_contact_messages', JSON.stringify(updatedMessages));
         } catch (error) {
             console.error('Error deleting local contact message:', error);
+        }
+    }
+
+    getLocalQrisTransactions() {
+        try {
+            return JSON.parse(localStorage.getItem('nestsian_qris_transactions') || '[]');
+        } catch (error) {
+            console.error('Error getting local QRIS transactions:', error);
+            return [];
         }
     }
 
