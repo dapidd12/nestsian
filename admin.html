@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - JMB STORE</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    .sidebar { width: 250px; }
+    .main-content { margin-left: 250px; }
+    @media (max-width: 768px) {
+      .sidebar { width: 100%; position: static; }
+      .main-content { margin-left: 0; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  
+  <!-- Admin Login Check -->
+  <div id="loginCheck" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-50">
+    <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full">
+      <h2 class="text-2xl font-bold mb-6 text-gray-800">Admin Authentication</h2>
+      <input type="password" id="adminAuth" placeholder="Enter Admin Password" 
+             class="w-full px-4 py-3 border rounded-lg mb-4">
+      <button onclick="verifyAdmin()" 
+              class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
+        Login
+      </button>
+    </div>
+  </div>
+
+  <!-- Admin Layout -->
+  <div id="adminLayout" class="hidden">
+    <!-- Sidebar -->
+    <div class="sidebar fixed h-screen bg-gray-800 text-white p-4">
+      <h2 class="text-xl font-bold mb-8 text-blue-300">JMB Admin Panel</h2>
+      <nav class="space-y-2">
+        <a href="#dashboard" class="block p-3 rounded-lg hover:bg-gray-700 transition" onclick="showSection('dashboard')">
+          📊 Dashboard
+        </a>
+        <a href="#products" class="block p-3 rounded-lg hover:bg-gray-700 transition" onclick="showSection('products')">
+          📦 Kelola Produk
+        </a>
+        <a href="#categories" class="block p-3 rounded-lg hover:bg-gray-700 transition" onclick="showSection('categories')">
+          🏷️ Kelola Kategori
+        </a>
+        <a href="#orders" class="block p-3 rounded-lg hover:bg-gray-700 transition" onclick="showSection('orders')">
+          📋 Pesanan
+        </a>
+        <a href="#settings" class="block p-3 rounded-lg hover:bg-gray-700 transition" onclick="showSection('settings')">
+          ⚙️ Pengaturan
+        </a>
+        <a href="/" class="block p-3 rounded-lg bg-red-600 hover:bg-red-700 transition mt-8">
+          ← Kembali ke Store
+        </a>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content p-6">
+      
+      <!-- Dashboard -->
+      <section id="dashboard" class="section">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">Dashboard</h1>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div class="bg-white p-6 rounded-xl shadow">
+            <h3 class="text-lg font-semibold text-gray-600">Total Produk</h3>
+            <p id="totalProducts" class="text-3xl font-bold text-blue-600 mt-2">0</p>
+          </div>
+          <div class="bg-white p-6 rounded-xl shadow">
+            <h3 class="text-lg font-semibold text-gray-600">Total Kategori</h3>
+            <p id="totalCategories" class="text-3xl font-bold text-green-600 mt-2">0</p>
+          </div>
+          <div class="bg-white p-6 rounded-xl shadow">
+            <h3 class="text-lg font-semibold text-gray-600">Status Sistem</h3>
+            <p class="text-3xl font-bold text-yellow-600 mt-2">Aktif</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Manage Products -->
+      <section id="products" class="section hidden">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">Kelola Produk</h1>
+        <button onclick="showAddProductModal()" 
+                class="mb-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
+          + Tambah Produk Baru
+        </button>
+        <div id="productsList" class="bg-white rounded-xl shadow p-6">
+          <!-- Products will be loaded here -->
+          <p class="text-gray-500">Memuat produk...</p>
+        </div>
+      </section>
+
+      <!-- Manage Categories -->
+      <section id="categories" class="section hidden">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">Kelola Kategori</h1>
+        <div id="categoriesList" class="bg-white rounded-xl shadow p-6">
+          <!-- Categories will be loaded here -->
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section id="settings" class="section hidden">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">Pengaturan</h1>
+        <div class="bg-white rounded-xl shadow p-6">
+          <div class="mb-6">
+            <label class="block text-gray-700 mb-2">Password Admin</label>
+            <input type="password" id="newPassword" class="w-full px-4 py-2 border rounded-lg">
+            <button onclick="updatePassword()" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg">
+              Update Password
+            </button>
+          </div>
+          <div class="mb-6">
+            <label class="block text-gray-700 mb-2">Audio URL</label>
+            <input type="text" id="audioUrl" class="w-full px-4 py-2 border rounded-lg" 
+                   value="https://files.catbox.moe/lzij2p.mp4">
+          </div>
+          <button onclick="saveSettings()" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold">
+            Simpan Pengaturan
+          </button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div id="addProductModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <h2 class="text-2xl font-bold mb-6">Tambah Produk Baru</h2>
+      <div class="space-y-4">
+        <input type="text" id="productName" placeholder="Nama Produk" class="w-full px-4 py-3 border rounded-lg">
+        <input type="number" id="productPrice" placeholder="Harga" class="w-full px-4 py-3 border rounded-lg">
+        <textarea id="productDesc" placeholder="Deskripsi" class="w-full px-4 py-3 border rounded-lg" rows="3"></textarea>
+        <input type="text" id="productImage" placeholder="URL Gambar" class="w-full px-4 py-3 border rounded-lg">
+        <select id="productCategory" class="w-full px-4 py-3 border rounded-lg">
+          <!-- Categories will be populated -->
+        </select>
+      </div>
+      <div class="flex gap-4 mt-8">
+        <button onclick="saveProduct()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold">
+          Simpan
+        </button>
+        <button onclick="closeAddProductModal()" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg">
+          Batal
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
