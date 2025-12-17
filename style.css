@@ -105,6 +105,17 @@
   }
 }
 
+@keyframes notification-slide {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* Animation Classes */
 .float-animation {
   animation: float 3s ease-in-out infinite;
@@ -158,7 +169,7 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.1), rgba(30, 41, 59, 0.1));
   border-radius: 10px;
   margin: 4px;
 }
@@ -166,7 +177,7 @@
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(to bottom, #3b82f6, #1d4ed8, #3b82f6);
   border-radius: 10px;
-  border: 2px solid rgba(15, 23, 42, 0.8);
+  border: 2px solid rgba(15, 23, 42, 0.2);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -175,22 +186,30 @@
 }
 
 ::-webkit-scrollbar-corner {
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.1);
+}
+
+/* Dark mode scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.8));
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #3b82f6, #1d4ed8, #3b82f6);
+  border: 2px solid rgba(15, 23, 42, 0.8);
 }
 
 /* Glass Effect */
 .glass-effect {
-  background: rgba(15, 23, 42, 0.7);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px) saturate(180%);
   -webkit-backdrop-filter: blur(12px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.glass-effect-light {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+.dark .glass-effect {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Loading Animation */
@@ -223,6 +242,11 @@
 
 .product-card:hover {
   transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1),
+              0 0 0 1px rgba(59, 130, 246, 0.2);
+}
+
+.dark .product-card:hover {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
               0 0 0 1px rgba(59, 130, 246, 0.3);
 }
@@ -234,7 +258,7 @@
 
 .payment-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
 }
 
 /* Button Effects */
@@ -262,7 +286,7 @@
 
 .btn-gradient:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
 }
 
 /* QR Code Container */
@@ -271,7 +295,7 @@
   padding: 20px;
   border-radius: 16px;
   position: relative;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
 }
 
 .qr-container::before {
@@ -476,6 +500,16 @@
   }
 }
 
+/* Custom Notification */
+.custom-notification {
+  animation: notification-slide 0.3s ease-out;
+  transform: translateX(100%);
+}
+
+.custom-notification.translate-x-0 {
+  transform: translateX(0);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 640px) {
   .shimmer-text {
@@ -488,6 +522,13 @@
   
   .qr-container {
     padding: 15px;
+  }
+  
+  #themeToggle {
+    top: 1rem;
+    left: 1rem;
+    width: 2.5rem;
+    height: 2.5rem;
   }
 }
 
@@ -504,10 +545,8 @@
 }
 
 /* Dark Mode Enhancements */
-@media (prefers-color-scheme: dark) {
-  .glass-effect {
-    background: rgba(15, 23, 42, 0.9);
-  }
+.dark .glass-effect {
+  background: rgba(15, 23, 42, 0.9);
 }
 
 /* Performance Optimizations */
@@ -547,13 +586,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Custom Cursor (Optional) */
-/* Uncomment jika ingin custom cursor
-body {
-  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="%233b82f6" opacity="0.3"/><circle cx="16" cy="16" r="8" fill="%233b82f6"/></svg>') 16 16, auto;
-}
-*/
-
 /* Loading Bar */
 .loading-bar {
   position: fixed;
@@ -576,4 +608,9 @@ body {
 @keyframes loading {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
+}
+
+/* Smooth transitions */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }

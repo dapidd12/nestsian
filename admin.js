@@ -1,14 +1,14 @@
-// admin.js - Fix lengkap
+// admin.js - FIXED LENGKAP
 let currentAdminSection = 'dashboard';
 
-// Pastikan supabase client tersedia
+// Get Supabase client
 const getSupabase = () => {
-  return window.supabaseClient || supabase;
+  return window.supabaseClient || supabaseClient;
 };
 
-// Verify Admin - Updated
-const verifyAdmin = async () => {
-  const password = document.getElementById('adminAuth').value;
+// Verify Admin
+window.verifyAdmin = async () => {
+  const password = document.getElementById('adminAuth')?.value;
   
   if (!password) {
     alert('Masukkan password!');
@@ -27,7 +27,7 @@ const verifyAdmin = async () => {
 };
 
 // Show Section
-const showSection = (sectionId) => {
+window.showSection = (sectionId) => {
   // Hide all sections
   document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
   
@@ -58,7 +58,7 @@ const showSection = (sectionId) => {
   }
 };
 
-// Load Dashboard - Updated
+// Load Dashboard
 const loadDashboard = async () => {
   try {
     const supabase = getSupabase();
@@ -87,7 +87,7 @@ const loadDashboard = async () => {
   }
 };
 
-// Load Products for Admin - Updated
+// Load Products for Admin
 const loadProductsAdmin = async () => {
   try {
     const supabase = getSupabase();
@@ -98,6 +98,8 @@ const loadProductsAdmin = async () => {
         name,
         price,
         image_url,
+        description,
+        stock,
         categories (
           name
         )
@@ -122,7 +124,12 @@ const loadProductsAdmin = async () => {
     }
 
     if (!products || products.length === 0) {
-      container.innerHTML = '<p class="text-gray-500">Belum ada produk.</p>';
+      container.innerHTML = `
+        <div class="text-center py-8">
+          <i class="fas fa-box-open text-4xl text-gray-300 mb-3"></i>
+          <p class="text-gray-500">Belum ada produk.</p>
+        </div>
+      `;
       return;
     }
 
@@ -133,6 +140,7 @@ const loadProductsAdmin = async () => {
             <tr class="border-b bg-gray-50">
               <th class="text-left p-3 font-semibold">Produk</th>
               <th class="text-left p-3 font-semibold">Harga</th>
+              <th class="text-left p-3 font-semibold">Stok</th>
               <th class="text-left p-3 font-semibold">Kategori</th>
               <th class="text-left p-3 font-semibold">Aksi</th>
             </tr>
@@ -150,12 +158,20 @@ const loadProductsAdmin = async () => {
                         <span class="text-blue-600">📦</span>
                       </div>
                     `}
-                    <span class="font-medium">${product.name}</span>
+                    <div>
+                      <span class="font-medium">${product.name}</span>
+                      ${product.description ? `<p class="text-xs text-gray-500">${product.description.substring(0, 50)}...</p>` : ''}
+                    </div>
                   </div>
                 </td>
                 <td class="p-3">
                   <span class="font-bold text-blue-600">
                     Rp ${parseInt(product.price || 0).toLocaleString()}
+                  </span>
+                </td>
+                <td class="p-3">
+                  <span class="px-2 py-1 rounded-full text-xs font-medium ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                    ${product.stock || 0}
                   </span>
                 </td>
                 <td class="p-3">
@@ -166,12 +182,12 @@ const loadProductsAdmin = async () => {
                 <td class="p-3">
                   <div class="flex gap-2">
                     <button onclick="editProduct('${product.id}')" 
-                            class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm transition-colors">
-                      Edit
+                            class="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded text-sm transition-colors flex items-center gap-1">
+                      <i class="fas fa-edit text-xs"></i> Edit
                     </button>
                     <button onclick="deleteProduct('${product.id}')" 
-                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm transition-colors">
-                      Hapus
+                            class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-sm transition-colors flex items-center gap-1">
+                      <i class="fas fa-trash text-xs"></i> Hapus
                     </button>
                   </div>
                 </td>
@@ -200,7 +216,7 @@ const loadProductsAdmin = async () => {
   }
 };
 
-// Load Categories for Admin - Updated
+// Load Categories for Admin
 const loadCategoriesAdmin = async () => {
   try {
     const supabase = getSupabase();
@@ -226,12 +242,15 @@ const loadCategoriesAdmin = async () => {
     if (categories && categories.length > 0) {
       categories.forEach(category => {
         html += `
-          <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+          <div class="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
             <div class="flex items-center gap-2 mb-2">
               ${category.icon ? `<span class="text-xl">${category.icon}</span>` : ''}
               <h3 class="font-bold text-lg">${category.name}</h3>
             </div>
             ${category.description ? `<p class="text-gray-600 text-sm mb-3">${category.description}</p>` : ''}
+            <div class="text-xs text-gray-500">
+              Order: ${category.order_index || 0}
+            </div>
             <div class="flex gap-2 mt-4">
               <button onclick="editCategory('${category.id}')" 
                       class="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-sm transition-colors">
@@ -253,7 +272,7 @@ const loadCategoriesAdmin = async () => {
       </div>
       <button onclick="showAddCategoryModal()" 
               class="mt-6 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">
-        + Tambah Kategori Baru
+        <i class="fas fa-plus mr-2"></i>Tambah Kategori Baru
       </button>
     `;
 
@@ -272,10 +291,13 @@ const loadOrders = async () => {
   ordersSection.innerHTML = `
     <h1 class="text-3xl font-bold mb-6 text-gray-800">Pesanan</h1>
     <div class="bg-white rounded-xl shadow p-6">
-      <p class="text-gray-500">Fitur pesanan akan segera tersedia.</p>
-      <p class="text-sm text-gray-400 mt-2">
-        Untuk melihat pesanan, silahkan cek WhatsApp atau Telegram admin.
-      </p>
+      <div class="text-center py-8">
+        <i class="fas fa-shopping-bag text-4xl text-gray-300 mb-3"></i>
+        <p class="text-gray-500">Fitur pesanan akan segera tersedia.</p>
+        <p class="text-sm text-gray-400 mt-2">
+          Untuk melihat pesanan, silahkan cek WhatsApp atau Telegram admin.
+        </p>
+      </div>
     </div>
   `;
 };
@@ -287,6 +309,7 @@ const loadSettings = () => {
   
   // Get current settings from localStorage
   const audioUrl = localStorage.getItem('jmb_audio_url') || CONFIG.audio.url;
+  const whatsappNumber = localStorage.getItem('jmb_whatsapp_number') || CONFIG.whatsappNumber;
   
   settingsSection.innerHTML = `
     <h1 class="text-3xl font-bold mb-6 text-gray-800">Pengaturan</h1>
@@ -314,17 +337,17 @@ const loadSettings = () => {
         <div>
           <label class="block text-gray-700 mb-2 font-semibold">WhatsApp Number</label>
           <input type="text" id="whatsappNumber" 
-                 value="${CONFIG.whatsappNumber}"
+                 value="${whatsappNumber}"
                  class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
           <p class="text-sm text-gray-500 mt-1">Nomor WhatsApp untuk pesanan</p>
         </div>
         
         <div class="pt-4 border-t">
           <button onclick="saveSettings()" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors">
-            💾 Simpan Semua Pengaturan
+            <i class="fas fa-save mr-2"></i>Simpan Semua Pengaturan
           </button>
           <button onclick="resetSettings()" class="ml-3 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
-            🔄 Reset
+            <i class="fas fa-redo mr-2"></i>Reset
           </button>
         </div>
       </div>
@@ -332,8 +355,8 @@ const loadSettings = () => {
   `;
 };
 
-// Product CRUD Operations - Updated
-const showAddProductModal = async () => {
+// Product CRUD Operations
+window.showAddProductModal = async () => {
   try {
     const supabase = getSupabase();
     const { data: categories, error } = await supabase
@@ -341,21 +364,51 @@ const showAddProductModal = async () => {
       .select('id, name')
       .order('order_index');
 
+    // Create modal if doesn't exist
+    let modal = document.getElementById('addProductModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'addProductModal';
+      modal.className = 'fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4';
+      modal.innerHTML = `
+        <div class="bg-white rounded-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <h2 class="text-2xl font-bold mb-6">Tambah Produk Baru</h2>
+          <div class="space-y-4">
+            <input type="text" id="productName" placeholder="Nama Produk" class="w-full px-4 py-3 border rounded-lg">
+            <input type="number" id="productPrice" placeholder="Harga" class="w-full px-4 py-3 border rounded-lg">
+            <textarea id="productDesc" placeholder="Deskripsi" class="w-full px-4 py-3 border rounded-lg" rows="3"></textarea>
+            <input type="text" id="productImage" placeholder="URL Gambar" class="w-full px-4 py-3 border rounded-lg">
+            <input type="number" id="productStock" placeholder="Stok" class="w-full px-4 py-3 border rounded-lg">
+            <select id="productCategory" class="w-full px-4 py-3 border rounded-lg">
+              <option value="">Pilih Kategori</option>
+            </select>
+          </div>
+          <div class="flex gap-4 mt-8">
+            <button onclick="saveProduct()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold">
+              Simpan
+            </button>
+            <button onclick="closeAddProductModal()" class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg">
+              Batal
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
     const select = document.getElementById('productCategory');
     if (select) {
       if (error) {
         select.innerHTML = '<option value="">Error loading categories</option>';
       } else if (categories && categories.length > 0) {
-        select.innerHTML = categories.map(cat => 
-          `<option value="${cat.id}">${cat.name}</option>`
-        ).join('');
+        select.innerHTML = '<option value="">Pilih Kategori</option>' + 
+          categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
       } else {
         select.innerHTML = '<option value="">Belum ada kategori</option>';
       }
     }
 
-    const modal = document.getElementById('addProductModal');
-    if (modal) modal.classList.remove('hidden');
+    modal.classList.remove('hidden');
 
   } catch (error) {
     console.error('Error loading categories:', error);
@@ -363,7 +416,7 @@ const showAddProductModal = async () => {
   }
 };
 
-const closeAddProductModal = () => {
+window.closeAddProductModal = () => {
   const modal = document.getElementById('addProductModal');
   if (modal) modal.classList.add('hidden');
   clearProductForm();
@@ -374,13 +427,16 @@ const clearProductForm = () => {
   document.getElementById('productPrice').value = '';
   document.getElementById('productDesc').value = '';
   document.getElementById('productImage').value = '';
+  document.getElementById('productStock').value = '';
+  document.getElementById('productCategory').value = '';
 };
 
-const saveProduct = async () => {
+window.saveProduct = async () => {
   const name = document.getElementById('productName')?.value;
   const price = document.getElementById('productPrice')?.value;
   const description = document.getElementById('productDesc')?.value;
   const image_url = document.getElementById('productImage')?.value;
+  const stock = document.getElementById('productStock')?.value;
   const category_id = document.getElementById('productCategory')?.value;
 
   if (!name || !price || !category_id) {
@@ -393,6 +449,7 @@ const saveProduct = async () => {
     price: parseFloat(price),
     description: description || null,
     image_url: image_url || null,
+    stock: stock ? parseInt(stock) : 0,
     category_id,
     is_active: true,
     created_at: new Date().toISOString()
@@ -417,7 +474,7 @@ const saveProduct = async () => {
   }
 };
 
-const deleteProduct = async (productId) => {
+window.deleteProduct = async (productId) => {
   if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
 
   try {
@@ -440,16 +497,15 @@ const deleteProduct = async (productId) => {
 };
 
 // Category functions
-const showAddCategoryModal = () => {
+window.showAddCategoryModal = () => {
   alert('Fitur tambah kategori akan segera tersedia.');
-  // Implement category modal here
 };
 
-const editCategory = (categoryId) => {
+window.editCategory = (categoryId) => {
   alert(`Edit kategori ${categoryId} - Fitur akan segera tersedia.`);
 };
 
-const deleteCategory = async (categoryId) => {
+window.deleteCategory = async (categoryId) => {
   if (!confirm('Hapus kategori akan menghapus semua produk di dalamnya. Lanjutkan?')) return;
   
   try {
@@ -472,38 +528,35 @@ const deleteCategory = async (categoryId) => {
 };
 
 // Edit product
-const editProduct = (productId) => {
+window.editProduct = (productId) => {
   alert(`Edit produk ${productId} - Fitur akan segera tersedia.`);
 };
 
-// Settings Functions - Updated
-const updatePassword = () => {
+// Settings Functions
+window.updatePassword = () => {
   const newPassword = document.getElementById('newPassword')?.value;
   if (newPassword && confirm('Update password admin?')) {
-    // Note: In production, this should be hashed and stored securely
     alert('⚠️ Password berhasil diupdate! (Simpan di tempat aman)');
     document.getElementById('newPassword').value = '';
   }
 };
 
-const saveSettings = () => {
+window.saveSettings = () => {
   const audioUrl = document.getElementById('audioUrl')?.value;
   const whatsappNumber = document.getElementById('whatsappNumber')?.value;
 
   if (audioUrl) {
     localStorage.setItem('jmb_audio_url', audioUrl);
-    CONFIG.audio.url = audioUrl;
   }
   
   if (whatsappNumber) {
-    CONFIG.whatsappNumber = whatsappNumber;
     localStorage.setItem('jmb_whatsapp_number', whatsappNumber);
   }
 
   alert('✅ Pengaturan berhasil disimpan!');
 };
 
-const resetSettings = () => {
+window.resetSettings = () => {
   if (confirm('Reset semua pengaturan ke default?')) {
     localStorage.removeItem('jmb_audio_url');
     localStorage.removeItem('jmb_whatsapp_number');
@@ -514,6 +567,8 @@ const resetSettings = () => {
 
 // Initialize Admin Panel
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 Initializing Admin Panel...');
+  
   // Check if already authenticated
   const isAuthenticated = localStorage.getItem('jmb_admin_auth') === 'true';
   if (isAuthenticated) {
@@ -531,4 +586,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  
+  console.log('✅ Admin Panel initialized successfully');
 });
