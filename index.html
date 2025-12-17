@@ -36,25 +36,29 @@
   <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="https://img.icons8.com/color/96/000000/shopping-cart--v1.png" type="image/png">
 </head>
 <body class="bg-gradient-to-br from-gray-900 to-blue-900 text-gray-100 min-h-screen">
   
   <!-- Loading Screen -->
   <div id="loading" class="fixed inset-0 bg-gradient-to-b from-gray-900 via-gray-900 to-blue-900 flex flex-col items-center justify-center z-50">
     <div class="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-    <div class="mt-4 text-blue-400 font-semibold text-lg">Loading...</div>
+    <div class="mt-4 text-blue-400 font-semibold text-lg loading-dots">Loading</div>
+    <p class="text-blue-300 text-sm mt-2">SYAIF OFFICIAL - JMB STORE</p>
   </div>
 
   <!-- Audio Control -->
-  <div id="audioPanel" class="fixed top-4 right-4 bg-gray-800 bg-opacity-90 p-4 rounded-xl border border-blue-500 border-opacity-20 flex items-center gap-4 z-40 hidden">
+  <div id="audioPanel" class="fixed top-4 right-4 bg-gray-800 bg-opacity-90 p-4 rounded-xl border border-blue-500 border-opacity-20 flex items-center gap-4 z-40 glass-effect hidden">
     <div class="w-12 h-12 bg-gradient-to-br from-blue-700 to-blue-900 rounded-lg flex items-center justify-center font-bold text-xl">♪</div>
     <div>
       <div class="font-bold text-blue-100">Putar Sound</div>
       <div class="text-xs text-blue-300">Klik untuk play/stop</div>
     </div>
     <div class="flex flex-col gap-2">
-      <button id="playBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-semibold">Play</button>
-      <button id="stopBtn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm">Stop</button>
+      <button id="playBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-semibold transition-colors">Play</button>
+      <button id="stopBtn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors">Stop</button>
     </div>
   </div>
 
@@ -63,89 +67,211 @@
     
     <!-- Header -->
     <header class="flex items-center gap-4 mb-8" data-aos="fade-down">
-      <div class="w-16 h-16 bg-gradient-to-br from-blue-800 to-blue-600 rounded-xl flex items-center justify-center font-black text-xl">
+      <div class="w-16 h-16 bg-gradient-to-br from-blue-800 to-blue-600 rounded-xl flex items-center justify-center font-black text-xl float-animation">
         ᴋᴘ
       </div>
       <div>
-        <h1 class="text-2xl md:text-3xl font-bold">SYAIF OFFICIAL - JMB STORE</h1>
+        <h1 class="text-2xl md:text-3xl font-bold shimmer-text">SYAIF OFFICIAL - JMB STORE</h1>
         <p class="text-blue-300">Selamat datang — silahkan pilih barang atau produk yang kamu mau</p>
       </div>
     </header>
 
     <!-- Store Title -->
-    <h2 class="text-3xl md:text-4xl font-black mb-8 text-center animate-pulse" data-aos="zoom-in">
-      <span class="bg-gradient-to-r from-blue-400 via-green-400 to-yellow-400 bg-clip-text text-transparent">
+    <h2 class="text-3xl md:text-4xl font-black mb-8 text-center" data-aos="zoom-in">
+      <span class="bg-gradient-to-r from-blue-400 via-green-400 to-yellow-400 bg-clip-text text-transparent animate-pulse">
         SYAIF OFFICIAL - JMB STORE
       </span>
     </h2>
 
     <!-- Products Section -->
-    <section class="bg-gray-800 bg-opacity-50 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-blue-500 border-opacity-20 shadow-2xl" data-aos="fade-up">
-      <h3 class="text-xl font-bold mb-4 text-blue-300">All Produk</h3>
+    <section class="bg-gray-800 bg-opacity-50 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-blue-500 border-opacity-20 shadow-2xl glass-effect" data-aos="fade-up">
+      <h3 class="text-xl font-bold mb-4 text-blue-300">🎯 All Produk</h3>
       <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <!-- Products will be loaded dynamically -->
+        <div class="text-center py-8">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+          <p class="text-gray-400">Memuat produk...</p>
+        </div>
       </div>
     </section>
 
+    <!-- QRIS Payment Section -->
+    <section class="bg-gradient-to-r from-purple-900 via-blue-900 to-indigo-900 rounded-2xl p-6 mb-6 border border-purple-500 border-opacity-30 shadow-xl" data-aos="fade-up">
+      <h3 class="text-xl font-bold mb-4 text-white">💳 QRIS Pembayaran Dinamis</h3>
+      <p class="text-gray-300 mb-4">Bayar dengan mudah menggunakan QRIS. QR Code otomatis menyesuaikan harga produk!</p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div class="bg-white bg-opacity-10 p-4 rounded-lg payment-card">
+          <div class="text-2xl mb-2">⚡</div>
+          <h4 class="font-bold text-white mb-1">Cepat & Otomatis</h4>
+          <p class="text-sm text-gray-300">QR Code otomatis sesuai harga produk</p>
+        </div>
+        <div class="bg-white bg-opacity-10 p-4 rounded-lg payment-card">
+          <div class="text-2xl mb-2">💰</div>
+          <h4 class="font-bold text-white mb-1">Multi Payment</h4>
+          <p class="text-sm text-gray-300">Diterima semua bank & e-wallet</p>
+        </div>
+        <div class="bg-white bg-opacity-10 p-4 rounded-lg payment-card">
+          <div class="text-2xl mb-2">🔒</div>
+          <h4 class="font-bold text-white mb-1">Aman & Terlacak</h4>
+          <p class="text-sm text-gray-300">Transaksi terenkripsi dan terlacak</p>
+        </div>
+      </div>
+      
+      <button onclick="showQRISDemo()" 
+              class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-bold text-white transition-all hover:scale-105 shadow-lg">
+        🚀 Lihat Demo QRIS Dinamis
+      </button>
+    </section>
+
     <!-- Contact Section -->
-    <section class="bg-gray-800 bg-opacity-50 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-blue-500 border-opacity-20" data-aos="fade-up">
-      <h3 class="text-xl font-bold mb-4 text-blue-300">Hubungi Kami</h3>
+    <section class="bg-gray-800 bg-opacity-50 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-blue-500 border-opacity-20 shadow-xl glass-effect" data-aos="fade-up">
+      <h3 class="text-xl font-bold mb-4 text-blue-300">📞 Hubungi Kami</h3>
       <div class="flex flex-wrap gap-3">
-        <a href="https://t.me/CrasHerJmB" target="_blank" 
-           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-all hover:scale-105">
-          Hubungi Owner (Tele)
+        <a href="https://t.me/dapidd_ae02" target="_blank" 
+           class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2">
+          <span>📱</span> Owner (Telegram)
         </a>
-        <a href="https://wa.me/6285161570297" target="_blank" 
-           class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-all hover:scale-105">
-          Hubungi Owner (WhatsApp)
+        <a href="https://wa.me/6285185025316" target="_blank" 
+           class="px-4 py-2 bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2">
+          <span>💬</span> Owner (WhatsApp)
         </a>
-        <a href="https://tiktok.com/@crasher.jmb" target="_blank" 
-           class="px-4 py-2 bg-black hover:bg-gray-800 rounded-lg font-semibold transition-all hover:scale-105">
-          TikTok Owner
+        <a href="https://tiktok.com/@dapid_ae02" target="_blank" 
+           class="px-4 py-2 bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2">
+          <span>🎵</span> TikTok Owner
         </a>
         <button id="adminLoginBtn" 
-                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition-all hover:scale-105">
-          Admin Panel
+                class="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2">
+          <span>⚙️</span> Admin Panel
         </button>
+      </div>
+      
+      <div class="mt-6 pt-6 border-t border-blue-500 border-opacity-20">
+        <h4 class="font-bold text-blue-300 mb-3">📋 Cara Order:</h4>
+        <ol class="text-sm text-gray-300 space-y-2 pl-5 list-decimal">
+          <li>Pilih produk yang diinginkan</li>
+          <li>Klik "Bayar Sekarang" atau "Pesan via WhatsApp"</li>
+          <li>Untuk QRIS: Scan QR Code yang otomatis sesuai harga</li>
+          <li>Kirim bukti transfer ke WhatsApp kami</li>
+          <li>Produk akan dikirim segera setelah konfirmasi</li>
+        </ol>
       </div>
     </section>
 
     <!-- Product Details Modal -->
-    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 p-4">
-      <div class="bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl p-6 max-w-lg w-full border border-blue-500 border-opacity-30">
+    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50 p-4 overflow-y-auto">
+      <div class="bg-gradient-to-b from-gray-900 to-gray-800 rounded-2xl p-6 max-w-2xl w-full border border-blue-500 border-opacity-30 shadow-2xl my-8">
         <div id="productModalContent"></div>
         <div class="mt-6 text-right">
-          <button onclick="closeProductModal()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
-            Tutup
+          <button onclick="closeProductModal()" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors">
+            ✕ Tutup
           </button>
         </div>
       </div>
     </div>
 
     <!-- Admin Login Modal -->
-    <div id="adminLoginModal" class="fixed inset-0 bg-black bg-opacity-70 hidden items-center justify-center z-50 p-4">
-      <div class="bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl p-8 max-w-md w-full border border-blue-500 border-opacity-30">
-        <h3 class="text-2xl font-bold mb-6 text-center text-blue-300">Admin Login</h3>
+    <div id="adminLoginModal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50 p-4">
+      <div class="bg-gradient-to-b from-gray-900 to-gray-800 rounded-2xl p-8 max-w-md w-full border border-blue-500 border-opacity-30 shadow-2xl">
+        <h3 class="text-2xl font-bold mb-6 text-center text-blue-300">🔐 Admin Login</h3>
         <div class="space-y-4">
           <input type="password" id="adminPassword" 
                  placeholder="Masukkan Password Admin" 
-                 class="w-full px-4 py-3 bg-gray-700 rounded-lg border border-blue-500 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                 class="w-full px-4 py-3 bg-gray-700 rounded-lg border border-blue-500 border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                 autocomplete="off">
           <button onclick="adminLogin()" 
-                  class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold">
-            Login
+                  class="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 rounded-lg font-bold transition-all">
+            🚀 Login
           </button>
         </div>
-        <div class="mt-6 text-right">
-          <button onclick="closeAdminLogin()" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+        <div class="mt-6 text-center">
+          <button onclick="closeAdminLogin()" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors">
             Batal
           </button>
         </div>
       </div>
     </div>
 
+    <!-- Demo QRIS Modal -->
+    <div id="qrisDemoModal" class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-50 p-4">
+      <div class="bg-gradient-to-b from-gray-900 to-gray-800 rounded-2xl p-8 max-w-md w-full border border-purple-500 border-opacity-50 shadow-2xl">
+        <div class="text-center">
+          <h3 class="text-2xl font-bold mb-2 text-white">💰 Demo QRIS Dinamis</h3>
+          <p class="text-gray-300 mb-6">QR Code otomatis menyesuaikan dengan harga produk yang dipilih</p>
+          
+          <div class="bg-white p-6 rounded-xl mb-6 inline-block scan-animation qris-pulse">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=JMB-STORE-DEMO-50000&format=png&color=0a192f&bgcolor=8b5cf6" 
+                 alt="QRIS Demo" 
+                 class="w-48 h-48 mx-auto">
+          </div>
+          
+          <div class="space-y-3">
+            <div class="flex justify-between items-center bg-gray-800 p-4 rounded-lg">
+              <span class="text-gray-300">💰 Produk Demo</span>
+              <span class="font-bold text-green-400">Rp 50.000</span>
+            </div>
+            
+            <p class="text-sm text-gray-400 bg-gray-900 p-3 rounded-lg">
+              💡 <strong>Fitur QRIS Dinamis:</strong><br>
+              Saat memilih produk asli, QR Code akan berisi data transaksi lengkap dengan harga yang sesuai secara otomatis.
+            </p>
+          </div>
+          
+          <div class="mt-8">
+            <button onclick="closeQRISDemo()" 
+                    class="w-full px-6 py-3 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-800 hover:to-purple-950 rounded-lg font-bold text-white transition-all">
+              ✅ Tutup Demo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction History Button (Floating) -->
+    <button id="transactionHistoryBtn" 
+            class="fixed bottom-4 left-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white p-3 rounded-full shadow-lg z-30 hidden transition-all hover:scale-110">
+      <span class="flex items-center gap-2">
+        <span>📋</span>
+        <span class="text-sm font-semibold">Riwayat</span>
+      </span>
+    </button>
+
+    <!-- Transaction History Modal -->
+    <div id="transactionHistoryModal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50 p-4">
+      <div class="bg-gradient-to-b from-gray-900 to-gray-800 rounded-2xl p-6 max-w-md w-full border border-blue-500 border-opacity-30 shadow-2xl">
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold text-blue-300">📜 Riwayat Transaksi</h3>
+          <button onclick="closeTransactionHistory()" class="text-gray-400 hover:text-white">
+            ✕
+          </button>
+        </div>
+        <div id="transactionHistoryContent" class="max-h-96 overflow-y-auto">
+          <!-- Transactions will be loaded here -->
+          <p class="text-gray-400 text-center py-8">Belum ada transaksi</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer -->
     <footer class="text-center text-blue-300 mt-12 pt-6 border-t border-blue-500 border-opacity-20" data-aos="fade-up">
-      ® Created by SYAIF OFFICIAL - JMB STORE
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-4">
+        <div class="text-sm">
+          <span class="font-bold text-white">💳 Metode Pembayaran:</span>
+          <div class="flex flex-wrap gap-2 mt-2 justify-center">
+            <span class="px-3 py-1 bg-blue-900 bg-opacity-50 rounded-full text-xs">QRIS Dinamis</span>
+            <span class="px-3 py-1 bg-green-900 bg-opacity-50 rounded-full text-xs">DANA</span>
+            <span class="px-3 py-1 bg-purple-900 bg-opacity-50 rounded-full text-xs">GoPay</span>
+            <span class="px-3 py-1 bg-red-900 bg-opacity-50 rounded-full text-xs">Bank Transfer</span>
+          </div>
+        </div>
+        <div class="text-sm">
+          <span class="font-bold text-white">🛡️ Garansi:</span>
+          <div class="mt-1">Produk Original • Support 24/7 • Refund Garansi</div>
+        </div>
+      </div>
+      <div class="text-sm text-gray-400">
+        ® Created by SYAIF OFFICIAL - JMB STORE • © 2024 All Rights Reserved
+      </div>
     </footer>
 
   </main>
@@ -155,8 +281,133 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- App Scripts -->
-  <script src="config.js" defer></script>
-  <script src="app.js" defer></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  
+  <!-- Inline Script for Demo Functions -->
+  <script>
+    // QRIS Demo Functions
+    function showQRISDemo() {
+      document.getElementById('qrisDemoModal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeQRISDemo() {
+      document.getElementById('qrisDemoModal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+
+    // Transaction History Functions
+    document.getElementById('transactionHistoryBtn')?.addEventListener('click', function() {
+      showTransactionHistory();
+    });
+
+    function showTransactionHistory() {
+      const modal = document.getElementById('transactionHistoryModal');
+      const content = document.getElementById('transactionHistoryContent');
+      
+      // Get transactions from localStorage
+      const transactions = JSON.parse(localStorage.getItem('jmb_transactions') || '[]');
+      
+      if (transactions.length === 0) {
+        content.innerHTML = `
+          <div class="text-center py-8">
+            <div class="text-4xl mb-4">📭</div>
+            <p class="text-gray-400">Belum ada riwayat transaksi</p>
+            <p class="text-sm text-gray-500 mt-2">Transaksi Anda akan muncul di sini</p>
+          </div>
+        `;
+      } else {
+        let html = '<div class="space-y-3">';
+        
+        transactions.reverse().forEach(trans => {
+          const date = new Date(trans.timestamp).toLocaleDateString('id-ID');
+          const amount = trans.amount.toLocaleString('id-ID');
+          
+          html += `
+            <div class="bg-gray-800 p-4 rounded-lg border border-blue-500 border-opacity-20">
+              <div class="flex justify-between items-start mb-2">
+                <div>
+                  <h4 class="font-semibold text-white">${trans.productName}</h4>
+                  <p class="text-xs text-gray-400">${date} • ${trans.method}</p>
+                </div>
+                <span class="bg-green-900 bg-opacity-50 text-green-300 px-3 py-1 rounded-full text-sm font-bold">
+                  Rp ${amount}
+                </span>
+              </div>
+              <div class="flex justify-between items-center mt-3">
+                <span class="text-xs px-3 py-1 rounded-full ${trans.status === 'pending' ? 'bg-yellow-900 text-yellow-300' : 'bg-green-900 text-green-300'}">
+                  ${trans.status === 'pending' ? '⏳ Menunggu' : '✅ Selesai'}
+                </span>
+                <button onclick="retryTransaction('${trans.id}')" class="text-xs text-blue-400 hover:text-blue-300">
+                  ↻ Ulangi
+                </button>
+              </div>
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+        content.innerHTML = html;
+      }
+      
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeTransactionHistory() {
+      document.getElementById('transactionHistoryModal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+
+    function retryTransaction(transId) {
+      const transactions = JSON.parse(localStorage.getItem('jmb_transactions') || '[]');
+      const transaction = transactions.find(t => t.id === transId);
+      
+      if (transaction) {
+        showPaymentOptions(transaction.productName, transaction.amount, transaction.productId);
+        closeTransactionHistory();
+      }
+    }
+
+    // Close modals on ESC key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeQRISDemo();
+        closeTransactionHistory();
+        closeProductModal();
+        closeAdminLogin();
+      }
+    });
+
+    // Close modals on outside click
+    document.addEventListener('click', function(e) {
+      const qrisModal = document.getElementById('qrisDemoModal');
+      const historyModal = document.getElementById('transactionHistoryModal');
+      const productModal = document.getElementById('productModal');
+      const adminModal = document.getElementById('adminLoginModal');
+      
+      if (qrisModal && !qrisModal.classList.contains('hidden') && 
+          e.target === qrisModal) {
+        closeQRISDemo();
+      }
+      
+      if (historyModal && !historyModal.classList.contains('hidden') && 
+          e.target === historyModal) {
+        closeTransactionHistory();
+      }
+      
+      if (productModal && !productModal.classList.contains('hidden') && 
+          e.target === productModal) {
+        closeProductModal();
+      }
+      
+      if (adminModal && !adminModal.classList.contains('hidden') && 
+          e.target === adminModal) {
+        closeAdminLogin();
+      }
+    });
+  </script>
   
 </body>
 </html>
