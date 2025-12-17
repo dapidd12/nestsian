@@ -1,282 +1,232 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SYAIF OFFICIAL - JMB STORE</title>
+  <meta name="description" content="NestSian Official Store - Toko digital terpercaya dengan QRIS dinamis">
+  <meta name="keywords" content="toko digital, produk digital, QRIS, pembayaran online, NestSian">
+  <title>NestSian - Official Store</title>
   
-  <!-- Anti Inspect & DevTools Protection -->
-  <script>
-    // Anti Inspect Protection
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-      if ((e.ctrlKey && e.shiftKey && e.key === 'I') || 
-          (e.ctrlKey && e.key === 'U') || 
-          (e.key === 'F12')) {
-        e.preventDefault();
-        return false;
-      }
-    });
-    
-    // DevTools Detection
-    (function() {
-      const element = new Image();
-      Object.defineProperty(element, 'id', {
-        get: function() {
-          window.location.href = 'about:blank';
-        }
-      });
-      console.log('%c', element);
-    })();
-  </script>
+  <!-- Favicon -->
+  <link rel="icon" href="logo.jpg" type="image/jpeg">
   
   <!-- Tailwind CSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <!-- AOS Animation -->
-  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
   
-  <!-- Favicon -->
-  <link rel="icon" href="https://img.icons8.com/color/96/000000/shopping-cart--v1.png" type="image/png">
+  <!-- Anti Inspect -->
+  <script>
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.onkeydown = function(e) {
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) {
+        return false;
+      }
+    };
+  </script>
 </head>
-<body class="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-900 text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300">
+<body class="bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-300">
   
   <!-- Theme Toggle -->
-  <button id="themeToggle" class="fixed top-4 left-4 z-50 w-12 h-12 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-all duration-300">
-    <i id="themeIcon" class="fas fa-moon text-gray-800 dark:text-yellow-300 text-xl"></i>
+  <button id="themeToggle" class="theme-toggle">
+    <i id="themeIcon" class="fas fa-sun"></i>
   </button>
 
   <!-- Loading Screen -->
-  <div id="loading" class="fixed inset-0 bg-gradient-to-b from-gray-50 via-gray-100 to-blue-100 dark:from-gray-900 dark:via-gray-900 dark:to-blue-900 flex flex-col items-center justify-center z-40 transition-colors duration-300">
-    <div class="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-    <div class="mt-4 text-blue-600 dark:text-blue-400 font-semibold text-lg loading-dots">Loading</div>
-    <p class="text-blue-500 dark:text-blue-300 text-sm mt-2">SYAIF OFFICIAL - JMB STORE</p>
-  </div>
-
-  <!-- Welcome Modal (First Visit) -->
-  <div id="welcomeModal" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 hidden">
-    <div class="bg-gradient-to-b from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-8 max-w-md w-full border border-blue-500 border-opacity-30 shadow-2xl">
-      <div class="text-center">
-        <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center mb-6">
-          <i class="fas fa-store text-white text-3xl"></i>
-        </div>
-        
-        <h3 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">🎉 Selamat Datang!</h3>
-        <p class="text-gray-600 dark:text-gray-300 mb-6">
-          Selamat datang di <span class="font-bold text-blue-600 dark:text-blue-400">JMB STORE</span> - Toko online terpercaya untuk semua kebutuhan digital Anda!
-        </p>
-        
-        <div class="bg-blue-50 dark:bg-gray-800 p-4 rounded-lg mb-6">
-          <h4 class="font-bold text-blue-700 dark:text-blue-300 mb-2">✨ Fitur Unggulan:</h4>
-          <ul class="text-sm text-left text-gray-600 dark:text-gray-300 space-y-2">
-            <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> QRIS Pembayaran Dinamis</li>
-            <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> Produk Original 100%</li>
-            <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> Support 24/7</li>
-            <li class="flex items-center gap-2"><i class="fas fa-check text-green-500"></i> Garansi & Refund</li>
-          </ul>
-        </div>
-        
-        <div class="flex items-center justify-center gap-3 mb-6">
-          <div class="w-10 h-10 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center">
-            <i class="fab fa-whatsapp text-white"></i>
-          </div>
-          <div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Support by:</p>
-            <p class="font-bold text-gray-800 dark:text-white">SYAIF OFFICIAL</p>
-          </div>
-        </div>
-        
-        <button onclick="closeWelcomeModal()" 
-                class="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 rounded-lg font-bold text-white transition-all duration-300">
-          🚀 Mulai Belanja
-        </button>
-        
-        <div class="mt-4 text-xs text-gray-500 dark:text-gray-400">
-          <input type="checkbox" id="dontShowAgain" class="mr-2">
-          <label for="dontShowAgain">Jangan tampilkan lagi</label>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Audio Control -->
-  <div id="audioPanel" class="fixed top-4 right-4 bg-white dark:bg-gray-800 bg-opacity-90 p-4 rounded-xl border border-blue-500 border-opacity-20 flex items-center gap-4 z-30 glass-effect hidden">
-    <div class="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-700 dark:to-blue-900 rounded-lg flex items-center justify-center font-bold text-xl text-white">
-      <i class="fas fa-music"></i>
-    </div>
-    <div>
-      <div class="font-bold text-gray-800 dark:text-blue-100">Putar Sound</div>
-      <div class="text-xs text-gray-600 dark:text-blue-300">Klik untuk play/stop</div>
-    </div>
-    <div class="flex flex-col gap-2">
-      <button id="playBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 rounded-lg text-sm font-semibold transition-colors text-white">
-        <i class="fas fa-play mr-2"></i>Play
-      </button>
-      <button id="stopBtn" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-sm transition-colors text-gray-800 dark:text-gray-200">
-        <i class="fas fa-stop mr-2"></i>Stop
-      </button>
-    </div>
+  <div id="loading" class="fixed inset-0 bg-gradient-to-b from-gray-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 flex flex-col items-center justify-center z-50 transition-opacity duration-300">
+    <div class="loading-spinner mb-4"></div>
+    <div class="text-2xl font-bold gradient-text mb-2">NestSian Store</div>
+    <p class="text-gray-600 dark:text-gray-400">Loading...</p>
   </div>
 
   <!-- Main Content -->
   <main id="main" class="container mx-auto px-4 py-8 hidden">
     
     <!-- Header -->
-    <header class="flex items-center gap-4 mb-8" data-aos="fade-down">
-      <div class="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-800 dark:to-blue-600 rounded-xl flex items-center justify-center font-black text-xl float-animation text-white">
-        <i class="fas fa-shopping-cart"></i>
+    <header class="flex items-center justify-between mb-12" data-aos="fade-down">
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 rounded-xl overflow-hidden border-2 border-blue-500">
+          <img src="logo.jpg" alt="NestSian Logo" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/64?text=NS'">
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold gradient-text">NestSian Store</h1>
+          <p class="text-gray-600 dark:text-gray-400">Toko Digital Resmi & Terpercaya</p>
+        </div>
       </div>
-      <div class="flex-1">
-        <h1 class="text-2xl md:text-3xl font-bold shimmer-text">SYAIF OFFICIAL - JMB STORE</h1>
-        <p class="text-blue-600 dark:text-blue-300">Selamat datang — silahkan pilih barang atau produk yang kamu mau</p>
+      <div class="hidden md:flex items-center gap-4">
+        <span class="px-4 py-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 rounded-full font-semibold">
+          <i class="fas fa-bolt mr-2"></i>Ready Stock
+        </span>
+        <button id="cartBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors">
+          <i class="fas fa-shopping-cart mr-2"></i>Keranjang
+        </button>
       </div>
     </header>
 
-    <!-- Store Title -->
-    <h2 class="text-3xl md:text-4xl font-black mb-8 text-center" data-aos="zoom-in">
-      <span class="bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 dark:from-blue-400 dark:via-green-400 dark:to-yellow-400 bg-clip-text text-transparent animate-pulse">
-        <i class="fas fa-star mr-2"></i>JMB STORE<i class="fas fa-star ml-2"></i>
-      </span>
-    </h2>
-
-    <!-- Welcome Card -->
-    <div class="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-700 dark:to-purple-800 rounded-2xl p-6 mb-8 shadow-xl" data-aos="fade-up">
-      <div class="flex flex-col md:flex-row items-center gap-6">
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-700 dark:to-purple-800 rounded-2xl p-8 mb-12 shadow-xl" data-aos="fade-up">
+      <div class="flex flex-col lg:flex-row items-center justify-between gap-8">
         <div class="flex-1">
-          <h3 class="text-2xl font-bold text-white mb-2">✨ Selamat Datang di JMB Store!</h3>
-          <p class="text-blue-100 mb-4">
-            Temukan berbagai produk digital berkualitas dengan harga terbaik. 
-            Transaksi aman, cepat, dan terjamin 100% original!
+          <h2 class="text-4xl font-bold text-white mb-4">Selamat Datang di NestSian Store! 🎉</h2>
+          <p class="text-blue-100 text-lg mb-6">
+            Temukan produk digital berkualitas dengan harga terbaik. Transaksi aman, cepat, dan dijamin 100% original!
           </p>
-          <div class="flex flex-wrap gap-2">
-            <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm text-white">⚡ Instant Delivery</span>
-            <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm text-white">🔒 100% Secure</span>
-            <span class="px-3 py-1 bg-white bg-opacity-20 rounded-full text-sm text-white">💬 24/7 Support</span>
+          <div class="flex flex-wrap gap-3">
+            <span class="px-4 py-2 bg-white bg-opacity-20 rounded-full text-white flex items-center gap-2">
+              <i class="fas fa-shield-alt"></i> Aman & Terpercaya
+            </span>
+            <span class="px-4 py-2 bg-white bg-opacity-20 rounded-full text-white flex items-center gap-2">
+              <i class="fas fa-bolt"></i> Instant Delivery
+            </span>
+            <span class="px-4 py-2 bg-white bg-opacity-20 rounded-full text-white flex items-center gap-2">
+              <i class="fas fa-headset"></i> Support 24/7
+            </span>
           </div>
         </div>
-        <div class="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-          <i class="fas fa-gift text-white text-4xl"></i>
+        <div class="w-64 h-64 bg-white bg-opacity-20 rounded-full flex items-center justify-center rotate">
+          <i class="fas fa-store text-white text-8xl"></i>
         </div>
+      </div>
+    </section>
+
+    <!-- Search Bar -->
+    <div class="mb-8" data-aos="fade-up">
+      <div class="relative">
+        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+        <input type="text" 
+               id="searchInput"
+               placeholder="Cari produk yang kamu mau..." 
+               class="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-300 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm">
       </div>
     </div>
 
-    <!-- Products Section -->
-    <section class="bg-white dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-blue-500 border-opacity-20 shadow-xl glass-effect" data-aos="fade-up">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-xl font-bold text-gray-800 dark:text-blue-300">
-          <i class="fas fa-bolt mr-2"></i>All Produk
+    <!-- Products Grid -->
+    <section id="productsSection" class="mb-12">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
+          <i class="fas fa-box text-blue-500"></i> Semua Produk
+          <span id="productCount" class="text-sm bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 px-3 py-1 rounded-full">0 produk</span>
         </h3>
-        <span class="text-sm text-gray-600 dark:text-gray-300" id="productCount">0 produk tersedia</span>
+        <div class="flex gap-2">
+          <button id="sortBtn" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <i class="fas fa-sort mr-2"></i>Urutkan
+          </button>
+          <button id="filterBtn" class="px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+            <i class="fas fa-filter mr-2"></i>Filter
+          </button>
+        </div>
       </div>
-      <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Products will be loaded dynamically -->
-        <div class="text-center py-8 col-span-3">
+      
+      <div id="productsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Products will be loaded here -->
+        <div class="col-span-3 text-center py-12">
           <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div>
           <p class="text-gray-500 dark:text-gray-400">Memuat produk...</p>
         </div>
       </div>
     </section>
 
-    <!-- QRIS Payment Section -->
-    <section class="bg-gradient-to-r from-purple-500 to-blue-600 dark:from-purple-700 dark:to-blue-800 rounded-2xl p-6 mb-6 border border-purple-500 border-opacity-30 shadow-xl" data-aos="fade-up">
-      <h3 class="text-xl font-bold mb-4 text-white">
-        <i class="fas fa-qrcode mr-2"></i>QRIS Pembayaran Dinamis
+    <!-- Featured Categories -->
+    <section id="categoriesSection" class="mb-12 hidden" data-aos="fade-up">
+      <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
+        <i class="fas fa-tags text-purple-500"></i> Kategori Produk
       </h3>
-      <p class="text-blue-100 mb-4">Bayar dengan mudah menggunakan QRIS. QR Code otomatis menyesuaikan harga produk!</p>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <div class="bg-white bg-opacity-20 p-4 rounded-lg payment-card">
-          <div class="text-2xl mb-2 text-white"><i class="fas fa-bolt"></i></div>
-          <h4 class="font-bold text-white mb-1">Cepat & Otomatis</h4>
-          <p class="text-sm text-blue-100">QR Code otomatis sesuai harga produk</p>
-        </div>
-        <div class="bg-white bg-opacity-20 p-4 rounded-lg payment-card">
-          <div class="text-2xl mb-2 text-white"><i class="fas fa-wallet"></i></div>
-          <h4 class="font-bold text-white mb-1">Multi Payment</h4>
-          <p class="text-sm text-blue-100">Diterima semua bank & e-wallet</p>
-        </div>
-        <div class="bg-white bg-opacity-20 p-4 rounded-lg payment-card">
-          <div class="text-2xl mb-2 text-white"><i class="fas fa-shield-alt"></i></div>
-          <h4 class="font-bold text-white mb-1">Aman & Terlacak</h4>
-          <p class="text-sm text-blue-100">Transaksi terenkripsi dan terlacak</p>
-        </div>
+      <div id="categoriesGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <!-- Categories will be loaded here -->
       </div>
-      
-      <button onclick="showQRISDemo()" 
-              class="w-full px-6 py-3 bg-gradient-to-r from-white to-gray-100 hover:from-gray-100 hover:to-white dark:from-purple-600 dark:to-pink-600 dark:hover:from-purple-700 dark:hover:to-pink-700 rounded-lg font-bold text-purple-700 dark:text-white transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2">
-        <i class="fas fa-rocket"></i>Lihat Demo QRIS Dinamis
-      </button>
     </section>
 
-    <!-- Contact Section -->
-    <section class="bg-white dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-blue-500 border-opacity-20 shadow-xl glass-effect" data-aos="fade-up">
-      <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-blue-300">
-        <i class="fas fa-headset mr-2"></i>Hubungi Kami
+    <!-- QRIS Info -->
+    <section class="bg-gradient-to-r from-purple-500 to-blue-600 dark:from-purple-700 dark:to-blue-800 rounded-2xl p-8 mb-12 shadow-xl" data-aos="fade-up">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+        <div class="flex-1">
+          <h3 class="text-2xl font-bold text-white mb-4">
+            <i class="fas fa-qrcode mr-3"></i>QRIS Pembayaran Dinamis
+          </h3>
+          <p class="text-blue-100 mb-6">
+            Bayar dengan mudah menggunakan QRIS. QR Code otomatis menyesuaikan dengan total pembayaran!
+          </p>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white bg-opacity-20 p-4 rounded-lg">
+              <div class="text-2xl mb-2 text-white"><i class="fas fa-bolt"></i></div>
+              <h4 class="font-bold text-white mb-1">Cepat & Otomatis</h4>
+              <p class="text-sm text-blue-100">QR Code otomatis sesuai harga</p>
+            </div>
+            <div class="bg-white bg-opacity-20 p-4 rounded-lg">
+              <div class="text-2xl mb-2 text-white"><i class="fas fa-wallet"></i></div>
+              <h4 class="font-bold text-white mb-1">Multi Payment</h4>
+              <p class="text-sm text-blue-100">Diterima semua bank & e-wallet</p>
+            </div>
+          </div>
+        </div>
+        <div class="qr-container qris-pulse">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=NestSian-Store-Demo&format=png" 
+               alt="QRIS Demo" 
+               class="w-48 h-48">
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact & Support -->
+    <section class="bg-white dark:bg-gray-800 rounded-2xl p-8 mb-12 shadow-xl glass-effect" data-aos="fade-up">
+      <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-3">
+        <i class="fas fa-headset text-green-500"></i> Hubungi Kami
       </h3>
-      <p class="text-gray-600 dark:text-gray-300 mb-4">Hubungi kami melalui kontak di bawah ini untuk konsultasi dan pemesanan:</p>
       
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <a href="https://t.me/dapidd_ae02" target="_blank" 
-           class="px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-3 text-white">
-          <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-            <i class="fab fa-telegram text-xl"></i>
-          </div>
-          <div class="text-left">
-            <div class="text-sm">Owner</div>
-            <div class="font-bold">Telegram</div>
-          </div>
-        </a>
-        
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <a href="https://wa.me/6285185025316" target="_blank" 
-           class="px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-3 text-white">
-          <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-            <i class="fab fa-whatsapp text-xl"></i>
+           class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 p-6 rounded-xl text-white transition-all hover:scale-105 shadow-lg">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+              <i class="fab fa-whatsapp text-2xl"></i>
+            </div>
+            <div>
+              <div class="text-sm opacity-80">Customer Service</div>
+              <div class="text-xl font-bold">WhatsApp</div>
+            </div>
           </div>
-          <div class="text-left">
-            <div class="text-sm">Owner</div>
-            <div class="font-bold">WhatsApp</div>
-          </div>
+          <p class="text-sm opacity-90">Respon cepat 24 jam</p>
         </a>
         
-        <a href="https://tiktok.com/@dapid_ae02" target="_blank" 
-           class="px-4 py-3 bg-gradient-to-r from-gray-800 to-black hover:from-gray-900 hover:to-black rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-3 text-white">
-          <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-            <i class="fab fa-tiktok text-xl"></i>
+        <a href="https://t.me/dapidd_ae02" target="_blank" 
+           class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 p-6 rounded-xl text-white transition-all hover:scale-105 shadow-lg">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+              <i class="fab fa-telegram text-2xl"></i>
+            </div>
+            <div>
+              <div class="text-sm opacity-80">Owner</div>
+              <div class="text-xl font-bold">Telegram</div>
+            </div>
           </div>
-          <div class="text-left">
-            <div class="text-sm">Owner</div>
-            <div class="font-bold">TikTok</div>
-          </div>
+          <p class="text-sm opacity-90">Konsultasi produk</p>
         </a>
         
-        <!-- New Contact: Instagram -->
         <a href="https://instagram.com/dapid_ae02" target="_blank" 
-           class="px-4 py-3 bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-3 text-white">
-          <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-            <i class="fab fa-instagram text-xl"></i>
+           class="bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 p-6 rounded-xl text-white transition-all hover:scale-105 shadow-lg">
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+              <i class="fab fa-instagram text-2xl"></i>
+            </div>
+            <div>
+              <div class="text-sm opacity-80">Social Media</div>
+              <div class="text-xl font-bold">Instagram</div>
+            </div>
           </div>
-          <div class="text-left">
-            <div class="text-sm">Owner</div>
-            <div class="font-bold">Instagram</div>
-          </div>
+          <p class="text-sm opacity-90">Update produk terbaru</p>
         </a>
       </div>
       
-      <button id="adminLoginBtn" 
-              class="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 rounded-lg font-semibold transition-all hover:scale-105 flex items-center justify-center gap-2 w-full mb-6 text-white">
-        <i class="fas fa-cog"></i>Admin Panel
-      </button>
-      
-      <div class="mt-6 pt-6 border-t border-blue-500 border-opacity-20">
-        <h4 class="font-bold text-gray-800 dark:text-blue-300 mb-3 flex items-center gap-2">
-          <i class="fas fa-shopping-cart"></i>Cara Order:
+      <div class="bg-blue-50 dark:bg-gray-900 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
+        <h4 class="font-bold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
+          <i class="fas fa-shopping-cart text-blue-500"></i>Cara Order:
         </h4>
-        <ol class="text-sm text-gray-600 dark:text-gray-300 space-y-2 pl-5 list-decimal">
+        <ol class="text-gray-700 dark:text-gray-300 space-y-3 pl-5 list-decimal">
           <li>Pilih produk yang diinginkan</li>
-          <li>Klik "Bayar Sekarang" atau "Pesan via WhatsApp"</li>
+          <li>Klik "Beli Sekarang" atau "Detail Produk"</li>
+          <li>Pilih metode pembayaran (QRIS atau Transfer Manual)</li>
           <li>Untuk QRIS: Scan QR Code yang otomatis sesuai harga</li>
           <li>Kirim bukti transfer ke WhatsApp kami</li>
           <li>Produk akan dikirim segera setelah konfirmasi</li>
@@ -284,346 +234,152 @@
       </div>
     </section>
 
-    <!-- Product Details Modal -->
-    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50 p-4 overflow-y-auto">
-      <div class="bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl p-6 max-w-2xl w-full border border-blue-500 border-opacity-30 shadow-2xl my-8">
-        <div id="productModalContent"></div>
-        <div class="mt-6 text-right">
-          <button onclick="closeProductModal()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg font-semibold transition-colors text-gray-800 dark:text-gray-200">
-            <i class="fas fa-times mr-2"></i>Tutup
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Admin Login Modal -->
-    <div id="adminLoginModal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50 p-4">
-      <div class="bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl p-8 max-w-md w-full border border-blue-500 border-opacity-30 shadow-2xl">
-        <div class="text-center mb-6">
-          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center mb-4">
-            <i class="fas fa-lock text-white text-2xl"></i>
-          </div>
-          <h3 class="text-2xl font-bold text-gray-800 dark:text-blue-300">Admin Login</h3>
-          <p class="text-gray-600 dark:text-gray-300 text-sm mt-1">Masukkan password admin untuk mengakses panel</p>
-        </div>
-        
-        <div class="space-y-4">
-          <div class="relative">
-            <i class="fas fa-key absolute left-4 top-4 text-gray-400"></i>
-            <input type="password" id="adminPassword" 
-                   placeholder="Masukkan Password Admin" 
-                   class="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-800 dark:text-gray-200"
-                   autocomplete="off">
-          </div>
-          
-          <button onclick="adminLogin()" 
-                  class="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 rounded-lg font-bold transition-all text-white flex items-center justify-center gap-2">
-            <i class="fas fa-sign-in-alt"></i>Login
-          </button>
-        </div>
-        
-        <div class="mt-6 text-center">
-          <button onclick="closeAdminLogin()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg font-semibold transition-colors text-gray-800 dark:text-gray-200">
-            <i class="fas fa-times mr-2"></i>Batal
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Demo QRIS Modal -->
-    <div id="qrisDemoModal" class="fixed inset-0 bg-black bg-opacity-90 hidden items-center justify-center z-50 p-4">
-      <div class="bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl p-8 max-w-md w-full border border-purple-500 border-opacity-50 shadow-2xl">
-        <div class="text-center">
-          <h3 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">Demo QRIS Dinamis</h3>
-          <p class="text-gray-600 dark:text-gray-300 mb-6">QR Code otomatis menyesuaikan dengan harga produk yang dipilih</p>
-          
-          <div class="bg-white p-6 rounded-xl mb-6 inline-block scan-animation qris-pulse">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=JMB-STORE-DEMO-50000&format=png&color=0a192f&bgcolor=8b5cf6" 
-                 alt="QRIS Demo" 
-                 class="w-48 h-48 mx-auto">
-          </div>
-          
-          <div class="space-y-3">
-            <div class="flex justify-between items-center bg-gray-100 dark:bg-gray-800 p-4 rounded-lg">
-              <span class="text-gray-600 dark:text-gray-300">💰 Produk Demo</span>
-              <span class="font-bold text-green-600 dark:text-green-400">Rp 50.000</span>
-            </div>
-            
-            <p class="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg">
-              <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
-              <strong>Fitur QRIS Dinamis:</strong><br>
-              Saat memilih produk asli, QR Code akan berisi data transaksi lengkap dengan harga yang sesuai secara otomatis.
-            </p>
-          </div>
-          
-          <div class="mt-8">
-            <button onclick="closeQRISDemo()" 
-                    class="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 rounded-lg font-bold text-white transition-all flex items-center justify-center gap-2">
-              <i class="fas fa-check"></i>Tutup Demo
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Transaction History Button (Floating) -->
-    <button id="transactionHistoryBtn" 
-            class="fixed bottom-4 left-4 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white p-3 rounded-full shadow-lg z-30 hidden transition-all hover:scale-110">
-      <span class="flex items-center gap-2">
-        <i class="fas fa-history"></i>
-        <span class="text-sm font-semibold">Riwayat</span>
-      </span>
-    </button>
-
-    <!-- Transaction History Modal -->
-    <div id="transactionHistoryModal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50 p-4">
-      <div class="bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl p-6 max-w-md w-full border border-blue-500 border-opacity-30 shadow-2xl">
-        <div class="flex justify-between items-center mb-6">
-          <h3 class="text-xl font-bold text-gray-800 dark:text-blue-300 flex items-center gap-2">
-            <i class="fas fa-history"></i>Riwayat Transaksi
-          </h3>
-          <button onclick="closeTransactionHistory()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">
-            <i class="fas fa-times text-xl"></i>
-          </button>
-        </div>
-        <div id="transactionHistoryContent" class="max-h-96 overflow-y-auto">
-          <!-- Transactions will be loaded here -->
-          <div class="text-center py-8">
-            <div class="text-4xl mb-4 text-gray-300 dark:text-gray-600">
-              <i class="fas fa-receipt"></i>
-            </div>
-            <p class="text-gray-500 dark:text-gray-400">Belum ada transaksi</p>
-            <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Transaksi Anda akan muncul di sini</p>
-          </div>
-        </div>
-      </div>
+    <!-- Admin Panel Button -->
+    <div class="text-center mb-12">
+      <button id="adminLoginBtn" 
+              class="px-8 py-4 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 rounded-xl font-bold text-white transition-all hover:scale-105 flex items-center justify-center gap-3 mx-auto shadow-lg">
+        <i class="fas fa-cog"></i>Admin Panel
+      </button>
     </div>
 
     <!-- Footer -->
-    <footer class="text-center text-gray-600 dark:text-blue-300 mt-12 pt-6 border-t border-gray-300 dark:border-blue-500 border-opacity-20" data-aos="fade-up">
-      <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
+    <footer class="text-center text-gray-600 dark:text-gray-400 pt-8 border-t border-gray-300 dark:border-gray-700">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
         <div class="text-center md:text-left">
-          <span class="font-bold text-gray-800 dark:text-white">💳 Metode Pembayaran:</span>
-          <div class="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-            <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 bg-opacity-50 rounded-full text-xs text-blue-800 dark:text-blue-200">QRIS Dinamis</span>
-            <span class="px-3 py-1 bg-green-100 dark:bg-green-900 bg-opacity-50 rounded-full text-xs text-green-800 dark:text-green-200">DANA</span>
-            <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900 bg-opacity-50 rounded-full text-xs text-purple-800 dark:text-purple-200">GoPay</span>
-            <span class="px-3 py-1 bg-red-100 dark:bg-red-900 bg-opacity-50 rounded-full text-xs text-red-800 dark:text-red-200">Bank Transfer</span>
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg overflow-hidden">
+              <img src="logo.jpg" alt="NestSian Logo" class="w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/40?text=NS'">
+            </div>
+            <div>
+              <div class="font-bold text-gray-800 dark:text-white">NestSian Store</div>
+              <div class="text-sm">Toko Digital Terpercaya</div>
+            </div>
           </div>
+          <div class="text-sm">Jual produk digital berkualitas dengan harga terjangkau</div>
         </div>
+        
         <div class="text-center">
-          <span class="font-bold text-gray-800 dark:text-white">🛡️ Garansi:</span>
-          <div class="mt-1 text-sm">Produk Original • Support 24/7 • Refund Garansi</div>
+          <div class="font-bold text-gray-800 dark:text-white mb-3">Metode Pembayaran</div>
+          <div class="flex flex-wrap gap-2 justify-center">
+            <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 rounded-full text-xs text-blue-800 dark:text-blue-200">QRIS Dinamis</span>
+            <span class="px-3 py-1 bg-green-100 dark:bg-green-900 rounded-full text-xs text-green-800 dark:text-green-200">Bank Transfer</span>
+            <span class="px-3 py-1 bg-purple-100 dark:bg-purple-900 rounded-full text-xs text-purple-800 dark:text-purple-200">E-Wallet</span>
+          </div>
         </div>
       </div>
       
       <div class="mb-6">
-        <h4 class="font-bold text-gray-800 dark:text-white mb-3">💌 Kontak Owner:</h4>
-        <div class="flex flex-wrap justify-center gap-3">
-          <a href="mailto:jmbstore@example.com" class="px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            <i class="fas fa-envelope mr-2"></i>Email
-          </a>
-          <a href="https://wa.me/6285185025316" target="_blank" class="px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            <i class="fab fa-whatsapp mr-2"></i>WhatsApp
-          </a>
-          <a href="https://t.me/dapidd_ae02" target="_blank" class="px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-            <i class="fab fa-telegram mr-2"></i>Telegram
-          </a>
+        <div class="flex flex-wrap justify-center gap-4">
+          <a href="/" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Beranda</a>
+          <a href="#products" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Produk</a>
+          <a href="#contact" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">Kontak</a>
+          <a href="#faq" class="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400">FAQ</a>
         </div>
       </div>
       
-      <div class="text-sm text-gray-500 dark:text-gray-400">
-        <i class="fas fa-copyright mr-1"></i>Created by SYAIF OFFICIAL - JMB STORE • © 2024 All Rights Reserved
+      <div class="text-sm text-gray-500 dark:text-gray-500">
+        <i class="fas fa-copyright mr-1"></i>2024 NestSian Store • All Rights Reserved
       </div>
     </footer>
 
   </main>
 
+  <!-- Product Detail Modal -->
+  <div id="productDetailModal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50 p-4 overflow-y-auto">
+    <div class="bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl p-6 max-w-4xl w-full border border-blue-500 border-opacity-30 shadow-2xl my-8">
+      <div id="productDetailContent"></div>
+      <div class="mt-6 text-right">
+        <button onclick="closeProductDetail()" class="px-6 py-3 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg font-semibold transition-colors text-gray-800 dark:text-gray-200">
+          <i class="fas fa-times mr-2"></i>Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50 p-4">
+    <div class="bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl p-8 max-w-md w-full border border-blue-500 border-opacity-30 shadow-2xl">
+      <div id="paymentContent"></div>
+    </div>
+  </div>
+
+  <!-- Admin Login Modal -->
+  <div id="adminLoginModal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50 p-4">
+    <div class="bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl p-8 max-w-md w-full border border-blue-500 border-opacity-30 shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto flex items-center justify-center mb-4">
+          <i class="fas fa-lock text-white text-2xl"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-blue-300">Admin Login</h3>
+        <p class="text-gray-600 dark:text-gray-300 text-sm mt-1">Masukkan password admin untuk mengakses panel</p>
+      </div>
+      
+      <div class="space-y-4">
+        <div class="relative">
+          <i class="fas fa-key absolute left-4 top-4 text-gray-400"></i>
+          <input type="password" id="adminPassword" 
+                 placeholder="Masukkan Password Admin" 
+                 class="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-gray-800 dark:text-gray-200"
+                 autocomplete="off">
+        </div>
+        
+        <button onclick="adminLogin()" 
+                class="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 rounded-lg font-bold transition-all text-white flex items-center justify-center gap-2">
+          <i class="fas fa-sign-in-alt"></i>Login
+        </button>
+      </div>
+      
+      <div class="mt-6 text-center">
+        <button onclick="closeAdminLogin()" class="px-6 py-2 bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg font-semibold transition-colors text-gray-800 dark:text-gray-200">
+          <i class="fas fa-times mr-2"></i>Batal
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Modal -->
+  <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-80 hidden items-center justify-center z-50 p-4">
+    <div class="bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-2xl p-8 max-w-2xl w-full border border-blue-500 border-opacity-30 shadow-2xl">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold text-gray-800 dark:text-blue-300 flex items-center gap-2">
+          <i class="fas fa-shopping-cart"></i>Keranjang Belanja
+        </h3>
+        <button onclick="closeCart()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white">
+          <i class="fas fa-times text-xl"></i>
+        </button>
+      </div>
+      <div id="cartContent" class="max-h-96 overflow-y-auto mb-6">
+        <!-- Cart items will be loaded here -->
+        <div class="text-center py-8">
+          <div class="text-4xl mb-4 text-gray-300 dark:text-gray-600">
+            <i class="fas fa-shopping-cart"></i>
+          </div>
+          <p class="text-gray-500 dark:text-gray-400">Keranjang belanja kosong</p>
+          <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Tambahkan produk untuk memulai belanja</p>
+        </div>
+      </div>
+      <div class="flex justify-between items-center pt-6 border-t border-gray-300 dark:border-gray-700">
+        <div>
+          <div class="text-sm text-gray-600 dark:text-gray-400">Total</div>
+          <div id="cartTotal" class="text-2xl font-bold text-blue-600 dark:text-blue-400">Rp 0</div>
+        </div>
+        <button onclick="checkoutCart()" 
+                class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-lg font-bold text-white transition-all">
+          Checkout <i class="fas fa-arrow-right ml-2"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Container -->
+  <div id="notificationContainer" class="fixed top-4 right-4 z-50"></div>
+
   <!-- External Scripts -->
-  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <!-- App Scripts -->
   <script src="config.js"></script>
   <script src="app.js"></script>
-  
-  <!-- Inline Script for Demo Functions -->
-  <script>
-    // Theme Toggle
-    const themeToggle = document.getElementById('themeToggle');
-    const themeIcon = document.getElementById('themeIcon');
-    
-    // Check for saved theme or prefer-color-scheme
-    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
-    const currentTheme = localStorage.getItem('theme');
-    
-    if (currentTheme === 'dark' || (!currentTheme && prefersDarkScheme.matches)) {
-      document.documentElement.classList.add('dark');
-      themeIcon.classList.remove('fa-moon');
-      themeIcon.classList.add('fa-sun');
-    }
-    
-    themeToggle.addEventListener('click', () => {
-      document.documentElement.classList.toggle('dark');
-      
-      if (document.documentElement.classList.contains('dark')) {
-        localStorage.setItem('theme', 'dark');
-        themeIcon.classList.remove('fa-moon');
-        themeIcon.classList.add('fa-sun');
-      } else {
-        localStorage.setItem('theme', 'light');
-        themeIcon.classList.remove('fa-sun');
-        themeIcon.classList.add('fa-moon');
-      }
-    });
 
-    // Welcome Modal
-    function showWelcomeModal() {
-      const dontShowAgain = localStorage.getItem('jmb_welcome_shown');
-      if (!dontShowAgain) {
-        setTimeout(() => {
-          document.getElementById('welcomeModal').classList.remove('hidden');
-          document.body.style.overflow = 'hidden';
-        }, 1000);
-      }
-    }
-
-    function closeWelcomeModal() {
-      const dontShowAgain = document.getElementById('dontShowAgain').checked;
-      if (dontShowAgain) {
-        localStorage.setItem('jmb_welcome_shown', 'true');
-      }
-      document.getElementById('welcomeModal').classList.add('hidden');
-      document.body.style.overflow = 'auto';
-    }
-
-    // QRIS Demo Functions
-    function showQRISDemo() {
-      document.getElementById('qrisDemoModal').classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeQRISDemo() {
-      document.getElementById('qrisDemoModal').classList.add('hidden');
-      document.body.style.overflow = 'auto';
-    }
-
-    // Transaction History Functions
-    document.getElementById('transactionHistoryBtn')?.addEventListener('click', function() {
-      showTransactionHistory();
-    });
-
-    function showTransactionHistory() {
-      const modal = document.getElementById('transactionHistoryModal');
-      const content = document.getElementById('transactionHistoryContent');
-      
-      // Get transactions from localStorage
-      const transactions = JSON.parse(localStorage.getItem('jmb_transactions') || '[]');
-      
-      if (transactions.length === 0) {
-        content.innerHTML = `
-          <div class="text-center py-8">
-            <div class="text-4xl mb-4 text-gray-300 dark:text-gray-600">
-              <i class="fas fa-receipt"></i>
-            </div>
-            <p class="text-gray-500 dark:text-gray-400">Belum ada riwayat transaksi</p>
-            <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Transaksi Anda akan muncul di sini</p>
-          </div>
-        `;
-      } else {
-        let html = '<div class="space-y-3">';
-        
-        transactions.reverse().forEach(trans => {
-          const date = new Date(trans.timestamp).toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-          const amount = trans.amount.toLocaleString('id-ID');
-          
-          html += `
-            <div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-blue-500 border-opacity-20">
-              <div class="flex justify-between items-start mb-2">
-                <div>
-                  <h4 class="font-semibold text-gray-800 dark:text-white">${trans.productName}</h4>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">${date} • ${trans.method}</p>
-                </div>
-                <span class="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300 px-3 py-1 rounded-full text-sm font-bold">
-                  Rp ${amount}
-                </span>
-              </div>
-              <div class="flex justify-between items-center mt-3">
-                <span class="text-xs px-3 py-1 rounded-full ${trans.status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-300' : 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300'}">
-                  ${trans.status === 'pending' ? '⏳ Menunggu' : '✅ Selesai'}
-                </span>
-                <button onclick="retryTransaction('${trans.id}')" class="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
-                  <i class="fas fa-redo mr-1"></i>Ulangi
-                </button>
-              </div>
-            </div>
-          `;
-        });
-        
-        html += '</div>';
-        content.innerHTML = html;
-      }
-      
-      modal.classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeTransactionHistory() {
-      document.getElementById('transactionHistoryModal').classList.add('hidden');
-      document.body.style.overflow = 'auto';
-    }
-
-    function retryTransaction(transId) {
-      const transactions = JSON.parse(localStorage.getItem('jmb_transactions') || '[]');
-      const transaction = transactions.find(t => t.id === transId);
-      
-      if (transaction) {
-        showPaymentOptions(transaction.productName, transaction.amount, transaction.productId);
-        closeTransactionHistory();
-      }
-    }
-
-    // Close modals on ESC key
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        closeQRISDemo();
-        closeTransactionHistory();
-        closeProductModal();
-        closeAdminLogin();
-        if (!document.getElementById('welcomeModal').classList.contains('hidden')) {
-          closeWelcomeModal();
-        }
-      }
-    });
-
-    // Close modals on outside click
-    document.addEventListener('click', function(e) {
-      const modals = [
-        'qrisDemoModal',
-        'transactionHistoryModal',
-        'productModal',
-        'adminLoginModal',
-        'welcomeModal'
-      ];
-      
-      modals.forEach(modalId => {
-        const modal = document.getElementById(modalId);
-        if (modal && !modal.classList.contains('hidden') && e.target === modal) {
-          if (modalId === 'welcomeModal') closeWelcomeModal();
-          if (modalId === 'qrisDemoModal') closeQRISDemo();
-          if (modalId === 'transactionHistoryModal') closeTransactionHistory();
-          if (modalId === 'productModal') closeProductModal();
-          if (modalId === 'adminLoginModal') closeAdminLogin();
-        }
-      });
-    });
-  </script>
-  
 </body>
 </html>

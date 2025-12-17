@@ -1,6 +1,6 @@
-// config.js - FIXED
-const SUPABASE_URL = 'https://xziodkamchgvnvmqfgow.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh6aW9ka2FtY2hndm52bXFmZ293Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4MDQ4ODQsImV4cCI6MjA4MTM4MDg4NH0.xTIAisFXgPlSA8Aw1G-GHVJztj9czB5Q-OUlleN-YQQ';
+// config.js - FIXED VERSION
+const SUPABASE_URL = 'https://sfmktymfexzemypmbmcu.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNmbWt0eW1mZXh6ZW15cG1ibWN1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5OTY4OTgsImV4cCI6MjA4MTU3Mjg5OH0.tqd8WfYBn4a4yI45ohrbg0T_EVPEQYmaBi7nzxmrnk4';
 
 // Initialize Supabase client
 let supabaseClient;
@@ -26,23 +26,14 @@ const ADMIN_PASSWORD = 'admin123'; // Ganti dengan password yang aman
 
 // App Configuration
 const CONFIG = {
-  siteName: 'SYAIF OFFICIAL - JMB STORE',
-  ownerName: 'SYAIF',
+  siteName: 'NestSian - Official Store',
+  ownerName: 'NestSian',
   contact: {
-    telegram: 'https://t.me/dapidd_ae02',
     whatsapp: 'https://wa.me/6285185025316',
-    tiktok: 'https://tiktok.com/@dapid_ae02',
+    telegram: 'https://t.me/dapidd_ae02',
     instagram: 'https://instagram.com/dapid_ae02'
   },
   whatsappNumber: '6285185025316',
-  audio: {
-    url: 'https://files.catbox.moe/lzij2p.mp4',
-    enabled: true
-  },
-  qris: {
-    baseUrl: 'https://api.qrserver.com/v1/create-qr-code/',
-    size: '300x300'
-  },
   features: {
     lazyLoad: true,
     animations: true,
@@ -50,7 +41,7 @@ const CONFIG = {
     dynamicQR: true,
     darkMode: true
   },
-  defaultTheme: 'dark' // 'light' or 'dark'
+  defaultTheme: 'dark'
 };
 
 // Export untuk global access
