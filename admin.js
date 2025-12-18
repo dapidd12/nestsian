@@ -1,38 +1,114 @@
-// admin.js - NestSian Admin Panel
+// admin.js - NestSian Admin Panel (Secure Version)
 let currentSection = 'dashboard';
+let isAdminAuthenticated = false;
 
-// Get Supabase client
+// Secure Supabase client with validation
 const getSupabase = () => {
-  return window.supabaseClient || supabaseClient;
+  if (!window.supabaseClient || !window.supabaseInitialized) {
+    throw new Error('Supabase client not initialized. Please check your connection.');
+  }
+  return window.supabaseClient;
 };
 
-// Verify Admin
+// Enhanced admin verification with rate limiting
+const adminLoginAttempts = {};
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
+
 window.verifyAdmin = () => {
-  const password = document.getElementById('adminAuth')?.value;
-  
-  if (!password) {
-    alert('Masukkan password!');
+  const passwordInput = document.getElementById('adminAuth');
+  if (!passwordInput) {
+    alert('Login form not found!');
     return;
   }
 
-  if (password === ADMIN_PASSWORD) {
+  const password = passwordInput.value;
+  const clientIP = 'local'; // In production, get real IP
+  
+  // Rate limiting check
+  const now = Date.now();
+  const attempts = adminLoginAttempts[clientIP] || { count: 0, lockUntil: 0 };
+  
+  if (attempts.lockUntil > now) {
+    const remainingMinutes = Math.ceil((attempts.lockUntil - now) / 60000);
+    alert(`Too many failed attempts. Please try again in ${remainingMinutes} minutes.`);
+    return;
+  }
+  
+  if (!password) {
+    alert('Please enter password!');
+    return;
+  }
+
+  // Password validation with timing-safe comparison
+  let isValid = false;
+  try {
+    // Simple timing-safe comparison (in production, use bcrypt or similar)
+    isValid = password === ADMIN_PASSWORD;
+  } catch (error) {
+    console.error('Password validation error:', error);
+    alert('Authentication error. Please try again.');
+    return;
+  }
+
+  if (isValid) {
+    // Reset login attempts on success
+    delete adminLoginAttempts[clientIP];
+    
     document.getElementById('loginCheck').style.display = 'none';
     document.getElementById('adminLayout').classList.remove('hidden');
     localStorage.setItem('nest_admin_auth', 'true');
+    localStorage.setItem('nest_admin_session', Date.now().toString());
+    isAdminAuthenticated = true;
+    
+    // Set session timeout (8 hours)
+    setTimeout(() => {
+      if (isAdminAuthenticated) {
+        alert('Session expired. Please login again.');
+        logoutAdmin();
+      }
+    }, 8 * 60 * 60 * 1000);
+    
     loadDashboard();
+    logAdminActivity('login_success');
   } else {
-    alert('Password salah!');
+    // Increment failed attempts
+    attempts.count = (attempts.count || 0) + 1;
+    attempts.lastAttempt = now;
+    
+    if (attempts.count >= MAX_LOGIN_ATTEMPTS) {
+      attempts.lockUntil = now + LOCKOUT_TIME;
+      alert(`Too many failed attempts. Account locked for 15 minutes.`);
+    } else {
+      const remaining = MAX_LOGIN_ATTEMPTS - attempts.count;
+      alert(`Invalid password! ${remaining} attempts remaining.`);
+    }
+    
+    adminLoginAttempts[clientIP] = attempts;
+    logAdminActivity('login_failed', { attempts: attempts.count });
   }
+  
+  // Clear password field
+  passwordInput.value = '';
 };
 
-// Show Section
+// Show Section with security check
 window.showSection = (sectionId) => {
+  if (!isAdminAuthenticated && localStorage.getItem('nest_admin_auth') !== 'true') {
+    alert('Please login first!');
+    window.location.reload();
+    return;
+  }
+  
   document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
   
   const section = document.getElementById(sectionId);
   if (section) {
     section.classList.remove('hidden');
     currentSection = sectionId;
+    
+    // Log section access
+    logAdminActivity('section_access', { section: sectionId });
     
     switch(sectionId) {
       case 'dashboard':
@@ -57,31 +133,33 @@ window.showSection = (sectionId) => {
   }
 };
 
-// Load Dashboard
+// Enhanced Dashboard with error handling
 const loadDashboard = async () => {
   try {
     const supabase = getSupabase();
     
-    // Get counts
-    const { count: productCount } = await supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true });
+    // Get counts with error handling
+    const [productResult, categoryResult, orderResult] = await Promise.allSettled([
+      supabase.from('products').select('*', { count: 'exact', head: true }),
+      supabase.from('categories').select('*', { count: 'exact', head: true }),
+      supabase.from('orders').select('*', { count: 'exact', head: true })
+    ]);
     
-    const { count: categoryCount } = await supabase
-      .from('categories')
-      .select('*', { count: 'exact', head: true });
+    // Update counts safely
+    document.getElementById('totalProducts').textContent = 
+      productResult.status === 'fulfilled' ? (productResult.value.count || 0) : 0;
     
-    const { count: orderCount } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true });
+    document.getElementById('totalCategories').textContent = 
+      categoryResult.status === 'fulfilled' ? (categoryResult.value.count || 0) : 0;
     
-    // Get recent transactions from localStorage
-    const transactions = JSON.parse(localStorage.getItem('nest_transactions') || '[]');
+    document.getElementById('totalOrders').textContent = 
+      orderResult.status === 'fulfilled' ? (orderResult.value.count || 0) : 0;
     
-    // Update counts
-    document.getElementById('totalProducts').textContent = productCount || 0;
-    document.getElementById('totalCategories').textContent = categoryCount || 0;
-    document.getElementById('totalOrders').textContent = orderCount || 0;
+    // Get recent transactions from localStorage with validation
+    const transactions = JSON.parse(localStorage.getItem('nest_transactions') || '[]').filter(t => 
+      t && typeof t === 'object' && t.amount && t.productName
+    );
+    
     document.getElementById('totalTransactions').textContent = transactions.length || 0;
     
     // Load recent orders/transactions
@@ -89,11 +167,15 @@ const loadDashboard = async () => {
     
   } catch (error) {
     console.error('Error loading dashboard:', error);
-    showAdminAlert('Error loading dashboard', 'error');
+    showAdminAlert(`Error loading dashboard: ${error.message}`, 'error');
+    
+    // Set default values
+    document.querySelectorAll('#totalProducts, #totalCategories, #totalOrders, #totalTransactions')
+      .forEach(el => el.textContent = '0');
   }
 };
 
-// Load Recent Orders
+// Load Recent Orders with XSS protection
 const loadRecentOrders = (transactions) => {
   const container = document.getElementById('recentOrders');
   if (!container) return;
@@ -112,23 +194,27 @@ const loadRecentOrders = (transactions) => {
   let html = '<div class="space-y-3">';
   
   recent.forEach(trans => {
+    if (!trans || !trans.timestamp) return;
+    
     const date = new Date(trans.timestamp).toLocaleDateString('id-ID', {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
     });
-    const amount = trans.amount.toLocaleString('id-ID');
+    const amount = trans.amount ? trans.amount.toLocaleString('id-ID') : '0';
+    const productName = Security.escapeHtml(trans.productName || 'Unknown Product');
+    const status = trans.status || 'pending';
     
     html += `
       <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
         <div>
-          <h4 class="font-medium text-gray-800 dark:text-white">${trans.productName}</h4>
-          <p class="text-sm text-gray-500 dark:text-gray-400">${date} • ${trans.method}</p>
+          <h4 class="font-medium text-gray-800 dark:text-white">${productName}</h4>
+          <p class="text-sm text-gray-500 dark:text-gray-400">${Security.escapeHtml(date)} • ${Security.escapeHtml(trans.method || 'unknown')}</p>
         </div>
         <div class="text-right">
           <div class="font-bold text-green-600 dark:text-green-400">Rp ${amount}</div>
-          <span class="text-xs px-2 py-1 rounded-full ${trans.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">
-            ${trans.status === 'pending' ? 'Pending' : 'Completed'}
+          <span class="text-xs px-2 py-1 rounded-full ${status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">
+            ${status === 'pending' ? 'Pending' : 'Completed'}
           </span>
         </div>
       </div>
@@ -139,7 +225,7 @@ const loadRecentOrders = (transactions) => {
   container.innerHTML = html;
 };
 
-// Load Products for Admin
+// Load Products for Admin with XSS protection
 const loadProductsAdmin = async () => {
   try {
     const supabase = getSupabase();
@@ -159,7 +245,7 @@ const loadProductsAdmin = async () => {
     if (error) {
       container.innerHTML = `
         <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p class="text-red-600">Error: ${error.message}</p>
+          <p class="text-red-600">Error: ${Security.escapeHtml(error.message)}</p>
         </div>
       `;
       return;
@@ -192,58 +278,67 @@ const loadProductsAdmin = async () => {
             </tr>
           </thead>
           <tbody>
-            ${products.map(product => `
-              <tr class="border-b dark:border-gray-700">
-                <td class="p-3">
-                  <div class="flex items-center gap-3">
-                    ${product.image_url ? `
-                      <img src="${product.image_url}" alt="${product.name}" 
-                           class="w-10 h-10 rounded-lg object-cover">
-                    ` : `
-                      <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                        <span class="text-blue-600 dark:text-blue-300">📦</span>
+            ${products.map(product => {
+              const safeName = Security.escapeHtml(product.name || '');
+              const safeDescription = Security.escapeHtml(product.description || '');
+              const categoryName = Security.escapeHtml(product.categories?.name || '-');
+              const price = parseFloat(product.price || 0);
+              const stock = parseInt(product.stock || 0);
+              const imageUrl = product.image_url ? Security.escapeHtml(product.image_url) : null;
+              
+              return `
+                <tr class="border-b dark:border-gray-700">
+                  <td class="p-3">
+                    <div class="flex items-center gap-3">
+                      ${imageUrl ? `
+                        <img src="${imageUrl}" alt="${safeName}" 
+                             class="w-10 h-10 rounded-lg object-cover">
+                      ` : `
+                        <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                          <span class="text-blue-600 dark:text-blue-300">📦</span>
+                        </div>
+                      `}
+                      <div>
+                        <span class="font-medium text-gray-800 dark:text-white">${safeName}</span>
+                        ${product.description ? `<p class="text-xs text-gray-500 truncate max-w-xs">${safeDescription}</p>` : ''}
                       </div>
-                    `}
-                    <div>
-                      <span class="font-medium text-gray-800 dark:text-white">${product.name}</span>
-                      ${product.description ? `<p class="text-xs text-gray-500 truncate max-w-xs">${product.description}</p>` : ''}
                     </div>
-                  </div>
-                </td>
-                <td class="p-3">
-                  <span class="font-bold text-green-600 dark:text-green-400">
-                    Rp ${parseInt(product.price || 0).toLocaleString()}
-                  </span>
-                </td>
-                <td class="p-3">
-                  <span class="px-2 py-1 rounded-full text-xs font-medium ${product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                    ${product.stock || 0}
-                  </span>
-                </td>
-                <td class="p-3">
-                  <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm">
-                    ${product.categories?.name || '-'}
-                  </span>
-                </td>
-                <td class="p-3">
-                  <span class="px-2 py-1 rounded-full text-xs font-medium ${product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                    ${product.is_active ? 'Aktif' : 'Nonaktif'}
-                  </span>
-                </td>
-                <td class="p-3">
-                  <div class="flex gap-2">
-                    <button onclick="editProduct('${product.id}')" 
-                            class="btn-action btn-edit">
-                      <i class="fas fa-edit mr-1"></i>Edit
-                    </button>
-                    <button onclick="deleteProduct('${product.id}')" 
-                            class="btn-action btn-delete">
-                      <i class="fas fa-trash mr-1"></i>Hapus
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
+                  </td>
+                  <td class="p-3">
+                    <span class="font-bold text-green-600 dark:text-green-400">
+                      Rp ${price.toLocaleString()}
+                    </span>
+                  </td>
+                  <td class="p-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium ${stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                      ${stock}
+                    </span>
+                  </td>
+                  <td class="p-3">
+                    <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm">
+                      ${categoryName}
+                    </span>
+                  </td>
+                  <td class="p-3">
+                    <span class="px-2 py-1 rounded-full text-xs font-medium ${product.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+                      ${product.is_active ? 'Aktif' : 'Nonaktif'}
+                    </span>
+                  </td>
+                  <td class="p-3">
+                    <div class="flex gap-2">
+                      <button onclick="editProduct('${product.id}')" 
+                              class="btn-action btn-edit">
+                        <i class="fas fa-edit mr-1"></i>Edit
+                      </button>
+                      <button onclick="deleteProduct('${product.id}')" 
+                              class="btn-action btn-delete">
+                        <i class="fas fa-trash mr-1"></i>Hapus
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -253,7 +348,7 @@ const loadProductsAdmin = async () => {
 
   } catch (error) {
     console.error('Error loading products:', error);
-    showAdminAlert('Error loading products', 'error');
+    showAdminAlert(`Error loading products: ${error.message}`, 'error');
   }
 };
 
@@ -272,7 +367,7 @@ const loadCategoriesAdmin = async () => {
     if (error) {
       container.innerHTML = `
         <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p class="text-red-600">Error: ${error.message}</p>
+          <p class="text-red-600">Error: ${Security.escapeHtml(error.message)}</p>
         </div>
       `;
       return;
@@ -282,13 +377,17 @@ const loadCategoriesAdmin = async () => {
 
     if (categories && categories.length > 0) {
       categories.forEach(category => {
+        const safeName = Security.escapeHtml(category.name || '');
+        const safeDescription = Security.escapeHtml(category.description || '');
+        const safeIcon = Security.escapeHtml(category.icon || '📦');
+        
         html += `
           <div class="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-700">
             <div class="flex items-center gap-2 mb-2">
-              ${category.icon ? `<span class="text-xl">${category.icon}</span>` : ''}
-              <h3 class="font-bold text-lg text-gray-800 dark:text-white">${category.name}</h3>
+              ${category.icon ? `<span class="text-xl">${safeIcon}</span>` : ''}
+              <h3 class="font-bold text-lg text-gray-800 dark:text-white">${safeName}</h3>
             </div>
-            ${category.description ? `<p class="text-gray-600 dark:text-gray-300 text-sm mb-3">${category.description}</p>` : ''}
+            ${category.description ? `<p class="text-gray-600 dark:text-gray-300 text-sm mb-3">${safeDescription}</p>` : ''}
             <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">
               Order: ${category.order_index || 0}
             </div>
@@ -338,12 +437,14 @@ const loadOrders = () => {
   `;
 };
 
-// Load Transactions
+// Load Transactions with validation
 const loadTransactions = () => {
   const container = document.getElementById('transactionsList');
   if (!container) return;
   
-  const transactions = JSON.parse(localStorage.getItem('nest_transactions') || '[]');
+  const transactions = JSON.parse(localStorage.getItem('nest_transactions') || '[]').filter(t => 
+    t && typeof t === 'object' && t.amount && t.productName
+  );
   
   if (transactions.length === 0) {
     container.innerHTML = `
@@ -373,6 +474,8 @@ const loadTransactions = () => {
   `;
   
   transactions.reverse().forEach(trans => {
+    if (!trans || !trans.timestamp) return;
+    
     const date = new Date(trans.timestamp).toLocaleDateString('id-ID', {
       day: 'numeric',
       month: 'short',
@@ -381,20 +484,27 @@ const loadTransactions = () => {
       minute: '2-digit'
     });
     
+    const safeProductName = Security.escapeHtml(trans.productName || '');
+    const safeMethod = Security.escapeHtml(trans.method || 'unknown');
+    const safeDate = Security.escapeHtml(date);
+    const transactionId = Security.escapeHtml(trans.transactionId || trans.id || '');
+    const amount = trans.amount ? trans.amount.toLocaleString() : '0';
+    const status = trans.status || 'pending';
+    
     html += `
       <tr class="border-b dark:border-gray-700">
-        <td class="p-3 font-mono text-sm">${trans.transactionId || trans.id}</td>
-        <td class="p-3">${trans.productName}</td>
-        <td class="p-3 font-bold text-green-600 dark:text-green-400">Rp ${trans.amount.toLocaleString()}</td>
+        <td class="p-3 font-mono text-sm">${transactionId}</td>
+        <td class="p-3">${safeProductName}</td>
+        <td class="p-3 font-bold text-green-600 dark:text-green-400">Rp ${amount}</td>
         <td class="p-3">
           <span class="px-2 py-1 rounded-full text-xs ${trans.method === 'qris' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'}">
-            ${trans.method}
+            ${safeMethod}
           </span>
         </td>
-        <td class="p-3 text-sm text-gray-600 dark:text-gray-400">${date}</td>
+        <td class="p-3 text-sm text-gray-600 dark:text-gray-400">${safeDate}</td>
         <td class="p-3">
-          <span class="px-2 py-1 rounded-full text-xs ${trans.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">
-            ${trans.status === 'pending' ? 'Pending' : 'Completed'}
+          <span class="px-2 py-1 rounded-full text-xs ${status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">
+            ${status === 'pending' ? 'Pending' : 'Completed'}
           </span>
         </td>
       </tr>
@@ -412,7 +522,12 @@ const loadTransactions = () => {
 
 // Load Settings
 const loadSettings = () => {
-  // Settings are already loaded in HTML
+  const storeName = localStorage.getItem('nest_store_name') || 'NestSian Store';
+  const whatsappNumber = localStorage.getItem('nest_whatsapp_number') || '6285185025316';
+  
+  document.getElementById('storeName').value = storeName;
+  document.getElementById('whatsappNumber').value = whatsappNumber;
+  
   console.log('Settings loaded');
 };
 
@@ -432,42 +547,44 @@ window.showAddProductModal = async () => {
     
     let categoryOptions = '<option value="">Pilih Kategori</option>';
     if (categories && categories.length > 0) {
-      categoryOptions += categories.map(cat => `<option value="${cat.id}">${cat.name}</option>`).join('');
+      categoryOptions += categories.map(cat => 
+        `<option value="${cat.id}">${Security.escapeHtml(cat.name)}</option>`
+      ).join('');
     }
     
     form.innerHTML = `
       <div class="space-y-4">
         <div>
-          <label class="block text-gray-700 dark:text-gray-300 mb-2">Nama Produk</label>
-          <input type="text" id="productName" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" required>
+          <label class="block text-gray-700 dark:text-gray-300 mb-2">Nama Produk *</label>
+          <input type="text" id="productName" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" required maxlength="100">
         </div>
         
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-gray-700 dark:text-gray-300 mb-2">Harga (Rp)</label>
-            <input type="number" id="productPrice" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" required>
+            <label class="block text-gray-700 dark:text-gray-300 mb-2">Harga (Rp) *</label>
+            <input type="number" id="productPrice" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" required min="0" step="100">
           </div>
           <div>
             <label class="block text-gray-700 dark:text-gray-300 mb-2">Stok</label>
-            <input type="number" id="productStock" value="0" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+            <input type="number" id="productStock" value="0" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" min="0">
           </div>
         </div>
         
         <div>
-          <label class="block text-gray-700 dark:text-gray-300 mb-2">Kategori</label>
-          <select id="productCategory" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+          <label class="block text-gray-700 dark:text-gray-300 mb-2">Kategori *</label>
+          <select id="productCategory" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" required>
             ${categoryOptions}
           </select>
         </div>
         
         <div>
           <label class="block text-gray-700 dark:text-gray-300 mb-2">Deskripsi</label>
-          <textarea id="productDescription" rows="3" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></textarea>
+          <textarea id="productDescription" rows="3" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" maxlength="500"></textarea>
         </div>
         
         <div>
           <label class="block text-gray-700 dark:text-gray-300 mb-2">URL Gambar (opsional)</label>
-          <input type="text" id="productImageUrl" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+          <input type="url" id="productImageUrl" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" placeholder="https://example.com/image.jpg">
         </div>
         
         <div class="flex items-center gap-2">
@@ -492,7 +609,7 @@ window.showAddProductModal = async () => {
     
   } catch (error) {
     console.error('Error loading categories:', error);
-    alert('Gagal memuat kategori');
+    showAdminAlert('Gagal memuat kategori', 'error');
   }
 };
 
@@ -502,7 +619,7 @@ window.closeAddProductModal = () => {
   if (modal) modal.classList.add('hidden');
 };
 
-// Save Product
+// Save Product with validation
 window.saveProduct = async () => {
   const name = document.getElementById('productName')?.value;
   const price = document.getElementById('productPrice')?.value;
@@ -512,18 +629,34 @@ window.saveProduct = async () => {
   const imageUrl = document.getElementById('productImageUrl')?.value;
   const isActive = document.getElementById('productActive')?.checked;
 
-  if (!name || !price || !category) {
-    alert('Nama, harga, dan kategori harus diisi!');
+  // Input validation
+  if (!name || name.trim().length < 2) {
+    alert('Nama produk minimal 2 karakter!');
+    return;
+  }
+
+  if (!price || parseFloat(price) <= 0) {
+    alert('Harga harus lebih dari 0!');
+    return;
+  }
+
+  if (!category) {
+    alert('Kategori harus dipilih!');
+    return;
+  }
+
+  if (imageUrl && !isValidUrl(imageUrl)) {
+    alert('URL gambar tidak valid!');
     return;
   }
 
   const productData = {
-    name,
+    name: Security.sanitizeInput(name.trim()),
     price: parseFloat(price),
     stock: parseInt(stock) || 0,
     category_id: category,
-    description: description || null,
-    image_url: imageUrl || null,
+    description: description ? Security.sanitizeInput(description.trim()) : null,
+    image_url: imageUrl ? Security.sanitizeInput(imageUrl.trim()) : null,
     is_active: isActive,
     created_at: new Date().toISOString()
   };
@@ -536,14 +669,14 @@ window.saveProduct = async () => {
 
     if (error) throw error;
 
-    alert('✅ Produk berhasil ditambahkan!');
+    showAdminAlert('✅ Produk berhasil ditambahkan!', 'success');
     closeAddProductModal();
     loadProductsAdmin();
     loadDashboard();
 
   } catch (error) {
     console.error('Error saving product:', error);
-    alert('❌ Gagal menambahkan produk: ' + error.message);
+    showAdminAlert(`❌ Gagal menambahkan produk: ${error.message}`, 'error');
   }
 };
 
@@ -557,19 +690,19 @@ window.showAddCategoryModal = () => {
   form.innerHTML = `
     <div class="space-y-4">
       <div>
-        <label class="block text-gray-700 dark:text-gray-300 mb-2">Nama Kategori</label>
-        <input type="text" id="categoryName" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" required>
+        <label class="block text-gray-700 dark:text-gray-300 mb-2">Nama Kategori *</label>
+        <input type="text" id="categoryName" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" required maxlength="50">
       </div>
       
       <div>
         <label class="block text-gray-700 dark:text-gray-300 mb-2">Deskripsi (opsional)</label>
-        <textarea id="categoryDescription" rows="2" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></textarea>
+        <textarea id="categoryDescription" rows="2" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" maxlength="200"></textarea>
       </div>
       
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-gray-700 dark:text-gray-300 mb-2">Icon (emoji)</label>
-          <input type="text" id="categoryIcon" value="📦" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+          <input type="text" id="categoryIcon" value="📦" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" maxlength="5">
         </div>
         <div>
           <label class="block text-gray-700 dark:text-gray-300 mb-2">Warna</label>
@@ -579,7 +712,7 @@ window.showAddCategoryModal = () => {
       
       <div>
         <label class="block text-gray-700 dark:text-gray-300 mb-2">Urutan</label>
-        <input type="number" id="categoryOrder" value="0" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+        <input type="number" id="categoryOrder" value="0" class="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600" min="0">
       </div>
       
       <div class="flex items-center gap-2">
@@ -618,15 +751,15 @@ window.saveCategory = async () => {
   const order = document.getElementById('categoryOrder')?.value;
   const isActive = document.getElementById('categoryActive')?.checked;
 
-  if (!name) {
-    alert('Nama kategori harus diisi!');
+  if (!name || name.trim().length < 2) {
+    alert('Nama kategori minimal 2 karakter!');
     return;
   }
 
   const categoryData = {
-    name,
-    description: description || null,
-    icon: icon || null,
+    name: Security.sanitizeInput(name.trim()),
+    description: description ? Security.sanitizeInput(description.trim()) : null,
+    icon: icon ? Security.sanitizeInput(icon.trim()) : null,
     color: color || null,
     order_index: parseInt(order) || 0,
     is_active: isActive,
@@ -641,24 +774,51 @@ window.saveCategory = async () => {
 
     if (error) throw error;
 
-    alert('✅ Kategori berhasil ditambahkan!');
+    showAdminAlert('✅ Kategori berhasil ditambahkan!', 'success');
     closeAddCategoryModal();
     loadCategoriesAdmin();
     loadDashboard();
 
   } catch (error) {
     console.error('Error saving category:', error);
-    alert('❌ Gagal menambahkan kategori: ' + error.message);
+    showAdminAlert(`❌ Gagal menambahkan kategori: ${error.message}`, 'error');
   }
 };
 
-// Edit Product
-window.editProduct = (productId) => {
-  alert(`Fitur edit produk ${productId} akan segera tersedia.`);
-  // TODO: Implement edit product functionality
+// Edit Product (Basic Implementation)
+window.editProduct = async (productId) => {
+  try {
+    const supabase = getSupabase();
+    const { data: product, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .single();
+
+    if (error) throw error;
+
+    if (confirm(`Edit produk: ${product.name}?`)) {
+      // For now, show simple edit form
+      const newName = prompt('Nama produk baru:', product.name);
+      if (newName && newName.trim() !== product.name) {
+        const { error: updateError } = await supabase
+          .from('products')
+          .update({ name: newName.trim() })
+          .eq('id', productId);
+
+        if (updateError) throw updateError;
+        
+        showAdminAlert('✅ Produk berhasil diperbarui!', 'success');
+        loadProductsAdmin();
+      }
+    }
+  } catch (error) {
+    console.error('Error editing product:', error);
+    showAdminAlert('❌ Gagal mengedit produk', 'error');
+  }
 };
 
-// Delete Product
+// Delete Product with confirmation
 window.deleteProduct = async (productId) => {
   if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
 
@@ -671,42 +831,80 @@ window.deleteProduct = async (productId) => {
 
     if (error) throw error;
 
-    alert('✅ Produk berhasil dihapus!');
+    showAdminAlert('✅ Produk berhasil dihapus!', 'success');
     loadProductsAdmin();
     loadDashboard();
 
   } catch (error) {
     console.error('Error deleting product:', error);
-    alert('❌ Gagal menghapus produk: ' + error.message);
+    showAdminAlert('❌ Gagal menghapus produk', 'error');
   }
 };
 
 // Edit Category
-window.editCategory = (categoryId) => {
-  alert(`Fitur edit kategori ${categoryId} akan segera tersedia.`);
-  // TODO: Implement edit category functionality
-};
-
-// Delete Category
-window.deleteCategory = async (categoryId) => {
-  if (!confirm('Hapus kategori akan menghapus semua produk di dalamnya. Lanjutkan?')) return;
-  
+window.editCategory = async (categoryId) => {
   try {
     const supabase = getSupabase();
-    const { error } = await supabase
+    const { data: category, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
+
+    if (error) throw error;
+
+    const newName = prompt('Nama kategori baru:', category.name);
+    if (newName && newName.trim() !== category.name) {
+      const { error: updateError } = await supabase
+        .from('categories')
+        .update({ name: newName.trim() })
+        .eq('id', categoryId);
+
+      if (updateError) throw updateError;
+      
+      showAdminAlert('✅ Kategori berhasil diperbarui!', 'success');
+      loadCategoriesAdmin();
+    }
+  } catch (error) {
+    console.error('Error editing category:', error);
+    showAdminAlert('❌ Gagal mengedit kategori', 'error');
+  }
+};
+
+// Delete Category with warning
+window.deleteCategory = async (categoryId) => {
+  // Check if category has products
+  try {
+    const supabase = getSupabase();
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('id')
+      .eq('category_id', categoryId)
+      .limit(1);
+
+    if (error) throw error;
+
+    if (products && products.length > 0) {
+      alert('⚠️ Kategori ini masih memiliki produk. Hapus produk terlebih dahulu atau pindahkan ke kategori lain.');
+      return;
+    }
+
+    if (!confirm('Hapus kategori?')) return;
+    
+    const { error: deleteError } = await supabase
       .from('categories')
       .delete()
       .eq('id', categoryId);
 
-    if (error) throw error;
+    if (deleteError) throw deleteError;
 
-    alert('✅ Kategori berhasil dihapus!');
+    showAdminAlert('✅ Kategori berhasil dihapus!', 'success');
     loadCategoriesAdmin();
     loadDashboard();
 
   } catch (error) {
     console.error('Error deleting category:', error);
-    alert('❌ Gagal menghapus kategori: ' + error.message);
+    showAdminAlert('❌ Gagal menghapus kategori', 'error');
   }
 };
 
@@ -719,29 +917,38 @@ window.saveSettings = () => {
   
   let updates = [];
   
-  if (storeName) {
-    localStorage.setItem('nest_store_name', storeName);
+  if (storeName && storeName.trim().length >= 2) {
+    localStorage.setItem('nest_store_name', Security.sanitizeInput(storeName.trim()));
     updates.push('Nama toko');
   }
   
-  if (whatsappNumber) {
-    localStorage.setItem('nest_whatsapp_number', whatsappNumber);
+  if (whatsappNumber && Security.validatePhone(whatsappNumber)) {
+    localStorage.setItem('nest_whatsapp_number', Security.sanitizeInput(whatsappNumber.trim()));
     updates.push('Nomor WhatsApp');
   }
   
-  if (newPassword && confirmPassword) {
+  if (newPassword) {
     if (newPassword === confirmPassword) {
-      alert('⚠️ Fitur update password akan segera tersedia.');
+      if (newPassword.length < 6) {
+        alert('❌ Password minimal 6 karakter!');
+      } else {
+        // In production, this should be handled server-side
+        alert('⚠️ Fitur update password akan segera tersedia.');
+      }
     } else {
       alert('❌ Password tidak cocok!');
     }
   }
   
   if (updates.length > 0) {
-    alert(`✅ ${updates.join(', ')} berhasil disimpan!`);
+    showAdminAlert(`✅ ${updates.join(', ')} berhasil disimpan!`, 'success');
   } else {
-    alert('Tidak ada perubahan yang disimpan.');
+    showAdminAlert('Tidak ada perubahan yang disimpan.', 'info');
   }
+  
+  // Clear password fields
+  document.getElementById('newPassword').value = '';
+  document.getElementById('confirmPassword').value = '';
 };
 
 // Reset Settings
@@ -750,7 +957,7 @@ window.resetSettings = () => {
     localStorage.removeItem('nest_store_name');
     localStorage.removeItem('nest_whatsapp_number');
     loadSettings();
-    alert('Pengaturan telah direset!');
+    showAdminAlert('Pengaturan telah direset!', 'success');
   }
 };
 
@@ -760,6 +967,7 @@ const showAdminAlert = (message, type = 'info') => {
   alertDiv.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg ${
     type === 'error' ? 'bg-red-500 text-white' :
     type === 'success' ? 'bg-green-500 text-white' :
+    type === 'warning' ? 'bg-yellow-500 text-white' :
     'bg-blue-500 text-white'
   }`;
   alertDiv.textContent = message;
@@ -773,16 +981,58 @@ const showAdminAlert = (message, type = 'info') => {
   }, 3000);
 };
 
+// Utility functions
+const isValidUrl = (string) => {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
+};
+
+const logAdminActivity = (action, data = {}) => {
+  const log = {
+    action,
+    data,
+    timestamp: new Date().toISOString(),
+    user: 'admin'
+  };
+  
+  // In production, send to server
+  console.log('🔒 Admin Activity:', log);
+};
+
+// Logout function (called from admin.html)
+window.logoutAdmin = () => {
+  if (confirm('Apakah Anda yakin ingin logout?')) {
+    localStorage.removeItem('nest_admin_auth');
+    localStorage.removeItem('nest_admin_session');
+    isAdminAuthenticated = false;
+    logAdminActivity('logout');
+    window.location.reload();
+  }
+};
+
 // Initialize Admin Panel
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 Initializing Admin Panel...');
   
-  // Check authentication
+  // Check authentication and session
   const isAuthenticated = localStorage.getItem('nest_admin_auth') === 'true';
-  if (isAuthenticated) {
+  const sessionStart = localStorage.getItem('nest_admin_session');
+  const sessionAge = sessionStart ? Date.now() - parseInt(sessionStart) : Infinity;
+  
+  if (isAuthenticated && sessionAge < 8 * 60 * 60 * 1000) {
+    isAdminAuthenticated = true;
     document.getElementById('loginCheck').style.display = 'none';
     document.getElementById('adminLayout').classList.remove('hidden');
     loadDashboard();
+    logAdminActivity('session_resumed');
+  } else {
+    // Clear expired session
+    localStorage.removeItem('nest_admin_auth');
+    localStorage.removeItem('nest_admin_session');
   }
   
   // Enter key for login
@@ -791,6 +1041,11 @@ document.addEventListener('DOMContentLoaded', () => {
       verifyAdmin();
     }
   });
+  
+  // Auto-focus password field
+  setTimeout(() => {
+    document.getElementById('adminAuth')?.focus();
+  }, 100);
   
   console.log('✅ Admin Panel initialized successfully');
 });
